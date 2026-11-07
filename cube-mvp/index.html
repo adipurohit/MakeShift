@@ -107,7 +107,11 @@
       <h3>Recipe Catalog</h3>
       <span class="hint" id="catalogCount"></span>
     </div>
-    <p class="panel-hint">Everything CUBE knows how to build from your materials, ready or not.</p>
+    <p class="panel-hint">Everything CUBE knows how to build. Offline recipes bring their own parts.</p>
+    <div class="catalog-filter">
+      <input type="search" id="catalogSearch" placeholder="Search recipes..." aria-label="Search recipes" autocomplete="off">
+      <select id="catalogCategory" aria-label="Filter by category"><option value="">All categories</option></select>
+    </div>
     <div id="catalogList"></div>
     <div class="empty-note" id="catalogEmptyNote">No recipes yet — add materials and generate ideas.</div>
   </aside>
@@ -180,6 +184,7 @@
   <div class="modal complete-modal">
     <div class="trophy">🏆</div>
     <h2 id="completeTitle">Build Complete</h2>
+    <p class="complete-next" id="completeNext" hidden></p>
     <p class="pitch-line">"CUBE turns discarded materials into a playable engineering inventory. Scan what you have, combine parts to discover ideas, and follow an interactive assembly guide to build something real."</p>
     <button class="primary-btn big" id="closeCompleteBtn">Nice</button>
   </div>

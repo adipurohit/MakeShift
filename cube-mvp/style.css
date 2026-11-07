@@ -235,6 +235,15 @@ body {
 .idea-row-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .idea-row-title { font-size: 13px; font-weight: 700; }
 .idea-row .pitch { font-size: 11px; color: var(--text-dim); margin: 4px 0 0; line-height: 1.4; }
+.idea-meta { font-size: 10px; font-weight: 600; letter-spacing: .02em; color: var(--accent); margin-top: 6px; text-transform: uppercase; }
+.catalog-filter { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 4px 0; }
+.catalog-filter input, .catalog-filter select {
+  font: inherit; font-size: 12px; color: var(--text); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px; min-width: 0;
+}
+.catalog-filter input, .catalog-filter select { flex: 1 1 100%; }
+.catalog-filter input:focus-visible, .catalog-filter select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.complete-next { font-size: 14px; font-weight: 600; color: var(--accent); margin: 4px 0 12px; line-height: 1.45; }
 .idea-badge {
   font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; white-space: nowrap; flex-shrink: 0;
 }

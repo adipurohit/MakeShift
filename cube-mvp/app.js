@@ -10,7 +10,7 @@ import * as THREE from "three";
 import { OrbitControls } from "./vendor/OrbitControls.js";
 import { iconSvg, partGeometry } from "./parts.js";
 
-const STORAGE_KEY = "cube_mvp_state_v3";
+const STORAGE_KEY = "cube_mvp_state_v4"; // v4: one isolated sandbox per offline recipe
 
 const PALETTE_COLORS = ["#c0584a", "#3f8f5f", "#6f55c0", "#3a6fc0", "#b88a2e", "#2e9aa6"];
 function colorForId(id) {
@@ -33,6 +33,9 @@ const OFFLINE_IDEA = {
   title: "Robot Arm",
   pitch: "Strip two broken 3D printers for motors, rails and electronics, and build a 2-joint robot arm with a gripper made from the dead nozzles.",
   offline: true,
+  featured: true,
+  category: "Robotics",
+  difficulty: "Medium",
   rawMaterials: [
     { id: "stepper", name: "Stepper Motor", qty: 4 },
     { id: "pulley", name: "Pulley", qty: 2 },
@@ -79,11 +82,7 @@ function defaultState() {
     inventory: {},     // id -> qty (shared sandbox: real materials + AI-idea intermediates)
     discovered: [],    // ids ever crafted (shared sandbox)
     bench: [],         // [{uid, itemId, x, y, x3, z3}] (shared sandbox)
-    offline: {         // isolated sandbox for the offline example only
-      inventory: {},
-      discovered: [],
-      bench: [],
-    },
+    offlineBoxes: {},  // ideaId -> {inventory, discovered, bench}: one isolated sandbox per offline recipe
     ideaLibrary: [],   // AI-generated ideas (phase 1, resolved)
     activeIdeaId: null,
     assemblySteps: {}, // ideaId -> [steps], cached once generated
@@ -95,14 +94,34 @@ let state = loadState();
 // Bench tokens persist across reloads, so new uids must start past every saved
 // one. Restarting at 1 made a fresh token share a uid with a saved token, and
 // the merge check (t.uid !== movedTok.uid) then skipped the real partner.
-let uidCounter = 1 + Math.max(0, ...[...state.bench, ...state.offline.bench].map((t) => t.uid || 0));
+let uidCounter = 1 + Math.max(0, ...[...state.bench, ...Object.values(state.offlineBoxes).flatMap((b) => b.bench)].map((t) => t.uid || 0));
+
+/* ---------------- Offline recipe pack ----------------
+   recipes/pack.json holds the built-in offline recipes. Each one plays in its
+   own sandbox with its own parts, so every recipe works with no API key and
+   no network. Add recipes by editing pack.json, then run
+   python3 cube-mvp/recipes/validate.py. */
+let RECIPE_PACK = [];
+async function loadRecipePack() {
+  try {
+    const res = await fetch("recipes/pack.json");
+    const data = await res.json();
+    RECIPE_PACK = (data.recipes || []).map((r) => ({ ...r, offline: true, pack: true }));
+  } catch (e) {
+    RECIPE_PACK = [];
+  }
+}
+function offlineBox(ideaId) {
+  if (!state.offlineBoxes[ideaId]) state.offlineBoxes[ideaId] = { inventory: {}, discovered: [], bench: [] };
+  return state.offlineBoxes[ideaId];
+}
 
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultState();
     const parsed = JSON.parse(raw);
-    if (!parsed.items || !parsed.offline) return defaultState();
+    if (!parsed.items || !parsed.offlineBoxes) return defaultState();
     return parsed;
   } catch (e) {
     return defaultState();
@@ -121,10 +140,14 @@ function registerItem(id, meta) {
    always works standalone with zero AI/network. Everything else shares one
    global sandbox, since real materials are genuinely shared across ideas. */
 function isOfflineActive() {
-  return state.activeIdeaId === OFFLINE_IDEA.id;
+  const idea = state.activeIdeaId && findIdea(state.activeIdeaId);
+  return !!(idea && idea.offline);
 }
 function ctx() {
-  return isOfflineActive() ? state.offline : state;
+  return isOfflineActive() ? offlineBox(state.activeIdeaId) : state;
+}
+function invFor(idea) {
+  return idea.offline ? offlineBox(idea.id).inventory : state.inventory;
 }
 function qty(id) { return ctx().inventory[id] || 0; }
 function addQty(id, n) {
@@ -151,7 +174,8 @@ function resolveIdea(idea) {
   if (idea.offline) {
     idea.rawMaterials.forEach((m) => {
       registerItem(m.id, { name: m.name, short: shortFor(m.name), color: colorForId(m.id), raw: true });
-      if (state.offline.inventory[m.id] === undefined) state.offline.inventory[m.id] = m.qty;
+      const box = offlineBox(idea.id);
+      if (box.inventory[m.id] === undefined) box.inventory[m.id] = m.qty;
     });
   }
 
@@ -170,7 +194,7 @@ function resolveIdea(idea) {
 }
 
 function allIdeas() {
-  return [OFFLINE_IDEA, ...state.ideaLibrary];
+  return [OFFLINE_IDEA, ...state.ideaLibrary, ...RECIPE_PACK];
 }
 function findIdea(id) {
   return allIdeas().find((i) => i.id === id);
@@ -303,7 +327,7 @@ async function generateIdeas() {
       document.getElementById("generateError").classList.remove("visible");
       state.ideaLibrary = data.ideas || [];
       state.ideaLibrary.forEach((idea) => resolveIdea(idea));
-      if (state.activeIdeaId && state.activeIdeaId !== OFFLINE_IDEA.id && !findIdea(state.activeIdeaId)) {
+      if (state.activeIdeaId && !findIdea(state.activeIdeaId)) {
         state.activeIdeaId = null;
       }
       saveState();
@@ -323,7 +347,7 @@ async function generateIdeas() {
 function matchPercent(idea) {
   const ids = rawIdsForIdea(idea);
   if (ids.length === 0) return 0;
-  const have = ids.filter((id) => (idea.offline ? state.offline.inventory[id] > 0 : (state.inventory[id] || 0) > 0)).length;
+  const have = ids.filter((id) => (invFor(idea)[id] || 0) > 0).length;
   return Math.round((have / ids.length) * 100);
 }
 
@@ -331,7 +355,7 @@ function readyPercent(idea) {
   const resolved = resolveIdea(idea);
   const entries = Object.entries(resolved.finalRequires);
   if (entries.length === 0) return 0;
-  const inv = idea.offline ? state.offline.inventory : state.inventory;
+  const inv = invFor(idea);
   const ready = entries.filter(([id, need]) => (inv[id] || 0) >= need).length;
   return Math.round((ready / entries.length) * 100);
 }
@@ -339,7 +363,7 @@ function readyPercent(idea) {
 function renderBuildableNow() {
   const list = document.getElementById("buildableNowList");
   list.innerHTML = "";
-  const candidates = allIdeas().filter((i) => matchPercent(i) === 100);
+  const candidates = allIdeas().filter((i) => !i.pack && matchPercent(i) === 100);
   document.getElementById("buildableNowEmptyNote").classList.toggle("visible", candidates.length === 0);
   candidates.forEach((idea) => list.appendChild(buildIdeaRow(idea, true)));
 }
@@ -349,7 +373,8 @@ function buildIdeaRow(idea, compact) {
   row.className = "idea-row" + (idea.id === state.activeIdeaId ? " active" : "");
   const rp = readyPercent(idea);
   let badge;
-  if (idea.offline) badge = `<span class="idea-badge offline-badge">offline</span>`;
+  if (idea.pack) badge = "";
+  else if (idea.offline) badge = `<span class="idea-badge offline-badge">offline</span>`;
   else if (rp === 100) badge = `<span class="idea-badge ready-badge">ready!</span>`;
   else badge = `<span class="idea-badge match-badge">${rp}% ready</span>`;
 
@@ -359,6 +384,7 @@ function buildIdeaRow(idea, compact) {
       ${badge}
     </div>
     ${compact ? "" : `<p class="pitch">${idea.pitch}</p>`}
+    ${!compact && idea.category ? `<div class="idea-meta">${idea.category} · ${idea.difficulty || "Easy"}</div>` : ""}
   `;
   row.addEventListener("click", () => setActiveIdea(idea.id));
   return row;
@@ -368,10 +394,36 @@ function buildIdeaRow(idea, compact) {
 function renderCatalog() {
   const list = document.getElementById("catalogList");
   list.innerHTML = "";
-  const ideas = allIdeas();
-  document.getElementById("catalogCount").textContent = ideas.length ? `${ideas.length} recipe${ideas.length === 1 ? "" : "s"}` : "";
+  const all = allIdeas();
+  const q = catalogFilter.text.trim().toLowerCase();
+  const ideas = all.filter((i) =>
+    (!catalogFilter.category || i.category === catalogFilter.category) &&
+    (!q || (i.title + " " + i.pitch + " " + (i.category || "")).toLowerCase().includes(q)));
+  const n = all.length;
+  document.getElementById("catalogCount").textContent = !n ? "" :
+    ideas.length === n ? `${n} recipe${n === 1 ? "" : "s"}` : `${ideas.length} of ${n}`;
   document.getElementById("catalogEmptyNote").classList.toggle("visible", ideas.length === 0);
+  document.getElementById("catalogEmptyNote").textContent = n
+    ? "No recipes match. Clear the search or pick another category."
+    : "No recipes yet — add materials and generate ideas.";
   ideas.forEach((idea) => list.appendChild(buildIdeaRow(idea, false)));
+}
+
+const catalogFilter = { text: "", category: "" };
+function initCatalogFilter() {
+  const sel = document.getElementById("catalogCategory");
+  const cats = [...new Set(allIdeas().map((i) => i.category).filter(Boolean))].sort();
+  cats.forEach((c) => {
+    const opt = document.createElement("option");
+    opt.value = c;
+    opt.textContent = `${c} (${allIdeas().filter((i) => i.category === c).length})`;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener("change", () => { catalogFilter.category = sel.value; renderCatalog(); });
+  document.getElementById("catalogSearch").addEventListener("input", (e) => {
+    catalogFilter.text = e.target.value;
+    renderCatalog();
+  });
 }
 
 /* ================= ACTIVE RECIPE / REQUIREMENTS ================= */
@@ -401,7 +453,7 @@ function renderRequirements() {
   activeEl.hidden = false;
 
   const resolved = resolveIdea(idea);
-  const inv = idea.offline ? state.offline.inventory : state.inventory;
+  const inv = invFor(idea);
   const entries = Object.entries(resolved.finalRequires);
   const reqList = document.getElementById("reqList");
   reqList.innerHTML = "";
@@ -428,7 +480,7 @@ function renderHolograms(idea) {
   row.innerHTML = "";
   if (idea) {
     const resolved = resolveIdea(idea);
-    const inv = idea.offline ? state.offline.inventory : state.inventory;
+    const inv = invFor(idea);
     Object.entries(resolved.finalRequires).forEach(([id, need]) => {
       const item = state.items[id];
       const have = inv[id] || 0;
@@ -446,7 +498,7 @@ function initBuildButton() {
     const idea = findIdea(state.activeIdeaId);
     if (!idea) return;
     const resolved = resolveIdea(idea);
-    const inv = idea.offline ? state.offline.inventory : state.inventory;
+    const inv = invFor(idea);
     Object.entries(resolved.finalRequires).forEach(([id, need]) => { inv[id] -= need; });
     saveState();
     renderPalette();
@@ -460,16 +512,17 @@ function activeRecipesFirst() {
   const idea = findIdea(state.activeIdeaId);
   const list = [];
   if (idea) list.push(...resolveIdea(idea).recipes);
-  allIdeas().forEach((i) => { if (i.id !== state.activeIdeaId) list.push(...resolveIdea(i).recipes); });
+  // offline recipes merge only inside their own sandbox
+  allIdeas().forEach((i) => { if (!i.offline && i.id !== state.activeIdeaId) list.push(...resolveIdea(i).recipes); });
   return list;
 }
 function findRecipe(idA, idB) {
-  const recipes = isOfflineActive() ? resolveIdea(OFFLINE_IDEA).recipes : activeRecipesFirst();
+  const recipes = isOfflineActive() ? resolveIdea(findIdea(state.activeIdeaId)).recipes : activeRecipesFirst();
   return recipes.find((r) => (r.a === idA && r.b === idB) || (r.a === idB && r.b === idA));
 }
 
 function paletteItemIds() {
-  if (isOfflineActive()) return Object.keys(state.offline.inventory);
+  if (isOfflineActive()) return Object.keys(ctx().inventory);
   return Object.keys(state.items).filter((id) => {
     // hide ids that only belong to the isolated offline idea
     const inGlobal = Object.prototype.hasOwnProperty.call(state.inventory, id);
@@ -815,7 +868,7 @@ function render3DHolograms(idea) {
   three.holoGroup.clear();
   if (!idea) return;
   const resolved = resolveIdea(idea);
-  const inv = idea.offline ? state.offline.inventory : state.inventory;
+  const inv = invFor(idea);
   const entries = Object.entries(resolved.finalRequires);
   entries.forEach(([id, need], i) => {
     const item = state.items[id];
@@ -1050,6 +1103,9 @@ function initAssemblyModal() {
       renderBadges();
     }
     document.getElementById("completeTitle").textContent = assemblyIdea.title + " Built";
+    const nextEl = document.getElementById("completeNext");
+    nextEl.hidden = !assemblyIdea.extend;
+    nextEl.textContent = assemblyIdea.extend ? "Level up next: " + assemblyIdea.extend : "";
     document.getElementById("completeModal").classList.add("visible");
     launchConfetti();
   });
@@ -1256,10 +1312,12 @@ function renderAll() {
     : "No recipe selected — pick one from the catalog →";
 }
 
-function init() {
-  // make sure the offline idea's own metadata is registered (but not its
-  // quantities, which stay isolated in state.offline)
+async function init() {
+  await loadRecipePack();
+  // make sure the offline idea's own metadata is registered (its quantities
+  // stay isolated in its own offline sandbox)
   resolveIdea(OFFLINE_IDEA);
+  initCatalogFilter();
 
   initMaterialsForm();
   initGenerateButtons();
