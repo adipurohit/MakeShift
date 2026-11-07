@@ -16,10 +16,10 @@ Work breakdown for the CUBE demo (`cube-mvp/`) so teammates and agents can pick 
 
 | # | Task | Status |
 |---|------|--------|
-| 1 | Camera scan on a real device | Code audited and fixed; passes in headless Chromium with a synthetic camera (`tests/scan_browser.py`). **Still open:** one pass on a physical webcam using the checklist in `cube-mvp/NOTES-tasks-1-and-4.md`. |
+| 1 | Camera scan on a real device | Code audited and fixed; passes in headless Chromium with a synthetic camera (`cube-mvp/tests/scan_browser.py`). **Still open:** one pass on a physical webcam using the checklist in `NOTES-tasks-1-and-4.md`. |
 | 2 | Real part icons | Done (PR #6). |
 | 3 | 3D shapes per category | Done (PR #6). |
-| 4 | Recipe quality pass | Prompts + validator tightened, harness built (`tests/recipe_quality.py`). **Still open:** run it with an API key and review the report; before/after examples need that run. |
+| 4 | Recipe quality pass | Prompts + validator tightened, harness built (`cube-mvp/tests/recipe_quality.py`). **Still open:** run it with an API key and review the report; before/after examples need that run. |
 | 5 | Smoke test | Done. `python3 cube-mvp/tests/smoke.py` passes 21/21. |
 | 6 | Hosted deploy | Config ready (`render.yaml`, `DEPLOYMENT.md`). Public URL not created yet. |
 | 7 | Pitch narrative | Draft done (`PITCH.md`). Rehearsal pending. |

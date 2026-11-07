@@ -59,6 +59,12 @@ class ValidatorTests(unittest.TestCase):
         bad = copy.deepcopy(GOOD); bad["recipes"].reverse()
         self.assertTrue(any("unknown id" in p for p in check(bad)[1]))
 
+    def test_repeated_pair_is_rejected_in_either_order(self):
+        bad = copy.deepcopy(GOOD)
+        bad["recipes"].append({"a": "m_pulley", "b": "m_stepper_motor", "result_id": "twin", "result_name": "Twin", "result_short": "TW"})
+        bad["final_requires"].append({"id": "twin", "qty": 1})
+        self.assertTrue(any("repeats the pair" in p for p in check(bad)[1]))
+
     def test_dead_end_recipe(self):
         bad = copy.deepcopy(GOOD); bad["final_requires"] = [{"id": "m_zip_tie", "qty": 2}]
         self.assertTrue(any("dead-end" in p for p in check(bad)[1]))
