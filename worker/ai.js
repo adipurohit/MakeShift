@@ -155,7 +155,7 @@ export function cleanMaterials(materials) {
       const qty = /^\d+$/.test(q.replace(/^-+/, "")) ? Math.max(0, parseInt(q, 10) || 0) : 1;
       return { id: cleanText(m.id, 60), name: cleanText(m.name, 60), qty };
     })
-    .filter((m) => m.id && m.name);
+    .filter((m) => m.id && m.name && m.qty > 0); // only parts the user has
 }
 
 // ---------------- Groq calls ----------------
@@ -198,11 +198,26 @@ async function chatJson(env, system, user, name, schema, maxTokens, model) {
   }
 }
 
+const rawIdeas = (data) => (isObj(data) && Array.isArray(data.ideas) ? data.ideas : []);
+
 export async function generateIdeas(env, materials) {
   const user = "Materials on hand (id, name, quantity):\n" + JSON.stringify(materials, null, 2) +
     "\n\nPropose a catalog of buildable project ideas using these materials, following the schema.";
-  const data = await chatJson(env, CFG.idea_system_prompt, user, "ideas", CFG.idea_schema, 6144);
-  return validateAndClean(data, materials);
+  const first = rawIdeas(await chatJson(env, CFG.idea_system_prompt, user, "ideas", CFG.idea_schema, 6144));
+  const ideas = validateAndClean({ ideas: first }, materials);
+  if (ideas.length >= L.min_ideas) return ideas;
+
+  // Validation drops weak ideas, so ask once more for different ones to reach min_ideas.
+  const taken = ideas.map((i) => i.title).join("; ") || "none yet";
+  const topup = user + "\n\nThese ideas are already in the catalog: " + taken + ". Propose " +
+    `${L.min_ideas - ideas.length + 2} or more DIFFERENT ideas, with different titles and functions.`;
+  let second;
+  try {
+    second = rawIdeas(await chatJson(env, CFG.idea_system_prompt, topup, "ideas", CFG.idea_schema, 6144));
+  } catch (e) {
+    return ideas; // keep the first batch if the top-up call fails
+  }
+  return validateAndClean({ ideas: first.concat(second) }, materials);
 }
 
 export async function generateSteps(env, brief) {

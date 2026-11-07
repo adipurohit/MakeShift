@@ -156,6 +156,38 @@ function benchFor(idea) {
 function haveFor(idea, id) {
   return (invFor(idea)[id] || 0) + benchFor(idea).filter((t) => t.itemId === id).length;
 }
+// Walks the recipe tree from the final requirements, using parts already on hand first.
+// Returns, per merge, how many more times it must run, plus raw parts the build is short of.
+function buildPlan(idea) {
+  const resolved = resolveIdea(idea);
+  const byResult = {};
+  resolved.recipes.forEach((r) => { byResult[r.result] = r; });
+  const avail = {};
+  const have = (id) => {
+    if (!(id in avail)) avail[id] = haveFor(idea, id);
+    return avail[id];
+  };
+  const outstanding = {};
+  const missing = {};
+  const need = (id, q) => {
+    const take = Math.min(have(id), q);
+    avail[id] -= take;
+    const rem = q - take;
+    if (!rem) return;
+    const r = byResult[id];
+    if (r) {
+      outstanding[id] = (outstanding[id] || 0) + rem;
+      need(r.a, rem);
+      need(r.b, rem);
+    } else {
+      missing[id] = (missing[id] || 0) + rem;
+    }
+  };
+  Object.entries(resolved.finalRequires).forEach(([id, q]) => need(id, q));
+  const missingTotal = Object.values(missing).reduce((a, b) => a + b, 0);
+  return { recipes: resolved.recipes, outstanding, missing, missingTotal };
+}
+
 // Final requirements that no merge produces or consumes: they go into the build as-is.
 function asIsIds(idea) {
   const resolved = resolveIdea(idea);
@@ -263,6 +295,7 @@ function renderInventory() {
       state.inventory[id] = (state.inventory[id] || 0) + delta;
       saveState();
       renderAllForInventoryChange();
+      scheduleIdeaRefresh();
     });
   });
   grid.querySelectorAll(".item-remove").forEach((btn) => {
@@ -272,6 +305,7 @@ function renderInventory() {
       delete state.inventory[id];
       saveState();
       renderAllForInventoryChange();
+      scheduleIdeaRefresh();
     });
   });
 }
@@ -282,6 +316,7 @@ function addMaterial(name, qty0) {
   state.inventory[id] = (state.inventory[id] || 0) + qty0;
   saveState();
   renderAllForInventoryChange();
+  scheduleIdeaRefresh();
 }
 
 function initMaterialsForm() {
@@ -309,22 +344,61 @@ function renderAllForInventoryChange() {
 
 /* ================= AI IDEA GENERATION (phase 1) ================= */
 function initGenerateButtons() {
-  document.getElementById("refreshIdeasBtn").addEventListener("click", () => generateIdeas());
+  document.getElementById("refreshIdeasBtn").addEventListener("click", () => {
+    ideasAutoOff = false;
+    generateIdeas({ manual: true });
+  });
 }
 
-async function generateIdeas() {
-  const rawMaterials = Object.keys(state.items)
-    .filter((id) => state.items[id].raw)
-    .map((id) => ({ id, name: state.items[id].name, qty: state.inventory[id] || 0 }));
+// Only the parts in the user's own inventory, counting any sitting on the bench.
+// Catalog recipes register their parts too, but those belong to their own sandboxes.
+function userMaterials() {
+  return Object.keys(state.inventory)
+    .filter((id) => state.items[id] && state.items[id].raw)
+    .map((id) => ({
+      id,
+      name: state.items[id].name,
+      qty: (state.inventory[id] || 0) + state.bench.filter((t) => t.itemId === id).length,
+    }))
+    .filter((m) => m.qty > 0);
+}
+const materialsKey = (mats) => mats.map((m) => `${m.id}:${m.qty}`).sort().join("|");
 
+let ideasTimer = null;
+let ideasInFlight = false;
+let ideasPending = false;
+let ideasAutoOff = false;
+let lastIdeasKey = null;
+
+// Called after every inventory edit: regenerate ideas once the user pauses.
+function scheduleIdeaRefresh() {
+  if (ideasAutoOff) return;
+  clearTimeout(ideasTimer);
+  ideasTimer = setTimeout(() => {
+    if (ideasInFlight) { ideasPending = true; return; }
+    generateIdeas({ manual: false });
+  }, 1800);
+}
+
+function setIdeasStatus(text) {
+  const el = document.getElementById("ideasStatus");
+  el.textContent = text;
+  el.hidden = !text;
+}
+
+async function generateIdeas({ manual } = { manual: true }) {
+  const rawMaterials = userMaterials();
   if (rawMaterials.length === 0) {
-    toast("Add or scan a material first");
+    if (manual) toast("Add or scan a material first");
     return;
   }
+  const key = materialsKey(rawMaterials);
+  if (!manual && key === lastIdeasKey) return;
 
   const btn = document.getElementById("refreshIdeasBtn");
   btn.disabled = true;
-  toast("Generating build ideas...");
+  ideasInFlight = true;
+  setIdeasStatus("Updating ideas for your parts...");
 
   try {
     const res = await fetch("api/generate-ideas", {
@@ -334,23 +408,33 @@ async function generateIdeas() {
     });
     const data = await res.json();
     if (!res.ok) {
-      toast((data.message || "Couldn't generate ideas") + ". Catalog recipes still work.");
+      if (data.error === "no_api_key") ideasAutoOff = true;
+      if (manual) toast((data.message || "Couldn't generate ideas") + ". Catalog recipes still work.");
       document.getElementById("generateError").textContent = data.message || "Couldn't generate ideas.";
       document.getElementById("generateError").classList.add("visible");
     } else {
       document.getElementById("generateError").classList.remove("visible");
-      state.ideaLibrary = data.ideas || [];
+      const fresh = data.ideas || [];
+      // Keep the idea being built, even if the new batch dropped it.
+      const active = state.ideaLibrary.find((i) => i.id === state.activeIdeaId);
+      if (active && !fresh.some((i) => i.id === active.id)) fresh.unshift(active);
+      state.ideaLibrary = fresh;
       state.ideaLibrary.forEach((idea) => resolveIdea(idea));
       if (state.activeIdeaId && !findIdea(state.activeIdeaId)) {
         state.activeIdeaId = null;
       }
+      lastIdeasKey = key;
       saveState();
-      toast(`Generated ${state.ideaLibrary.length} ideas`);
+      toast(`${state.ideaLibrary.length} ideas for your parts`);
     }
   } catch (e) {
-    toast("AI ideas need the local server. Catalog recipes still work.");
+    ideasAutoOff = true;
+    if (manual) toast("AI ideas need the server. Catalog recipes still work.");
   }
 
+  ideasInFlight = false;
+  setIdeasStatus("");
+  if (ideasPending) { ideasPending = false; scheduleIdeaRefresh(); }
   btn.disabled = false;
   renderBuildableNow();
   renderCatalog();
@@ -376,19 +460,26 @@ function readyPercent(idea) {
 function renderBuildableNow() {
   const list = document.getElementById("buildableNowList");
   list.innerHTML = "";
-  const candidates = allIdeas().filter((i) => !i.pack && matchPercent(i) === 100);
-  document.getElementById("buildableNowEmptyNote").classList.toggle("visible", candidates.length === 0);
-  candidates.forEach((idea) => list.appendChild(buildIdeaRow(idea, true)));
+  const ideas = state.ideaLibrary
+    .map((idea, i) => ({ idea, i, short: buildPlan(idea).missingTotal }))
+    .sort((x, y) => (x.short === 0 ? 0 : 1) - (y.short === 0 ? 0 : 1) || x.i - y.i)
+    .map((x) => x.idea);
+  document.getElementById("buildableNowEmptyNote").classList.toggle("visible", ideas.length === 0);
+  const ready = ideas.filter((i) => buildPlan(i).missingTotal === 0).length;
+  document.getElementById("ideasCount").textContent = ideas.length ? `${ready} of ${ideas.length} ready` : "";
+  ideas.forEach((idea) => list.appendChild(buildIdeaRow(idea, true)));
 }
 
 function buildIdeaRow(idea, compact) {
   const row = document.createElement("div");
   row.className = "idea-row" + (idea.id === state.activeIdeaId ? " active" : "");
-  const rp = readyPercent(idea);
-  let badge;
-  if (idea.offline) badge = "";
-  else if (rp === 100) badge = `<span class="idea-badge ready-badge">ready!</span>`;
-  else badge = `<span class="idea-badge match-badge">${rp}% ready</span>`;
+  let badge = "";
+  if (!idea.offline) {
+    const short = buildPlan(idea).missingTotal;
+    badge = short === 0
+      ? `<span class="idea-badge ready-badge">Ready</span>`
+      : `<span class="idea-badge match-badge">Need ${short} more</span>`;
+  }
 
   row.innerHTML = `
     <div class="idea-row-top">
@@ -441,8 +532,9 @@ function initCatalogFilter() {
 /* ================= ACTIVE RECIPE / REQUIREMENTS ================= */
 function setActiveIdea(id) {
   state.activeIdeaId = id;
-  saveState();
   const idea = findIdea(id);
+  if (idea) resolveIdea(idea); // registers its parts and, for offline recipes, fills its sandbox
+  saveState();
   document.getElementById("activeRecipeLabel").textContent = idea ? "Building: " + idea.title : "Pick a recipe from the catalog";
   renderPalette();
   renderBench();
@@ -463,6 +555,7 @@ function renderRequirements() {
   }
   emptyEl.hidden = true;
   activeEl.hidden = false;
+  renderMergeGuide(idea);
 
   const resolved = resolveIdea(idea);
   const asIs = asIsIds(idea);
@@ -486,6 +579,38 @@ function renderRequirements() {
   document.getElementById("buildBtn").disabled = entries.length === 0 || readyCount < entries.length;
 
   renderHolograms(idea);
+}
+
+function renderMergeGuide(idea) {
+  const box = document.getElementById("mergeGuide");
+  const plan = buildPlan(idea);
+  box.innerHTML = "";
+  box.hidden = plan.recipes.length === 0;
+  if (box.hidden) return;
+  const head = document.createElement("div");
+  head.className = "merge-guide-head";
+  head.textContent = "How to build it";
+  box.appendChild(head);
+  const list = document.createElement("ol");
+  list.className = "merge-list";
+  const name = (id) => (state.items[id] || {}).name || id;
+  plan.recipes.forEach((r) => {
+    const left = plan.outstanding[r.result] || 0;
+    const li = document.createElement("li");
+    li.className = "merge-step" + (left ? "" : " done");
+    li.dataset.result = r.result;
+    li.innerHTML = `<span class="merge-parts">${name(r.a)} <b>+</b> ${name(r.b)} <b>→</b> ${name(r.result)}</span>` +
+      `<span class="merge-left">${left ? (left > 1 ? `merge ${left}×` : "merge") : "done"}</span>`;
+    list.appendChild(li);
+  });
+  box.appendChild(list);
+  const missing = Object.entries(plan.missing);
+  if (missing.length) {
+    const note = document.createElement("p");
+    note.className = "merge-missing";
+    note.textContent = "Short of: " + missing.map(([id, n]) => `${n} ${name(id)}`).join(", ") + ". Add them in Inventory.";
+    box.appendChild(note);
+  }
 }
 
 function renderHolograms(idea) {
@@ -1456,6 +1581,8 @@ async function init() {
   // make sure the offline idea's own metadata is registered (its quantities
   // stay isolated in its own offline sandbox)
   resolveIdea(OFFLINE_IDEA);
+  const active = findIdea(state.activeIdeaId);
+  if (active) resolveIdea(active);
   initCatalogFilter();
 
   initMaterialsForm();

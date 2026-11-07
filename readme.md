@@ -10,7 +10,7 @@ MakeShift treats broken gear and scrap as a parts inventory. Pick a build, drag 
 - **2D and 3D build views.** Merge parts on a 2D bench, or switch to 3D to see each part as a shape.
 - **Assembly guide** with checkable steps, a progress photo, a completion badge, and a suggested next upgrade.
 - **How-it-works screen** on first visit, reopened any time from the top bar.
-- **AI features** (need a Groq API key): scan a material with your camera, and generate new build ideas from your own inventory.
+- **AI features** (need a Groq API key): scan a material with your camera, and get 10 or more build ideas from your own inventory, refreshed as you change it.
 
 ## Run it
 
@@ -31,7 +31,7 @@ To host MakeShift at adipurohit.com/makeshift on Cloudflare and turn on the AI f
 ## How a build works
 
 1. **Pick a recipe** from the Recipe Catalog. Search by name or filter by category.
-2. **Merge parts.** Drag two parts onto the bench. Parts that fit together merge into a new piece, for example Stepper Motor + Pulley makes a Drive Unit.
+2. **Merge parts.** Follow the How to build it list under the bench. Drag two parts onto the bench. Parts that fit together merge into a new piece, for example Stepper Motor + Pulley makes a Drive Unit.
 3. **Fill the checklist.** The bar under the bench turns each requirement green once you have enough. Parts marked **as-is** go straight into the build with no merging, and parts on the bench still count.
 4. **Build it.** Press Build It, check off each step, add a photo, and earn a badge.
 
@@ -50,6 +50,7 @@ python3 cube-mvp/tests/pack_test.py <recipe_id>
 |---------|--------|
 | `python3 cube-mvp/tests/smoke.py` | Server endpoints and the full Robot Arm build in a headless browser |
 | `python3 cube-mvp/tests/pack_test.py` | Builds all 100 pack recipes end to end |
+| `python3 cube-mvp/tests/ai_flow_test.py` | AI ideas: only your parts sent, auto-refresh, 10+ ideas, merge guide |
 | `python3 cube-mvp/tests/bench_count_test.py` | Parts on the bench count toward the checklist, including as-is parts |
 | `python3 cube-mvp/tests/test_recipes.py` | AI recipe validation rules |
 | `python3 cube-mvp/tests/worker_parity_test.py` | Cloudflare Worker treats AI output exactly like `server.py` |

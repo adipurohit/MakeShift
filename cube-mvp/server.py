@@ -124,8 +124,8 @@ IDEA_SCHEMA = {
     "properties": {
         "ideas": {
             "type": "array",
-            "minItems": 6,
-            "maxItems": 10,
+            "minItems": 10,
+            "maxItems": 14,
             "items": {
                 "type": "object",
                 "properties": {
@@ -213,13 +213,20 @@ Safety (general audience, possibly children nearby):
 - If the only way to make an idea interesting is to break one of these rules, drop the idea.
 
 Quality:
-- Give genuine variety: different functions and different material mixes, not six versions of one organizer.
+- Aim for 10-14 ideas. Give genuine variety: different functions and different material mixes, not ten
+  versions of one organizer.
+- Most ideas should chain at least two merges, so the build has real sub-assemblies, not one merge and done.
 - Titles are punchy and specific. The pitch is one or two sentences that say what it does and why it is
   satisfying, and it must match the recipes.
 - Order ideas with the best material match / most immediately buildable first. Before ordering, count the
   raw units each idea needs against the quantities given.
 - If the materials are too limited for a good idea, return fewer, honest ideas instead of padding.
 """
+
+
+def raw_ideas(data):
+    ideas = data.get("ideas") if isinstance(data, dict) else None
+    return ideas if isinstance(ideas, list) else []
 
 
 def generate_ideas(materials):
@@ -231,8 +238,23 @@ def generate_ideas(materials):
     )
 
     response = chat_json(IDEA_SYSTEM_PROMPT, user_prompt, "ideas", IDEA_SCHEMA, 6144)
-    data = json.loads(first_text(response))
-    return validate_and_clean(data, materials)
+    first = raw_ideas(json.loads(first_text(response)))
+    ideas = validate_and_clean({"ideas": first}, materials)
+    if len(ideas) >= MIN_IDEAS:
+        return ideas
+
+    # Validation drops weak ideas, so ask once more for different ones to reach MIN_IDEAS.
+    taken = "; ".join(i["title"] for i in ideas) or "none yet"
+    topup_prompt = (
+        user_prompt + "\n\nThese ideas are already in the catalog: " + taken + ". Propose "
+        f"{MIN_IDEAS - len(ideas) + 2} or more DIFFERENT ideas, with different titles and functions."
+    )
+    try:
+        response = chat_json(IDEA_SYSTEM_PROMPT, topup_prompt, "ideas", IDEA_SCHEMA, 6144)
+        second = raw_ideas(json.loads(first_text(response)))
+    except Exception:
+        return ideas  # keep the first batch if the top-up call fails
+    return validate_and_clean({"ideas": first + second}, materials)
 
 
 def first_text(response):
@@ -246,7 +268,8 @@ def first_text(response):
     return text
 
 
-MAX_IDEAS = 10
+MIN_IDEAS = 10  # below this, generate_ideas() makes one top-up call
+MAX_IDEAS = 14
 MAX_RECIPES = 6
 MAX_FINAL = 6
 MAX_QTY = 5   # prompt asks for 1-3; allow some slack before rejecting
@@ -561,7 +584,7 @@ class Handler(SimpleHTTPRequestHandler):
             for m in materials
             if isinstance(m, dict) and m.get("id") and m.get("name")
         ]
-        materials = [m for m in materials if m["id"] and m["name"]]
+        materials = [m for m in materials if m["id"] and m["name"] and m["qty"] > 0]  # only parts the user has
         if not materials:
             self._send_json(400, {"error": "no_materials", "message": "Add at least one material first."})
             return

@@ -112,7 +112,7 @@ class HelperTests(unittest.TestCase):
         arr = out["properties"]["ideas"]
         self.assertNotIn("minItems", arr)
         self.assertNotIn("maxItems", arr)
-        self.assertIn("at least 6", arr["description"])
+        self.assertIn(f"at least {server.IDEA_SCHEMA['properties']['ideas']['minItems']}", arr["description"])
         self.assertIn("minItems", server.IDEA_SCHEMA["properties"]["ideas"])  # original untouched
 
     def test_steps_numbering_and_markup_removed(self):
