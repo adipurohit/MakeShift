@@ -9,5 +9,5 @@ services:
     healthCheckPath: /
     autoDeployTrigger: commit
     envVars:
-      - key: ANTHROPIC_API_KEY
+      - key: GROQ_API_KEY
         sync: false

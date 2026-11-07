@@ -1,0 +1,86 @@
+// Cloudflare Worker for MakeShift at adipurohit.com/makeshift.
+// Serves the static app from ./dist, and answers the three AI endpoints the Python server
+// answers locally: POST .../api/generate-ideas, generate-steps, identify-material.
+// The Groq key lives in a Worker secret named GROQ_API_KEY, never in the repo.
+import {
+  ApiError, BadImage, MAX_BODY_BYTES,
+  cleanMaterials, generateIdeas, generateSteps, identifyMaterial,
+} from "./ai.js";
+
+const API_RE = /\/api\/(generate-ideas|generate-steps|identify-material)$/;
+
+const json = (status, payload) =>
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+  });
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const match = API_RE.exec(url.pathname);
+    if (!match) return env.ASSETS.fetch(request);
+    if (request.method !== "POST") return json(405, { error: "method_not_allowed", message: "Use POST." });
+
+    // Only the MakeShift page itself may call these endpoints from a browser.
+    const origin = request.headers.get("Origin");
+    if (origin && origin !== url.origin) {
+      return json(403, { error: "forbidden", message: "This endpoint only serves the MakeShift app." });
+    }
+
+    // Per-visitor rate limit, so a public page can't burn through the Groq key.
+    if (env.AI_LIMIT) {
+      const who = request.headers.get("CF-Connecting-IP") || "unknown";
+      const { success } = await env.AI_LIMIT.limit({ key: who });
+      if (!success) return json(429, { error: "rate_limited", message: "Too many AI requests. Wait a minute and try again." });
+    }
+
+    const length = Number(request.headers.get("Content-Length") || 0);
+    if (length > MAX_BODY_BYTES) return json(413, { error: "too_large", message: "Request is too large." });
+    let body;
+    try {
+      const text = await request.text();
+      if (text.length > MAX_BODY_BYTES) return json(413, { error: "too_large", message: "Request is too large." });
+      body = JSON.parse(text || "{}");
+    } catch (e) {
+      return json(400, { error: "bad_request", message: "Invalid JSON body." });
+    }
+    if (body === null || typeof body !== "object" || Array.isArray(body)) {
+      return json(400, { error: "bad_request", message: "Expected a JSON object." });
+    }
+
+    if (!env.GROQ_API_KEY) {
+      return json(503, {
+        error: "no_api_key",
+        message: "AI features are off: no GROQ_API_KEY secret on this site. Catalog recipes still work.",
+      });
+    }
+
+    try {
+      if (match[1] === "generate-ideas") {
+        const materials = cleanMaterials(body.materials);
+        if (!materials.length) return json(400, { error: "no_materials", message: "Add at least one material first." });
+        const ideas = await generateIdeas(env, materials);
+        if (!ideas.length) {
+          return json(502, { error: "no_valid_ideas", message: "The model's response didn't validate cleanly. Try again, or use the offline example idea." });
+        }
+        return json(200, { ideas });
+      }
+      if (match[1] === "generate-steps") {
+        const brief = body.idea;
+        if (!brief || typeof brief !== "object" || Array.isArray(brief)) {
+          return json(400, { error: "bad_request", message: "Missing idea details." });
+        }
+        const steps = await generateSteps(env, brief);
+        if (!steps.length) return json(502, { error: "no_steps", message: "Couldn't generate assembly steps. Try again." });
+        return json(200, { assembly_steps: steps });
+      }
+      if (!body.image) return json(400, { error: "bad_request", message: "No image provided." });
+      return json(200, await identifyMaterial(env, body.image));
+    } catch (e) {
+      if (e instanceof BadImage) return json(400, { error: "bad_image", message: e.message });
+      const message = e instanceof ApiError ? e.message : "Unexpected error. Try again.";
+      return json(502, { error: "generation_failed", message });
+    }
+  },
+};
