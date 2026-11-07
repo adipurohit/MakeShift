@@ -19,7 +19,7 @@ cp .env.example .env
 open -e .env
 ```
 
-Paste your real Groq key over the placeholder, save, close. Do this yourself in Terminal — never paste a key into a chat with Claude. `.env` is git-ignored.
+Paste your real Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey) over the placeholder, save, close. Do this yourself in Terminal — never paste a key into a chat with Claude. `.env` is git-ignored.
 
 **No key? Everything still works.** The pinned "Robot Arm (offline)" recipe needs zero network calls — AI idea generation, step generation, camera-vision scanning, and material sourcing all degrade gracefully to offline alternatives if the key is missing or a call fails.
 
@@ -30,7 +30,7 @@ cd cube-mvp
 python3 server.py
 ```
 
-Open **http://localhost:8743**. Install the SDK first with `pip install -r requirements.txt` (it installs the `groq` package).
+Open **http://localhost:8743**. Install the SDK first with `pip install -r requirements.txt` (it installs the `google-genai` package).
 
 The 3D viewer uses Three.js, downloaded once into `vendor/` during development — it's served locally, not fetched from a live CDN, so the demo doesn't need internet just to open (only AI features do).
 
@@ -42,7 +42,7 @@ The 3D viewer uses Three.js, downloaded once into `vendor/` during development �
 
 ## Camera scan
 
-Click **Scan Material** → camera opens → **Capture** → the photo is sent to a Groq vision model, which guesses a material name you can edit before adding it to Inventory. If the camera is unavailable (permissions, no device, bad lighting) or vision identification fails, it falls back to a plain "type it in" form automatically — tested and confirmed working in this build.
+Click **Scan Material** → camera opens → **Capture** → the photo is sent to a Gemini vision model, which guesses a material name you can edit before adding it to Inventory. If the camera is unavailable (permissions, no device, bad lighting) or vision identification fails, it falls back to a plain "type it in" form automatically — tested and confirmed working in this build.
 
 ## Judgment calls made without asking (flag if you want these changed)
 

@@ -21,7 +21,7 @@ Work breakdown for the MakeShift demo (`cube-mvp/`) so teammates and agents can 
 | 3 | 3D shapes per category | Done (PR #6). |
 | 4 | Recipe quality pass | Prompts + validator tightened, ordered recipe graph now reaches step generation, 16 validator tests pass, and the 12-scenario harness works on Windows. **Still open:** run it with a real API key and review the report; before/after examples need that run. |
 | 5 | Smoke test | Done. `python3 cube-mvp/tests/smoke.py` passes 23/23 locally and against the hosted deployment. |
-| 6 | Hosted deploy | Public deployment live at [makeshift-cube-demo.onrender.com](https://makeshift-cube-demo.onrender.com), tracking `main`; hosted no-key smoke passes 23/23. **Still open for connected AI:** add a dedicated capped `ANTHROPIC_API_KEY` in Render. |
+| 6 | Hosted deploy | Public deployment live at [makeshift-cube-demo.onrender.com](https://makeshift-cube-demo.onrender.com), tracking `main`; hosted no-key smoke passes 23/23. **Still open for connected AI:** add a dedicated capped `GEMINI_API_KEY` in Render. |
 | 7 | Pitch narrative | Draft done (`PITCH.md`); the complete deterministic UI path passes its automated rehearsal under 3:30. **Still open:** presenters rehearse the spoken delivery on the presentation laptop. |
 | 8 | Mobile + accessibility | Done. No horizontal overflow at 390px. |
 | - | Offline demo bug fixes | Done (PR #4). |

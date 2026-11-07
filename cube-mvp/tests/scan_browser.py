@@ -22,7 +22,7 @@ def check(ok, name, detail=""):
     if not ok: fails.append(name)
 
 srv = subprocess.Popen([sys.executable, "-c", f"import server;server.PORT={PORT};server.ThreadingHTTPServer(('',{PORT}),server.Handler).serve_forever()"],
-                       cwd=APP, env={**os.environ, "GROQ_API_KEY": "stub"}, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                       cwd=APP, env={**os.environ, "GEMINI_API_KEY": "stub"}, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 try:
     for _ in range(40):
         try: urllib.request.urlopen(f"http://localhost:{PORT}/", timeout=1); break

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-End-to-end test of the Cloudflare Worker (worker/ + wrangler.jsonc) without a real Groq key.
+End-to-end test of the Cloudflare Worker (worker/ + wrangler.jsonc) without a real Gemini key.
 
-Runs the Worker locally with `wrangler dev`, pointed at a stand-in Groq server on localhost,
+Runs the Worker locally with `wrangler dev`, pointed at a stand-in Gemini server on localhost,
 then checks: the app loads at /makeshift/, the camera scan in a real browser (fake camera)
 reaches the Worker and gets a cleaned answer, ideas, steps, and source suggestions come back validated, the Worker
-sends Groq the right key, model, and schema, and the guards work (no key, wrong origin,
+sends Gemini the right key, model, and schema, and the guards work (no key, wrong origin,
 bad image, rate limit).
 
 Usage: python3 cube-mvp/tests/worker_e2e_test.py
@@ -30,7 +30,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 WRANGLER = os.environ.get("WRANGLER") or shutil.which("wrangler") or "npx wrangler"
 results = []
-groq_calls = []
+gemini_calls = []
 
 
 def check(ok, name, detail=""):
@@ -44,22 +44,23 @@ def free_port():
         return s.getsockname()[1]
 
 
-class FakeGroq(BaseHTTPRequestHandler):
-    """Answers /chat/completions like Groq, picking a reply by the requested schema name."""
+class FakeGemini(BaseHTTPRequestHandler):
+    """Returns Gemini generateContent responses, selecting output from the requested JSON schema."""
 
     def log_message(self, *a):
         pass
 
     def do_POST(self):
         body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
-        groq_calls.append({"auth": self.headers.get("Authorization"), "body": body})
-        name = body["response_format"]["json_schema"]["name"]
-        if name == "material":
+        gemini_calls.append({"auth": self.headers.get("x-goog-api-key"), "body": body, "path": self.path})
+        schema = body["generationConfig"]["responseSchema"]
+        props = schema.get("properties", {})
+        if "confidence" in props:
             content = {"name": "  <b>broken</b> stepper   motor ", "confidence": "high"}
-        elif name == "steps":
+        elif "assembly_steps" in props:
             content = {"assembly_steps": ["1. Glue the tube to the base.", "Step 2: Tie the pulley on.", "<i>Check</i> it spins freely."]}
-        elif name == "sources":
-            brief = json.loads(body["messages"][1]["content"].split("\n", 1)[1])
+        elif "suggestions" in props:
+            brief = json.loads(body["contents"][0]["parts"][0]["text"].split("\\n", 1)[1])
             content = {"suggestions": [
                 {"material": "Motor", "places": ["<b>Repair shop</b>", "Repair shop", "E-waste center"],
                  "salvage_tip": "Check an old printer.", "safety_note": "Ask permission."},
@@ -75,7 +76,7 @@ class FakeGroq(BaseHTTPRequestHandler):
                  "recipes": [{"a": "m_motor", "b": "ghost", "result_id": "x", "result_name": "X", "result_short": "X"}],
                  "final_requires": [{"id": "x", "qty": 1}]},
             ]}
-        out = json.dumps({"choices": [{"finish_reason": "stop", "message": {"content": json.dumps(content)}}]}).encode()
+        out = json.dumps({"candidates": [{"finishReason": "STOP", "content": {"parts": [{"text": json.dumps(content)}]}}]}).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(out)))
@@ -120,10 +121,10 @@ def stop(proc):
 def main():
     from playwright.sync_api import sync_playwright
 
-    groq_port, port, nokey_port = free_port(), free_port(), free_port()
-    groq = ThreadingHTTPServer(("127.0.0.1", groq_port), FakeGroq)
-    threading.Thread(target=groq.serve_forever, daemon=True).start()
-    worker = start_worker(port, {"GROQ_API_KEY": "test-key", "GROQ_BASE_URL": f"http://127.0.0.1:{groq_port}"})
+    gemini_port, port, nokey_port = free_port(), free_port(), free_port()
+    gemini = ThreadingHTTPServer(("127.0.0.1", gemini_port), FakeGemini)
+    threading.Thread(target=gemini.serve_forever, daemon=True).start()
+    worker = start_worker(port, {"GEMINI_API_KEY": "test-key", "GEMINI_BASE_URL": f"http://127.0.0.1:{gemini_port}/v1beta"})
     nokey = start_worker(nokey_port, {})
     try:
         base = f"http://127.0.0.1:{port}"
@@ -163,25 +164,25 @@ def main():
             check(not outside, "every request from the page stays under /makeshift/", ", ".join(outside))
             browser.close()
 
-        scan_call = next((c for c in groq_calls if c["body"]["response_format"]["json_schema"]["name"] == "material"), None)
-        check(scan_call and scan_call["auth"] == "Bearer test-key", "Worker sends the GROQ_API_KEY secret as a bearer token")
-        check(scan_call and scan_call["body"]["model"] == "qwen/qwen3.8-27b", "scan uses the vision model from server.py",
-              scan_call and scan_call["body"]["model"])
-        check(scan_call and scan_call["body"]["messages"][1]["content"][0]["image_url"]["url"].startswith("data:image/jpeg;base64,"),
-              "scan forwards the captured photo")
+        scan_call = next((c for c in gemini_calls if "confidence" in c["body"]["generationConfig"]["responseSchema"]["properties"]), None)
+        check(scan_call and scan_call["auth"] == "test-key", "Worker sends the GEMINI_API_KEY secret in x-goog-api-key")
+        check(scan_call and "/models/gemini-3.8-flash:generateContent" in scan_call["path"],
+              "scan uses the configured Gemini vision model", scan_call and scan_call["path"])
+        check(scan_call and scan_call["body"]["contents"][0]["parts"][1]["inlineData"]["mimeType"] == "image/jpeg",
+              "scan forwards the captured photo as Gemini inlineData")
 
-        before = len(groq_calls)
+        before = len(gemini_calls)
         status, data = post(port, "/makeshift/api/generate-ideas", {"materials": [
             {"id": "m_motor", "name": "Motor", "qty": 2}, {"id": "m_pulley", "name": "Pulley", "qty": 2},
             {"id": "m_zip", "name": "Zip Tie", "qty": 5}, {"id": "m_led", "name": "LED", "qty": 0}]})
         ideas = data.get("ideas", [])
         check(status == 200 and len(ideas) == 1 and ideas[0]["id"] == "crank" and ideas[0]["uses_material_ids"] == ["m_motor", "m_pulley", "m_zip"],
               "ideas come back validated: bad idea dropped, ids recomputed", json.dumps(ideas)[:160])
-        idea_calls = [c["body"] for c in groq_calls[before:]]
+        idea_calls = [c["body"] for c in gemini_calls[before:]]
         idea_call = idea_calls[0]
-        check(idea_call["model"] == "openai/gpt-oss-120b" and idea_call.get("reasoning_effort") == "low", "ideas use the text model from server.py")
-        check("m_led" not in idea_call["messages"][1]["content"], "parts with quantity 0 never reach the AI")
-        check(len(idea_calls) == 2 and "already in the catalog: Hand Crank" in idea_calls[1]["messages"][1]["content"],
+        check(idea_call["generationConfig"]["responseMimeType"] == "application/json" and idea_call["contents"][0]["parts"][0]["text"].startswith("Materials on hand"), "ideas use the text model from server.py")
+        check("m_led" not in idea_call["contents"][0]["parts"][0]["text"], "parts with quantity 0 never reach the AI")
+        check(len(idea_calls) == 2 and "already in the catalog: Hand Crank" in idea_calls[1]["contents"][0]["parts"][0]["text"],
               "fewer than 10 valid ideas triggers one top-up call for different ones", f"{len(idea_calls)} idea call(s)")
 
         status, data = post(port, "/makeshift/api/generate-steps", {"idea": {"title": "Hand Crank"}})
@@ -210,7 +211,7 @@ def main():
     finally:
         stop(worker)
         stop(nokey)
-        groq.shutdown()
+        gemini.shutdown()
     print(f"\n{sum(results)} passed, {len(results) - sum(results)} failed")
     return 0 if all(results) else 1
 

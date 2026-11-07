@@ -19,17 +19,17 @@ A Cloudflare Worker named `makeshift` serves the app. The config lives in [`wran
 
 ### Turn on the AI features (camera scan, AI ideas, AI steps)
 
-The AI runs on Groq. Add your Groq key as an encrypted secret, never in the repo:
+The AI runs on Gemini. Add your Gemini key as an encrypted secret, never in the repo:
 
 1. **Workers & Pages → makeshift → Settings → Variables and Secrets → Add**.
-2. Type: **Secret**. Name: `GROQ_API_KEY`. Value: your Groq key (starts with `gsk_`).
+2. Type: **Secret**. Name: `GEMINI_API_KEY`. Value: your Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey).
 3. Select **Deploy**. The secret takes effect right away, with no code change.
 
 Without the secret, the catalog recipes work and the AI features show a short notice.
 
-Set a spending limit on the key in the Groq console. Anyone who opens the site uses your key through the Worker, within the rate limit above.
+Set a spending limit on the key in the Google AI Studio. Anyone who opens the site uses your key through the Worker, within the rate limit above.
 
-Optional variables (type **Text**): `GROQ_TEXT_MODEL` and `GROQ_VISION_MODEL` override the models, same as in `cube-mvp/.env`.
+Optional variables (type **Text**): `GEMINI_TEXT_MODEL` and `GEMINI_VISION_MODEL` override the models, same as in `cube-mvp/.env`.
 
 ### Change a prompt
 
@@ -47,11 +47,11 @@ python3 scripts/export-ai-config.py
 python3 cube-mvp/tests/worker_e2e_test.py
 ```
 
-Runs the Worker with `wrangler dev` against a stand-in Groq server: page load, camera scan in a browser, ideas, steps, and the guards. No real key needed.
+Runs the Worker with `wrangler dev` against a stand-in Gemini server: page load, camera scan in a browser, ideas, steps, and the guards. No real key needed.
 
 ### Rotate or remove the key
 
-Delete or replace the `GROQ_API_KEY` secret in the Worker settings, then revoke the old key in the Groq console.
+Delete or replace the `GEMINI_API_KEY` secret in the Worker settings, then revoke the old key in the Google AI Studio.
 
 ## Render (Python server)
 
@@ -60,7 +60,7 @@ Delete or replace the `GROQ_API_KEY` secret in the Worker settings, then revoke 
 The existing Render deployment is [https://makeshift-cube-demo.onrender.com](https://makeshift-cube-demo.onrender.com), service `makeshift-cube-demo`, tracking `main`. It was last fully smoke-tested at commit `b945f83`; rerun the hosted smoke suite after merging this branch.
 
 1. In the Render Dashboard, choose **New → Blueprint** and connect `adipurohit/MakeShift`.
-2. When prompted for `GROQ_API_KEY`, enter a dedicated key with a spending limit.
+2. When prompted for `GEMINI_API_KEY`, enter a dedicated key with a spending limit.
 3. Wait for the health check at `/` to pass.
 
 Render supplies the listening port through `PORT`. Locally, without `PORT`, the server listens on 8743:

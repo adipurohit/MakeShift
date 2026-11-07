@@ -7,12 +7,12 @@ checks the server uses, adds heuristic red flags, and writes a markdown report f
 judge ("would this actually work / is it safe / is it boring"). The flags only point at what to read first;
 they do not replace reading.
 
-    export GROQ_API_KEY=...            # or put it in cube-mvp/.env
+    export GEMINI_API_KEY=...            # or put it in cube-mvp/.env
     python3 cube-mvp/tests/recipe_quality.py                       # all 12 lists -> recipe_quality_report.md
     python3 cube-mvp/tests/recipe_quality.py --only 3 7 --steps    # subset, also generate assembly steps
     python3 cube-mvp/tests/recipe_quality.py --stub                # no API: checks the harness itself
 
-Needs: pip install groq   (not needed for --stub)
+Needs: pip install -r requirements.txt   (not needed for --stub)
 """
 import argparse
 import json
@@ -120,8 +120,8 @@ def main():
     ap.add_argument("--stub", action="store_true", help="no API calls; canned output to test the harness")
     ap.add_argument("--out", default=str(Path(__file__).resolve().parent / "recipe_quality_report.md"))
     args = ap.parse_args()
-    if not args.stub and not __import__("os").environ.get("GROQ_API_KEY"):
-        sys.exit("GROQ_API_KEY is not set (use --stub to test the harness without it).")
+    if not args.stub and not __import__("os").environ.get("GEMINI_API_KEY"):
+        sys.exit("GEMINI_API_KEY is not set (use --stub to test the harness without it).")
 
     chosen = [(i, s) for i, s in enumerate(SCENARIOS, 1) if not args.only or i in args.only]
     out = ["# Recipe quality report", "", f"Model: `{server.TEXT_MODEL}`" + ("  (STUB: canned output, not real model results)" if args.stub else ""), ""]
