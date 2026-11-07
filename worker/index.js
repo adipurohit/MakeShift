@@ -3,11 +3,35 @@
 // answers locally: POST .../api/generate-ideas, generate-steps, suggest-sources, identify-material.
 // The Groq key lives in a Worker secret named GROQ_API_KEY, never in the repo.
 import {
-  ApiError, BadImage, MAX_BODY_BYTES,
+  ApiError, BadImage, BusyError, CONFIG_VERSION, MAX_BODY_BYTES,
   cleanMaterials, cleanSourceMaterials, generateIdeas, generateSteps, generateSourceSuggestions, identifyMaterial,
 } from "./ai.js";
 
 const API_RE = /\/api\/(generate-ideas|generate-steps|suggest-sources|identify-material)$/;
+
+// ---- idea cache (Cloudflare Cache API, per data center) ----
+async function ideasCacheKey(url, materials) {
+  const key = JSON.stringify([CONFIG_VERSION, materials.map((m) => [m.id, m.name, m.qty]).sort()]);
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(key));
+  const hex = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return new Request(`${url.origin}/makeshift/__cache/ideas/${hex}`);
+}
+async function cacheGet(key) {
+  try {
+    const hit = typeof caches !== "undefined" && (await caches.default.match(key));
+    return hit ? await hit.json() : null;
+  } catch (e) {
+    return null;
+  }
+}
+async function cachePut(key, payload) {
+  try {
+    if (typeof caches === "undefined") return;
+    await caches.default.put(key, new Response(JSON.stringify(payload), {
+      headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=21600" },
+    }));
+  } catch (e) { /* cache is best-effort */ }
+}
 
 const json = (status, payload) =>
   new Response(JSON.stringify(payload), {
@@ -22,17 +46,23 @@ export default {
     if (!match) return env.ASSETS.fetch(request);
     if (request.method !== "POST") return json(405, { error: "method_not_allowed", message: "Use POST." });
 
-    // Only the MakeShift page itself may call these endpoints from a browser.
+    // Only the MakeShift page may call these endpoints. Browsers always send Origin on a POST, so a
+    // missing Origin means a script, not the app. A script can fake the header, so the real protection
+    // is the rate limits below plus a spending cap on the Groq key.
     const origin = request.headers.get("Origin");
-    if (origin && origin !== url.origin) {
+    if (origin !== url.origin) {
       return json(403, { error: "forbidden", message: "This endpoint only serves the MakeShift app." });
     }
 
-    // Per-visitor rate limit, so a public page can't burn through the Groq key.
-    if (env.AI_LIMIT) {
-      const who = request.headers.get("CF-Connecting-IP") || "unknown";
-      const { success } = await env.AI_LIMIT.limit({ key: who });
-      if (!success) return json(429, { error: "rate_limited", message: "Too many AI requests. Wait a minute and try again." });
+    // Rate limits. Per browser session, so a room on one wifi address doesn't share one budget,
+    // plus a looser per-IP cap so faked session ids can't run up the bill.
+    const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+    const session = (request.headers.get("X-MakeShift-Session") || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40);
+    if (env.AI_IP_LIMIT && !(await env.AI_IP_LIMIT.limit({ key: ip })).success) {
+      return json(429, { error: "rate_limited", message: "Too many AI requests from this network. Wait a minute and try again." });
+    }
+    if (env.AI_LIMIT && !(await env.AI_LIMIT.limit({ key: `${ip}:${session}` })).success) {
+      return json(429, { error: "rate_limited", message: "Too many AI requests. Wait a minute and try again." });
     }
 
     const length = Number(request.headers.get("Content-Length") || 0);
@@ -61,7 +91,12 @@ export default {
       if (match[1] === "generate-ideas") {
         const materials = cleanMaterials(body.materials);
         if (!materials.length) return json(400, { error: "no_materials", message: "Add at least one material first." });
+        // Same inventory, same ideas for 6 hours: saves the Groq quota and lets you pre-warm a demo inventory.
+        const cacheKey = await ideasCacheKey(url, materials);
+        const cached = await cacheGet(cacheKey);
+        if (cached) return json(200, { ...cached, cached: true });
         const ideas = await generateIdeas(env, materials);
+        if (ideas.length) await cachePut(cacheKey, { ideas });
         if (!ideas.length) {
           return json(502, { error: "no_valid_ideas", message: "The model's response didn't validate cleanly. Try again, or use the offline example idea." });
         }
@@ -87,6 +122,7 @@ export default {
       return json(200, await identifyMaterial(env, body.image));
     } catch (e) {
       if (e instanceof BadImage) return json(400, { error: "bad_image", message: e.message });
+      if (e instanceof BusyError) return json(503, { error: "ai_busy", message: e.message });
       const message = e instanceof ApiError ? e.message : "Unexpected error. Try again.";
       return json(502, { error: "generation_failed", message });
     }

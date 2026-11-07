@@ -10,7 +10,7 @@ import * as THREE from "three";
 import { OrbitControls } from "./vendor/OrbitControls.js";
 import { iconSvg, partGeometry, projectGeometry, sourceHintsFor } from "./parts.js";
 
-const STORAGE_KEY = "cube_mvp_state_v4"; // v4: one isolated sandbox per offline recipe
+const STORAGE_KEY = "makeshift_state_v5"; // v5: new Robot Arm parts; v4 added one sandbox per offline recipe
 
 const PALETTE_COLORS = ["#c0584a", "#3f8f5f", "#6f55c0", "#3a6fc0", "#b88a2e", "#2e9aa6"];
 function colorForId(id) {
@@ -31,22 +31,23 @@ function slugify(name) {
 const OFFLINE_IDEA = {
   id: "offline_robot_arm",
   title: "Robot Arm",
-  pitch: "Strip two broken 3D printers for motors, rails and electronics, and build a 2-joint robot arm with a gripper made from the dead nozzles.",
+  pitch: "Strip two broken 3D printers for motors, rails, belts and the control board, and build a 2-joint desk robot arm with a spring-clip gripper made from the print-bed clips.",
   offline: true,
   featured: true,
   category: "Robotics",
   difficulty: "Medium",
   rawMaterials: [
-    { id: "stepper", name: "Stepper Motor", qty: 4 },
+    { id: "stepper", name: "Stepper Motor", qty: 4 }, // two printers give four; the arm uses two
     { id: "pulley", name: "Pulley", qty: 2 },
     { id: "belt", name: "Timing Belt", qty: 2 }, // 2 joints x 1 belt each; at 1 the offline demo can't finish
     { id: "extrusion", name: "Al. Extrusion", qty: 2 },
     { id: "rod", name: "Smooth Rod", qty: 2 },
     { id: "bearing", name: "Linear Bearing", qty: 2 },
-    { id: "nozzle", name: "Dead Nozzle", qty: 2 },
+    { id: "bedclip", name: "Bed Clip", qty: 2 }, // the spring clips that hold a printer's glass bed
     { id: "zip", name: "Zip Tie", qty: 2 },
+    { id: "frame", name: "Printer Frame", qty: 1 },
     { id: "board", name: "Control Board", qty: 1 },
-    { id: "psu", name: "Power Supply", qty: 1 },
+    { id: "psu", name: "Sealed 12V Adapter", qty: 1 }, // a closed plug-in adapter, never an opened mains supply
     { id: "limit", name: "Limit Switch", qty: 1 },
   ],
   recipes: [
@@ -54,24 +55,27 @@ const OFFLINE_IDEA = {
     { a: "driveunit", b: "belt", result_id: "joint", result_name: "Motorized Joint", result_short: "MJ" },
     { a: "extrusion", b: "rod", result_id: "rail", result_name: "Rail", result_short: "RL" },
     { a: "rail", b: "bearing", result_id: "armseg", result_name: "Arm Segment", result_short: "AS" },
-    { a: "nozzle", b: "zip", result_id: "gripper", result_name: "Gripper Claw", result_short: "GC" },
+    { a: "bedclip", b: "zip", result_id: "gripper", result_name: "Spring-Clip Gripper", result_short: "SG" },
   ],
   final_requires: [
     { id: "joint", qty: 2 },
     { id: "armseg", qty: 2 },
     { id: "gripper", qty: 1 },
+    { id: "frame", qty: 1 },
     { id: "board", qty: 1 },
     { id: "psu", qty: 1 },
     { id: "limit", qty: 1 },
   ],
   assembly_steps: [
-    "Mount the two Motorized Joints to the frame to form the shoulder and elbow pivots.",
-    "Attach an Arm Segment to each Motorized Joint using the Linear Bearings as sliding supports.",
-    "Thread the Timing Belt around each joint's pulley and tension by hand.",
-    "Secure the Gripper Claw (built from salvaged nozzle tips) to the end of the final Arm Segment.",
-    "Wire the Stepper Motors to the salvaged Control Board.",
-    "Connect the Power Supply and the Limit Switch to the Control Board for homing.",
-    "Power on, run the homing sequence, and test open/close on the Gripper Claw.",
+    "Unplug both printers and keep them unplugged for the whole build. Leave the printers' internal power supplies closed; this arm runs on the Sealed 12V Adapter instead.",
+    "Clamp or bolt the Printer Frame flat to a table edge so the base can't tip when the arm reaches out. Push the far end of the frame down to check it doesn't rock.",
+    "Mount the first Motorized Joint upright on the frame as the shoulder, pulley shaft pointing up. Turn it by hand: it should step smoothly without grinding.",
+    "Bolt an Arm Segment, about 20 cm long, to the shoulder joint. Mount the second Motorized Joint at its far end as the elbow, then bolt the second Arm Segment to the elbow.",
+    "Loop each Timing Belt over its joint's pulley and tension it until a firm finger press deflects it about 5 mm. Too loose and it skips teeth; too tight and the motor stalls.",
+    "Zip-tie the Spring-Clip Gripper to the end of the second Arm Segment, jaws facing down. It is passive: it grips light objects (under about 100 g) when the arm pushes it onto them, and you pull them out by hand.",
+    "Plug the shoulder and elbow motor cables into the Control Board's X and Y motor sockets, and the Limit Switch into the X endstop socket. Mount the switch where the shoulder presses it at its starting angle.",
+    "Plug the Sealed 12V Adapter into the board's power input, checking + goes to +, then plug the adapter into the wall.",
+    "From a laptop on the board's USB port, send a homing command, then jog each joint 10 degrees at low speed. If a motor buzzes without moving, unplug the adapter and check belt tension and the cable order.",
   ],
 };
 
@@ -95,6 +99,23 @@ let state = loadState();
 // one. Restarting at 1 made a fresh token share a uid with a saved token, and
 // the merge check (t.uid !== movedTok.uid) then skipped the real partner.
 let uidCounter = 1 + Math.max(0, ...[...state.bench, ...Object.values(state.offlineBoxes).flatMap((b) => b.bench)].map((t) => t.uid || 0));
+
+/* ---------------- AI request headers ----------------
+   A random id per browser, so the Worker rate-limits each visitor's session instead of a whole
+   room that shares one wifi address. It identifies nothing about the person. */
+function aiHeaders() {
+  let id = "";
+  try {
+    id = localStorage.getItem("makeshift_session") || "";
+    if (!id) {
+      id = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, "0")).join("");
+      localStorage.setItem("makeshift_session", id);
+    }
+  } catch (e) {
+    id = "nostore";
+  }
+  return { "Content-Type": "application/json", "X-MakeShift-Session": id };
+}
 
 /* ---------------- Offline recipe pack ----------------
    recipes/pack.json holds the built-in offline recipes. Each one plays in its
@@ -338,7 +359,14 @@ function renderInventory() {
   });
 }
 
+// Parts that can shock, burn or cut. Same pattern as PLAUSIBILITY["hazardous_part"] in server.py
+// (worker_parity_test.py checks they match). The AI never builds with these, so say why up front.
+const HAZARDOUS_PART = new RegExp("microwave|capacitor|swollen|lithium|\\bcrt\\b|transformer|power supply unit|\\bpsu\\b|car battery|mains|broken glass|cracked glass|glass shard|(broken|cracked|shattered) (phone |tablet |laptop )?screen", "i");
+
 function addMaterial(name, qty0) {
+  if (HAZARDOUS_PART.test(name)) {
+    toast(`Careful: ${name} can shock, burn or cut. Don't open or reuse it; take it to an e-waste drop-off. AI ideas will leave it out.`);
+  }
   const id = slugify(name) || ("m_" + Date.now());
   registerItem(id, { name, short: shortFor(name), color: colorForId(id), raw: true });
   state.inventory[id] = (state.inventory[id] || 0) + qty0;
@@ -405,7 +433,7 @@ function scheduleIdeaRefresh() {
   ideasTimer = setTimeout(() => {
     if (ideasInFlight) { ideasPending = true; return; }
     generateIdeas({ manual: false });
-  }, 1800);
+  }, 3000);
 }
 
 function setIdeasStatus(text) {
@@ -431,7 +459,7 @@ async function generateIdeas({ manual } = { manual: true }) {
   try {
     const res = await fetch("api/generate-ideas", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: aiHeaders(),
       body: JSON.stringify({ materials: rawMaterials }),
     });
     const data = await res.json();
@@ -502,7 +530,10 @@ function buildIdeaRow(idea, compact) {
   const row = document.createElement("div");
   row.className = "idea-row" + (idea.id === state.activeIdeaId ? " active" : "");
   let badge = "";
-  if (!idea.offline) {
+  const cov = catalogCoverage(idea);
+  if (cov) {
+    badge = `<span class="idea-badge ${cov.have === cov.total ? "ready-badge" : "match-badge"}" title="${cov.missing.length ? "Missing: " + cov.missing.join(", ") : "You have every part"}">${cov.have}/${cov.total} parts</span>`;
+  } else if (!idea.offline) {
     const short = buildPlan(idea).missingTotal;
     badge = short === 0
       ? `<span class="idea-badge ready-badge">Ready</span>`
@@ -522,6 +553,48 @@ function buildIdeaRow(idea, compact) {
 }
 
 /* ================= RIGHT PANEL: full catalog ================= */
+/* ================= CATALOG MATCHING (works with no AI) =================
+   Compares the user's own parts with each built-in recipe's parts list, so the catalog can rank
+   the 101 recipes by how much of each one the user already has. */
+const CONDITION_WORDS = new Set(["old", "broken", "dead", "scrap", "used", "spare", "small", "large", "big", "mini", "empty", "a", "an", "the", "of"]);
+function singular(w) {
+  if (w.length > 4 && w.endsWith("ies")) return w.slice(0, -3) + "y";
+  if (w.length > 4 && /(ches|shes|xes|sses)$/.test(w)) return w.slice(0, -2);
+  if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) return w.slice(0, -1);
+  return w;
+}
+function partTokens(name) {
+  return String(name).toLowerCase().replace(/t-shirt/g, "tshirt").replace(/\([^)]*\)/g, " ")
+    .split(/[^a-z0-9]+/).filter((w) => w && !CONDITION_WORDS.has(w)).map(singular);
+}
+// Same part if one name's words all appear in the other ("dowel" vs "Wooden Dowel"),
+// or both end in the same noun ("bottle caps" vs "Bottle Cap", "glass jar" vs "Jar").
+function samePart(a, b) {
+  const ta = partTokens(a), tb = partTokens(b);
+  if (!ta.length || !tb.length) return false;
+  const [short, long] = ta.length <= tb.length ? [ta, tb] : [tb, ta];
+  return short.every((w) => long.includes(w)) || ta[ta.length - 1] === tb[tb.length - 1];
+}
+function catalogCoverage(idea) {
+  if (!idea.offline || !idea.rawMaterials) return null;
+  const mine = userMaterials();
+  if (!mine.length) return null;
+  const parts = idea.rawMaterials.map((m) => m.name);
+  const have = parts.filter((name) => mine.some((m) => samePart(m.name, name)));
+  return { have: have.length, total: parts.length, missing: parts.filter((n) => !have.includes(n)) };
+}
+function renderCatalogMatches() {
+  const box = document.getElementById("catalogMatchList");
+  box.innerHTML = "";
+  const ranked = allIdeas()
+    .map((idea) => ({ idea, cov: catalogCoverage(idea) }))
+    .filter((x) => x.cov && x.cov.have > 0)
+    .sort((x, y) => y.cov.have / y.cov.total - x.cov.have / x.cov.total || y.cov.have - x.cov.have)
+    .slice(0, 5);
+  document.getElementById("catalogMatches").hidden = ranked.length === 0;
+  ranked.forEach(({ idea }) => box.appendChild(buildIdeaRow(idea, true)));
+}
+
 function renderCatalog() {
   const list = document.getElementById("catalogList");
   list.innerHTML = "";
@@ -537,7 +610,13 @@ function renderCatalog() {
   document.getElementById("catalogEmptyNote").textContent = n
     ? "No recipes match. Clear the search or pick another category."
     : "No recipes yet — add materials and generate ideas.";
+  // With parts in the inventory, built-in recipes sort by how many of their parts the user has.
+  if (userMaterials().length) {
+    const score = (i) => { const c = catalogCoverage(i); return c ? c.have / c.total : -1; };
+    ideas.sort((a, b) => (a.offline ? 1 : 0) - (b.offline ? 1 : 0) || score(b) - score(a));
+  }
   ideas.forEach((idea) => list.appendChild(buildIdeaRow(idea, false)));
+  renderCatalogMatches();
 }
 
 const catalogFilter = { text: "", category: "" };
@@ -658,7 +737,7 @@ async function suggestMaterialSources() {
   try {
     const res = await fetch("api/suggest-sources", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: aiHeaders(),
       body: JSON.stringify({ project: idea.title, materials }),
     });
     const data = await res.json();
@@ -1368,10 +1447,12 @@ async function openAssemblyModal(idea) {
           return acc;
         }, {})),
         final_parts: Object.entries(resolved.finalRequires).map(([id, q]) => `${state.items[id].name} x${q}`),
+        // the only raw parts the steps may use; without this list the model invented plates, screws and planks
+        raw_materials: rawIdsForIdea(idea).map((id) => (state.items[id] || {}).name).filter(Boolean),
       };
       const res = await fetch("api/generate-steps", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: aiHeaders(),
         body: JSON.stringify({ idea: brief }),
       });
       const data = await res.json();
@@ -1671,7 +1752,7 @@ async function captureScan() {
   try {
     const res = await fetch("api/identify-material", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: aiHeaders(),
       body: JSON.stringify({ image: dataUrl }),
       signal: abort.signal,
     });

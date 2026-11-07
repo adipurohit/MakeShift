@@ -38,6 +38,7 @@ def build():
         "steps_schema": server.api_schema(server.STEPS_SCHEMA),
         "sources_schema": server.api_schema(server.SOURCES_SCHEMA),
         "identify_schema": server.api_schema(server.IDENTIFY_SCHEMA),
+        "plausibility": server.PLAUSIBILITY,
         "limits": {
             "min_ideas": server.MIN_IDEAS,
             "max_ideas": server.MAX_IDEAS,
