@@ -127,6 +127,13 @@ export function plausibilityProblems(idea, names) {
     problems.push("stepper motion with no driver and power");
   }
   if (P.light_claim.test(text) && !P.light_source.test(parts)) problems.push("claims light with no light source");
+  if (P.hot_use.test(text) && P.melts.test(parts)) problems.push("hot items on parts that melt");
+  for (const [key, why] of [["body_load", "bears a person's weight or force"], ["overhead", "hangs weight overhead"],
+    ["security", "stands in for a lock or alarm"], ["machinery", "controls shop machinery"]]) {
+    const m = P[key].exec(text);
+    if (m) problems.push(`${why}: ${m[0]}`);
+  }
+  if (P.food_use.test(text) && P.leaded_part.test(parts)) problems.push("circuit board or solder near food or drink");
   for (const r of idea.recipes) {
     const inputs = [names[r.a] || "", names[r.b] || ""];
     if (inputs.some((n) => P.broken.test(n)) && P.functional.test(r.result_name)) {
@@ -366,17 +373,21 @@ async function chatJsonOnce(env, system, user, name, schema, maxTokens, model) {
 
 const rawIdeas = (data) => (isObj(data) && Array.isArray(data.ideas) ? data.ideas : []);
 
+// Same as idea_target() in server.py: 10 for a full inventory, 2 per distinct part + 1 for a short one.
+export const ideaTarget = (materials) => Math.max(1, Math.min(L.min_ideas, L.ideas_per_part * materials.length + 1));
+
 export async function generateIdeas(env, materials) {
+  const target = ideaTarget(materials);
   const user = "Materials on hand (id, name, quantity):\n" + JSON.stringify(materials, null, 2) +
-    "\n\nPropose a catalog of buildable project ideas using these materials, following the schema.";
+    `\n\nPropose a catalog of about ${target} buildable project ideas using these materials, following the schema.`;
   const first = rawIdeas(await chatJson(env, CFG.idea_system_prompt, user, "ideas", CFG.idea_schema, 6144));
   const ideas = validateAndClean({ ideas: first }, materials);
-  if (ideas.length >= L.min_ideas) return ideas;
+  if (ideas.length >= target) return ideas;
 
-  // Validation drops weak ideas, so ask once more for different ones to reach min_ideas.
+  // Validation drops weak ideas, so ask once more for different ones to reach the target.
   const taken = ideas.map((i) => i.title).join("; ") || "none yet";
   const topup = user + "\n\nThese ideas are already in the catalog: " + taken + ". Propose " +
-    `${L.min_ideas - ideas.length + 2} or more DIFFERENT ideas, with different titles and functions.`;
+    `${target - ideas.length + 2} or more DIFFERENT ideas, with different titles and functions.`;
   let second;
   try {
     second = rawIdeas(await chatJson(env, CFG.idea_system_prompt, topup, "ideas", CFG.idea_schema, 6144));

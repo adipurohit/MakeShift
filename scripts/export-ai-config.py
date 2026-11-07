@@ -41,6 +41,7 @@ def build():
         "identify_schema": server.api_schema(server.IDENTIFY_SCHEMA),
         "limits": {
             "min_ideas": server.MIN_IDEAS,
+            "ideas_per_part": server.IDEAS_PER_PART,
             "max_ideas": server.MAX_IDEAS,
             "max_recipes": server.MAX_RECIPES,
             "max_final": server.MAX_FINAL,

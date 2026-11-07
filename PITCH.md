@@ -52,7 +52,7 @@ The AI gets one optional 20-second beat after the build (see "Optional live AI b
 
 - Camera capture and AI vision identification (Google Gemini). Photos go to Google's Gemini API for identification; the scan dialog says so.
 - Manual entry when camera access or vision fails.
-- AI-generated catalog of 10+ build ideas from the user's inventory, checked for hazards and false claims before display.
+- AI-generated catalog of up to 14 build ideas (10 for a full inventory) from the user's inventory, checked for hazards and false claims before display.
 - On-demand AI assembly steps for a selected generated idea.
 - Future real geometry, parametric constraints, shared team inventories, and safety/feasibility validation.
 

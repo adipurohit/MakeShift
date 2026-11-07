@@ -12,7 +12,7 @@ MakeShift treats broken gear and scrap as a parts inventory. Tell it what you ha
 
 - **Works without AI.** 101 built-in recipes across 10 categories. Type in your scrap and **Catalog matches** ranks the recipes by how many of their parts you already have. No API key, no Wi-Fi.
 - **Guides every build.** The "How to build it" list shows each merge in order and checks it off as you go. Parts marked **as-is** go straight into the build.
-- **AI ideas from your own parts** (needs a Gemini key): 10 or more builds using only what's in your inventory, refreshed as you edit it, each marked Ready or Need N more. A validator rejects unsafe or impossible ideas, such as reusing capacitors, launchers, or a "motorized" build with no power source.
+- **AI ideas from your own parts** (needs a Gemini key): up to 14 builds using only what's in your inventory (10 for a full inventory, fewer for a short list so the AI doesn't pad it), refreshed as you edit it, each marked Ready or Need N more. A validator rejects unsafe or impossible ideas, such as reusing capacitors, launchers, a "motorized" build with no power source, rubber trivets for hot pans, or circuit-board coasters.
 - **Camera scan** (needs a Gemini key): photograph a part to add it. The photo goes to Google's Gemini service to name the part and isn't stored.
 - **Where to find parts:** donor objects that usually contain each part (a dead inkjet printer for a stepper motor and belt, worn skate wheels for bearings) and how to get it out.
 
@@ -25,7 +25,7 @@ MakeShift treats broken gear and scrap as a parts inventory. Tell it what you ha
 ## What it is not
 
 - **Not CAD.** The 3D view draws each part as a simple shape picked from its category, and the finished build as a rough silhouette. No real dimensions, fit checks, or strength or electrical analysis.
-- **Not engineering-verified.** People wrote and reviewed the built-in recipes; the AI's ideas pass safety and plausibility checks, but about 1 in 6 kept ideas is still physically doubtful (see [docs/recipe-quality.md](docs/recipe-quality.md)). Treat every build as a starting point to check with your own hands.
+- **Not engineering-verified.** People wrote and reviewed the built-in recipes; the AI's ideas pass safety and plausibility checks, but about 1 in 6 kept ideas is still physically doubtful, and 1 in 5 is trivial (see [docs/recipe-quality.md](docs/recipe-quality.md)). Treat every build as a starting point to check with your own hands.
 - **Scan accuracy isn't measured yet.** [scripts/scan_accuracy.py](scripts/scan_accuracy.py) measures it on 30 real photos; nobody has run it on a real camera yet.
 - **No user testing yet.** [docs/user-testing.md](docs/user-testing.md) is the plan.
 

@@ -116,6 +116,46 @@ class PlausibilityTests(unittest.TestCase):
     def mats(self, *names):
         return [{"id": "m_" + n.lower().replace(" ", "_"), "name": n, "qty": 3} for n in names]
 
+    # The 8 ideas from the live Gemini run that passed every older check (docs/recipe-quality.md).
+    LIVE_CONCERNS = [
+        ("Cork Trivet", "Rubber bands hold cork rounds for hot pans.", "Cork", "Rubber Band", "Trivet"),
+        ("Bike Chain Hot Pad", "A chain coil on an inner tube for hot dishes.", "Bike Chain", "Inner Tube", "Hot Pad"),
+        ("Overhead Pot Hanger", "Hang cookware from the ceiling on a wheel.", "Bike Wheel", "S Hook", "Pot Rack"),
+        ("Inner Tube Resistance Band", "A fitness band for arm workouts.", "Inner Tube", "Wooden Dowel", "Handle Band"),
+        ("Circuit Board Coasters", "Coasters for your mug.", "Circuit Board", "Cork", "Coaster"),
+        ("Spring Gate Latch", "A self-closing gate latch.", "Spring", "Hinge", "Gate Latch"),
+        ("Door Alert Bell", "A bell that rings as an alarm when the door opens.", "Bell", "String", "Door Bell"),
+        ("Shop Foot Pedal", "A foot pedal to switch your shop machinery.", "Hinge", "Wood Offcut", "Foot Pedal"),
+    ]
+
+    def test_live_concerns_rejected(self):
+        for title, pitch, a, b, result in self.LIVE_CONCERNS:
+            m = self.mats(a, b)
+            ida, idb = m[0]["id"], m[1]["id"]
+            r = [{"a": ida, "b": idb, "result_id": "r1", "result_name": result, "result_short": "R"}]
+            with self.subTest(title=title):
+                self.assertEqual(self.run_idea(title, pitch, m, r, [{"id": "r1", "qty": 1}]), [])
+
+    def test_safe_neighbours_kept(self):
+        cases = [
+            ("Cork Coaster Set", "Glued cork coasters for cold drinks.", "Cork", "Wood Glue", "Coaster Set"),
+            ("Wooden Trivet", "Dowel slats glued into a trivet for hot pans.", "Wooden Dowel", "Wood Glue", "Trivet"),
+            ("Circuit Board Wall Art", "A framed board for your desk wall.", "Circuit Board", "Picture Frame", "Framed Board"),
+        ]
+        for title, pitch, a, b, result in cases:
+            m = self.mats(a, b)
+            r = [{"a": m[0]["id"], "b": m[1]["id"], "result_id": "r1", "result_name": result, "result_short": "R"}]
+            with self.subTest(title=title):
+                self.assertEqual(len(self.run_idea(title, pitch, m, r, [{"id": "r1", "qty": 1}])), 1)
+
+    def test_idea_target_scales_with_parts(self):
+        mats = lambda n: [{"id": f"m{i}", "name": f"P{i}", "qty": 1} for i in range(n)]
+        self.assertEqual(server.idea_target(mats(1)), 3)
+        self.assertEqual(server.idea_target(mats(3)), 7)
+        self.assertEqual(server.idea_target(mats(4)), 9)
+        self.assertEqual(server.idea_target(mats(5)), server.MIN_IDEAS)
+        self.assertEqual(server.idea_target(mats(30)), server.MIN_IDEAS)
+
     def test_catapult_rejected(self):
         m = self.mats("Tin Can", "Rubber Band")
         r = [{"a": "m_tin_can", "b": "m_rubber_band", "result_id": "arm", "result_name": "Can Arm", "result_short": "CA"}]
@@ -165,7 +205,7 @@ class HelperTests(unittest.TestCase):
     def test_api_schema_preserves_gemini_json_schema_bounds(self):
         out = server.api_schema(server.IDEA_SCHEMA)
         arr = out["properties"]["ideas"]
-        self.assertEqual(arr["minItems"], 10)
+        self.assertEqual(arr["minItems"], 1)
         self.assertEqual(arr["maxItems"], 14)
         self.assertIn("minItems", server.IDEA_SCHEMA["properties"]["ideas"])  # original untouched
 
