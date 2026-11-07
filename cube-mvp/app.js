@@ -8,7 +8,7 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "./vendor/OrbitControls.js";
-import { iconSvg, partGeometry } from "./parts.js";
+import { iconSvg, partGeometry, projectGeometry, sourceHintsFor } from "./parts.js";
 
 const STORAGE_KEY = "cube_mvp_state_v4"; // v4: one isolated sandbox per offline recipe
 
@@ -205,6 +205,34 @@ function resolveIdea(idea) {
   });
 
   return { recipes, finalRequires };
+}
+
+// Expand the final checklist back through the recipe graph so sourcing advice
+// names raw materials, not intermediates such as "Drive Unit" or "Arm Segment".
+function rawMaterialNeeds(idea) {
+  const resolved = resolveIdea(idea);
+  const recipeByResult = new Map(resolved.recipes.map((r) => [r.result, r]));
+  const totals = {};
+  function expand(id, amount, path = new Set()) {
+    const recipe = recipeByResult.get(id);
+    if (!recipe || path.has(id)) {
+      totals[id] = (totals[id] || 0) + amount;
+      return;
+    }
+    const nextPath = new Set(path);
+    nextPath.add(id);
+    expand(recipe.a, amount, nextPath);
+    expand(recipe.b, amount, nextPath);
+  }
+  Object.entries(resolved.finalRequires).forEach(([id, amount]) => expand(id, amount));
+  const inv = invFor(idea);
+  return Object.entries(totals).map(([id, needed]) => ({
+    id,
+    name: state.items[id] ? state.items[id].name : id,
+    needed,
+    have: inv[id] || 0,
+    missing: Math.max(0, needed - (inv[id] || 0)),
+  }));
 }
 
 function allIdeas() {
@@ -459,6 +487,7 @@ function renderRequirements() {
     emptyEl.hidden = false;
     activeEl.hidden = true;
     renderHolograms(null);
+    renderSourceFinder(null);
     return;
   }
   emptyEl.hidden = true;
@@ -486,12 +515,121 @@ function renderRequirements() {
   document.getElementById("buildBtn").disabled = entries.length === 0 || readyCount < entries.length;
 
   renderHolograms(idea);
+  renderSourceFinder(idea);
+}
+
+/* ================= MATERIAL SOURCE FINDER ================= */
+const sourceSuggestionsByIdea = new Map();
+
+function initSourceFinder() {
+  document.getElementById("findSourcesBtn").addEventListener("click", suggestMaterialSources);
+}
+
+function renderSourceFinder(idea) {
+  const finder = document.getElementById("sourceFinder");
+  const panel = document.getElementById("sourceSuggestions");
+  finder.hidden = !idea;
+  if (!idea) {
+    panel.hidden = true;
+    panel.replaceChildren();
+    return;
+  }
+  const cached = sourceSuggestionsByIdea.get(idea.id);
+  if (cached) renderSourceSuggestions(cached, rawMaterialNeeds(idea));
+  else {
+    panel.hidden = true;
+    panel.replaceChildren();
+  }
+}
+
+function offlineSourceSuggestions(materials) {
+  return materials.map((material) => {
+    const hints = sourceHintsFor(state.items[material.id] || { name: material.name, raw: true });
+    return {
+      material: material.name,
+      places: hints.places,
+      salvage_tip: hints.tip,
+      safety_note: "Ask permission before taking materials; avoid damaged batteries and hazardous equipment.",
+    };
+  });
+}
+
+async function suggestMaterialSources() {
+  const idea = findIdea(state.activeIdeaId);
+  if (!idea) return;
+  const materials = rawMaterialNeeds(idea);
+  const btn = document.getElementById("findSourcesBtn");
+  btn.disabled = true;
+  btn.textContent = "Finding sources...";
+  let result;
+  try {
+    const res = await fetch("/api/suggest-sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ project: idea.title, materials }),
+    });
+    const data = await res.json();
+    if (!res.ok || !Array.isArray(data.suggestions) || data.suggestions.length === 0) throw new Error(data.message || "No AI suggestions");
+    result = { suggestions: data.suggestions, fallback: false };
+  } catch (e) {
+    result = { suggestions: offlineSourceSuggestions(materials), fallback: true };
+  }
+  sourceSuggestionsByIdea.set(idea.id, result);
+  if (state.activeIdeaId === idea.id) renderSourceSuggestions(result, materials);
+  btn.disabled = false;
+  btn.textContent = "Refresh sourcing guide";
+}
+
+function renderSourceSuggestions(result, materials) {
+  const panel = document.getElementById("sourceSuggestions");
+  panel.replaceChildren();
+  const note = document.createElement("p");
+  note.className = "source-mode-note";
+  note.textContent = result.fallback
+    ? "Common reuse ideas shown offline. Add an API key for project-specific AI suggestions."
+    : "AI suggestions — check locally and ask before taking anything.";
+  panel.appendChild(note);
+  const byName = new Map(materials.map((m) => [m.name.toLowerCase(), m]));
+  result.suggestions.forEach((suggestion) => {
+    const material = byName.get(String(suggestion.material || "").toLowerCase());
+    const card = document.createElement("article");
+    card.className = "source-card";
+    const title = document.createElement("div");
+    title.className = "source-card-title";
+    const count = material ? (material.missing > 0 ? ` · need ${material.missing} more` : ` · ${material.needed} available`) : "";
+    title.textContent = `${suggestion.material}${count}`;
+    card.appendChild(title);
+    const places = document.createElement("ul");
+    (suggestion.places || []).forEach((place) => {
+      const li = document.createElement("li");
+      li.textContent = place;
+      places.appendChild(li);
+    });
+    card.appendChild(places);
+    if (suggestion.salvage_tip) {
+      const tip = document.createElement("p");
+      tip.textContent = suggestion.salvage_tip;
+      card.appendChild(tip);
+    }
+    if (suggestion.safety_note) {
+      const safety = document.createElement("p");
+      safety.className = "source-safety";
+      safety.textContent = suggestion.safety_note;
+      card.appendChild(safety);
+    }
+    panel.appendChild(card);
+  });
+  panel.hidden = false;
 }
 
 function renderHolograms(idea) {
   const row = document.getElementById("hologramRow");
   row.innerHTML = "";
   if (idea) {
+    const finalCard = document.createElement("div");
+    finalCard.className = "final-hologram-card";
+    finalCard.innerHTML = `<span class="final-hologram-label">Final build</span><strong>${idea.title}</strong><span class="final-hologram-arrow">← assemble these parts</span>`;
+    row.appendChild(finalCard);
     const resolved = resolveIdea(idea);
     Object.entries(resolved.finalRequires).forEach(([id, need]) => {
       const item = state.items[id];
@@ -817,11 +955,11 @@ function initThreeIfNeeded() {
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
-  camera.position.set(7, 7, 9);
+  camera.position.set(5.5, 5.2, 7.5);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
-  controls.target.set(0, 0.5, 0);
+  controls.target.set(0, 0.8, 0.5);
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.7));
   const dir = new THREE.DirectionalLight(0xffffff, 0.9);
@@ -907,9 +1045,31 @@ function renderBench3D() {
 function render3DHolograms(idea) {
   if (!three) return;
   three.holoGroup.clear();
+  delete three.renderer.domElement.dataset.finalPreview;
   if (!idea) return;
+  three.renderer.domElement.dataset.finalPreview = idea.title;
   const resolved = resolveIdea(idea);
   const entries = Object.entries(resolved.finalRequires);
+  const finalGeo = projectGeometry(idea);
+  const finalMat = new THREE.MeshStandardMaterial({
+    color: 0x6f55c0,
+    emissive: 0x251447,
+    emissiveIntensity: 0.35,
+    transparent: true,
+    opacity: 0.62,
+    roughness: 0.35,
+    metalness: 0.1,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+  const finalMesh = new THREE.Mesh(finalGeo, finalMat);
+  finalMesh.position.set(0, 0.4, -1.3);
+  finalMesh.scale.setScalar(2.2);
+  const finalLabel = makeTextSprite(`FINAL: ${idea.title}`, "#6f55c0");
+  three.holoGroup.add(finalMesh);
+  finalLabel.position.set(0, 3.35, -1.3);
+  finalLabel.scale.set(3.0, 0.68, 1);
+  three.holoGroup.add(finalLabel);
   entries.forEach(([id, need], i) => {
     const item = state.items[id];
     if (!item) return;
@@ -923,9 +1083,10 @@ function render3DHolograms(idea) {
       opacity: satisfied ? 0.85 : 0.4,
     });
     const mesh = new THREE.Mesh(geo, mat);
-    const x = (i % 4 - 1.5) * 1.6;
-    const z = Math.floor(i / 4) * 1.6 - 1;
-    mesh.position.set(x, 2.4, z);
+    const x = (i % 3 - 1) * 2.15;
+    const z = Math.floor(i / 3) * 1.7 + 1.2;
+    mesh.position.set(x, 0.75, z);
+    mesh.scale.setScalar(0.88);
     const label = makeTextSprite(`${item.short} ${have}/${need}`, "#1c1e1b");
     label.position.set(0, 0.7, 0);
     mesh.add(label);
@@ -1072,6 +1233,11 @@ async function openAssemblyModal(idea) {
       const brief = {
         title: idea.title,
         pitch: idea.pitch,
+        recipe_graph: resolved.recipes.map((r) => ({
+          a: state.items[r.a].name,
+          b: state.items[r.b].name,
+          result: state.items[r.result].name,
+        })),
         sub_assemblies: Object.values(resolved.recipes.reduce((acc, r) => {
           acc[r.result] = state.items[r.result].name;
           return acc;
@@ -1463,6 +1629,7 @@ async function init() {
   initViewToggle();
   initBench();
   initBuildButton();
+  initSourceFinder();
   initAssemblyModal();
   initScan();
   initReset();

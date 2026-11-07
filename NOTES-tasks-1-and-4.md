@@ -6,6 +6,8 @@ Commands below run from the repo root, matching `recipes/README.md` and `TASKS.m
 This was worked in a sandbox with no camera, no browser and no `ANTHROPIC_API_KEY`, so nothing below claims a live
 camera capture or a real model output was observed.
 
+Follow-up verification on 2026-11-07 ran all 11 scan-state tests, all 10 synthetic-camera browser checks, and the full 12-scenario stub quality harness. A visible-browser attempt reached the correct manual fallback but reported that no physical camera was available. The harness also needed an explicit UTF-8 report encoding on Windows; that is now fixed. Step-generation briefs now include the ordered recipe graph, closing the previously documented build-order gap.
+
 ## Not done (needs you)
 
 | | What | How |
@@ -44,9 +46,9 @@ Findings, each grounded in the code, not in observed model output:
 - **Model text goes into `innerHTML`** in `app.js` (pitch, step text, item names). Server now strips markup from all model strings. (`app.js` itself still uses `innerHTML`; separate cleanup.)
 - **Steps prompt asked for "numbered" steps** but the UI numbers them → likely "1. 1. Glue…". Prompt now forbids numbering and the server strips it.
 - **Plausibility/safety gaps in the prompts:** no rule about broken parts ("Dead Nozzle" used as a working component), capabilities the parts can't provide (wifi, motors, light), salvaged lithium cells / PSUs / capacitors / microwave parts, load-bearing or safety items, or variety (six variants of one organizer). All added. Padding to 6 ideas when materials are scarce is now discouraged (server accepts fewer).
-- **Steps phase is blind to the recipe graph.** `app.js` sends sub-assembly *names* and final parts but not which part merges into which, so steps can't reliably follow build order. Fixing needs a small `app.js` change (include `recipes` in `brief`), which is outside task 4's file scope, so not done.
+- **Steps phase was blind to the recipe graph.** `app.js` now sends an ordered, human-readable `recipe_graph` with each steps request, and the steps prompt explicitly follows that graph so results are not described before their inputs exist.
 
-Tests: `python3 cube-mvp/tests/test_recipes.py` (15 offline tests for the validator, sanitizer, schema stripping, input checks).
+Tests: `python3 cube-mvp/tests/test_recipes.py` (16 offline tests for the validator, sanitizer, schema stripping, input checks).
 Harness: `cube-mvp/tests/recipe_quality.py`: 12 scenarios built to stress different failure modes (hazardous parts, nearly-empty inventory, broken parts, etc.), heuristic flags, reviewer checkboxes.
 
 Risk to watch on first real run: tighter prompts + stricter validation could lower the number of ideas that survive. The report prints returned vs. kept and every rejection reason so you can see if validation is too strict.
