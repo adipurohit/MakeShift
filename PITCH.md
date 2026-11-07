@@ -67,7 +67,7 @@ Bring clean, safe parts that map directly to the on-screen recipe:
 - One short aluminum extrusion or smooth rod.
 - One print-bed clip (the spring clip that holds a printer's glass bed) and one zip tie for the “scrap becomes a gripper” beat.
 - Optional: a control board, clearly disconnected from power.
-- One preselected progress photo saved locally as `cube-progress.jpg` in an easy-to-find folder.
+- One preselected progress photo saved locally as `makeshift-progress.jpg` in an easy-to-find folder.
 
 Avoid exposed mains wiring, sharp unprotected edges, leaking batteries, resin, solvents, or anything that creates a safety distraction.
 
@@ -75,26 +75,25 @@ Avoid exposed mains wiring, sharp unprotected edges, leaking batteries, resin, s
 
 ### Repository and browser
 
-- Ensure `task/fix-offline-demo` is merged. The offline recipe otherwise starts with only one timing belt and cannot be completed; that branch also fixes duplicate bench-token IDs after reload.
-- Include the mobile/accessibility and smoke-test branches if they have passed review, but neither is required for the desktop stage path.
-- Start from a clean checkout and run `python3 app/server.py` from the repository root.
-- Open `http://localhost:8743` in the presentation browser.
-- Use the offline Robot Arm recipe even if an API key is configured.
-- Set browser zoom to 100%, close unrelated tabs, disable notifications, and prevent the laptop from sleeping.
-- Click **Reset Demo** twice immediately before presenting.
-- Confirm that the palette contains two Timing Belts, the Robot Arm can reach all-green requirements, and the prepared photo can be selected.
-- Keep a second browser tab open at the app URL as a recovery option, but remember that both tabs share local storage.
+Primary: the hosted site, adipurohit.com/makeshift, on the presentation laptop. Backup: a local copy that needs no Wi-Fi. Final fallback: the recorded video.
+
+- **Hosted, 30 minutes before judging, on the venue Wi-Fi:** open adipurohit.com/makeshift, press **Reset** twice, and enter the demo inventory once to pre-warm the AI cache (see "Optional live AI beat").
+- **Local backup, prepared the night before:** a clean checkout with `python3 app/server.py` running and `http://localhost:8743` open in a second browser window. It runs the Robot Arm, Catalog matches, and every built-in recipe with no Wi-Fi and no API key.
+- **Fallback video:** `docs/demo.mp4` (about 60 s, a full Robot Arm build) downloaded to the laptop desktop, not streamed.
+- Use the Robot Arm recipe for the judged path even if the AI is working.
+- Set browser zoom to 100%, close unrelated tabs, turn off notifications, and keep the laptop from sleeping.
+- Confirm the palette shows two Timing Belts, the Robot Arm reaches all-green requirements, and the prepared photo can be selected.
 
 ### Thirty-second recovery plan
 
 If the live state becomes confused:
 
-1. Say, “The important part is the transformation graph; I’m resetting the deterministic demo state.”
-2. Click **Reset Demo** twice.
+1. Say, “The important part is the transformation graph; I’m resetting to a known state.”
+2. Click **Reset** twice.
 3. Select Robot Arm again and demonstrate only `Stepper Motor + Pulley → Drive Unit`.
 4. Move directly to the product explanation and close with the core loop. Do not spend stage time debugging.
 
-If 3D rendering fails, stay in 2D. If the photo picker stalls, close the assembly modal and explain the last verification step without claiming the build was completed. If the server stops, restart it from the prepared terminal and refresh the page.
+If the hosted site won't load, switch to the local backup window. If the laptop itself fails, play `docs/demo.mp4`. If 3D rendering fails, stay in 2D. If the photo picker stalls, close the assembly modal and describe the last step without claiming the build was completed. If AI Ideas says the AI is busy, point to Catalog matches, which need no AI.
 
 ## Rehearsal checklist
 
@@ -117,7 +116,7 @@ Run the full offline path at least twice on the actual presentation laptop:
 
 - **Later on 2026-11-07:** The Robot Arm changed (printer frame part, sealed 12V adapter, spring-clip gripper, nine steps), and the canonical demo URL moved to adipurohit.com/makeshift. The two entries below describe older builds; rerun the timed rehearsal on the current one.
 - **2026-11-07, automated local + hosted rehearsal (`main` hosted at `b945f83`, historical):** The complete Robot Arm interaction passed from recipe selection through all nine crafting merges, all-green requirements, seven assembly steps, photo preview, completion badge, 3D canvas, and mobile-width check with no console errors. The interaction path took 6.3 seconds locally and 6.3 seconds on the public Render deployment before narration. This verifies the technical stage path; presenters still need to rehearse the spoken 3:30 script with physical props on the presentation laptop.
-- **2026-11-07, `add-app-demo` at `f42bc8d`:** The app loaded locally, the offline Robot Arm recipe selected correctly, and its palette, holograms, and six requirement lines rendered as documented. The base branch supplied only one Timing Belt, confirming that the build cannot reach completion there. Complete the full timed rehearsal after `task/fix-offline-demo` is merged; that branch changes the starting quantity to two and fixes persisted bench-token IDs.
+- **2026-11-07, `add-cube-mvp-demo` at `f42bc8d`:** The app loaded locally, the offline Robot Arm recipe selected correctly, and its palette, holograms, and six requirement lines rendered as documented. The base branch supplied only one Timing Belt, confirming that the build cannot reach completion there. Complete the full timed rehearsal after `task/fix-offline-demo` is merged; that branch changes the starting quantity to two and fixes persisted bench-token IDs.
 
 ## Differentiation and audience
 
@@ -150,10 +149,20 @@ The first users are makerspaces, school labs, repair cafés, and hardware teams 
 
 Part-specific geometry, constraint-aware fit checks, shared inventories, build history, sourcing for genuinely missing parts, and evaluation data that scores generated recipes for feasibility, safety, cost, and waste diverted.
 
+## User evidence
+
+Run 3 to 5 sessions with [docs/user-testing.md](docs/user-testing.md) before judging, then fill this in with exact words. Don't present the pitch as user-validated until this table has real rows.
+
+| Participant | Background | Found a build without help? | Would build one for real? | Quote |
+|---|---|---|---|---|
+| | | | | |
+
 ## Honest MVP boundaries
 
 - The app is single-player and stores progress in the browser's local storage.
-- The 3D viewer uses simplified primitive geometry rather than exact scanned models.
+- AI ideas pass safety and plausibility checks, but about 1 in 6 kept ideas is still physically doubtful. See [docs/recipe-quality.md](docs/recipe-quality.md).
+- Camera-scan accuracy is unmeasured. `scripts/scan_accuracy.py` measures it on 30 real photos.
+- The 3D viewer uses simplified primitive geometry. It is not CAD: no real dimensions, fit checks or strength analysis.
 - Generated ideas and instructions are not engineering certification.
 - Photo evidence is previewed locally and is not uploaded or retained.
 - The live camera path still needs verification on the actual presentation device.
