@@ -45,6 +45,8 @@ Work breakdown for the CUBE demo (`cube-mvp/`) so teammates and agents can pick 
 **Done when:** `python3 cube-mvp/tests/smoke.py` (or equivalent) runs and reports pass/fail.
 
 ### 6. Deploy a shareable hosted version
+**Status:** Claimed on `task/deploy-hosted` (Codex). Target: Render Blueprint. A one-line production change to `cube-mvp/server.py` is required so the server listens on Render's `PORT` environment variable.
+
 **Why:** Right now this only runs on `localhost` on whoever's laptop has it checked out. A hosted version (even temporary) would let judges/teammates try it without a setup step.
 **Do:** Pick a host (Render, Railway, Fly.io, etc. — anything that can run a long-lived Python process and hold an env var for the API key). Note: this means the key leaves your laptop and sits on that host — use a key with a spending cap, not a personal unrestricted one.
 **Touches:** New deploy config files only; flag here first if it needs changes to `server.py` (e.g. reading `PORT` from env).
