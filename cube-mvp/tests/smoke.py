@@ -46,7 +46,7 @@ CRAFT_PLAN = [
     ("Rail", "Linear Bearing", "Arm Segment"),
     ("Al. Extrusion", "Smooth Rod", "Rail"),
     ("Rail", "Linear Bearing", "Arm Segment"),
-    ("Dead Nozzle", "Zip Tie", "Gripper Claw"),
+    ("Bed Clip", "Zip Tie", "Spring-Clip Gripper"),
 ]
 
 # 1x1 PNG for the progress-photo upload step.
@@ -253,7 +253,7 @@ def browser_checks(headed):
             page.wait_for_selector("#assemblyModal.visible")
             boxes = page.locator("#stepsList input[type=checkbox]")
             n = boxes.count()
-            record(n == 7, "Assembly guide shows 7 offline steps", f"got {n}")
+            record(n == 9, "Assembly guide shows 9 offline steps", f"got {n}")
             for i in range(n):
                 boxes.nth(i).check()
             with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:

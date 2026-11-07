@@ -18,9 +18,13 @@
   "routes": [
     { "pattern": "adipurohit.com/makeshift*", "zone_name": "adipurohit.com" }
   ],
-  // About 20 AI calls per visitor per minute, so a public page can't drain the Groq key.
+  // AI rate limits. namespace_id is any integer you pick that is unique within the Cloudflare account;
+  // these two are arbitrary, not placeholders.
+  // AI_LIMIT: 20 calls a minute per browser session. AI_IP_LIMIT: 120 a minute per network, which still
+  // lets a full room on one wifi address use the app while capping what faked session ids can spend.
   "ratelimits": [
-    { "name": "AI_LIMIT", "namespace_id": "4207", "simple": { "limit": 20, "period": 60 } }
+    { "name": "AI_LIMIT", "namespace_id": "4207", "simple": { "limit": 20, "period": 60 } },
+    { "name": "AI_IP_LIMIT", "namespace_id": "4208", "simple": { "limit": 120, "period": 60 } }
   ],
   "workers_dev": false,
   "observability": { "enabled": true }
