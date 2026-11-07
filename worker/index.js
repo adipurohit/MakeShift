@@ -64,7 +64,6 @@ export default {
     if (env.AI_LIMIT && !(await env.AI_LIMIT.limit({ key: `${ip}:${session}` })).success) {
       return json(429, { error: "rate_limited", message: "Too many AI requests. Wait a minute and try again." });
     }
-    }
 
     const length = Number(request.headers.get("Content-Length") || 0);
     if (length > MAX_BODY_BYTES) return json(413, { error: "too_large", message: "Request is too large." });
