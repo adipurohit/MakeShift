@@ -3,7 +3,7 @@
 //
 // 1. Open https://adipurohit.com/makeshift/ in Chrome.
 // 2. Open DevTools (Cmd+Option+J or Ctrl+Shift+J), paste this file into the Console, press Enter.
-// 3. Wait about 15 minutes. Calls run a minute apart to stay inside Gemini's free tier.
+// 3. Wait about 12 minutes. Calls run PACE_MS apart to stay inside Gemini's free tier.
 // 4. Results print as a table and are kept in window.qualityRun. Copy them with: copy(window.qualityRun)
 (async () => {
   const LISTS = [
@@ -21,6 +21,7 @@
     ["Metal junk", [["Rusty Bolt", 10], ["Hinge", 4], ["Spring", 3], ["Metal Bracket", 5], ["Bicycle Bell", 1]]],
   ];
   const slug = (n) => "m_" + n.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  const PACE_MS = window.QUALITY_PACE_MS || 30000;
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const session = localStorage.getItem("makeshift_session") || "quality-run";
   const post = async (path, body) => {
@@ -39,20 +40,23 @@
     const ideas = data.ideas || [];
     let steps = null;
     if (ideas[0]) {
-      await sleep(65000);
+      await sleep(PACE_MS);
       const names = Object.fromEntries(materials.map((m) => [m.id, m.name]));
       ideas[0].recipes.forEach((r) => { names[r.result_id] = r.result_name; });
       const brief = {
         title: ideas[0].title, pitch: ideas[0].pitch,
+        // same brief app.js sends, so the run measures what users get
+        recipe_graph: ideas[0].recipes.map((r) => ({ a: names[r.a], b: names[r.b], result: r.result_name })),
         sub_assemblies: ideas[0].recipes.map((r) => r.result_name),
         final_parts: ideas[0].final_requires.map((f) => `${names[f.id]} x${f.qty}`),
         raw_materials: ideas[0].uses_material_ids.map((i) => names[i]),
       };
       steps = (await post("api/generate-steps", { idea: brief }))[1].assembly_steps || null;
     }
-    window.qualityRun.push({ label, status, message: data.message, ideas: ideas.map((i) => `${i.title}: ${i.pitch}`), firstIdeaSteps: steps });
+    window.qualityRun.push({ label, status, cached: !!data.cached, message: data.message, ideas: ideas.map((i) => `${i.title}: ${i.pitch}`),
+      raw: ideas, firstIdeaSteps: steps });
     console.log(`${label}: ${status}, ${ideas.length} ideas`);
-    await sleep(65000);
+    await sleep(PACE_MS);
   }
   console.table(window.qualityRun.map((q) => ({ list: q.label, status: q.status, ideas: q.ideas.length })));
 })();

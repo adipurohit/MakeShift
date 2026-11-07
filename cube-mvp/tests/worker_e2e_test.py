@@ -31,6 +31,21 @@ ROOT = Path(__file__).resolve().parents[2]
 WRANGLER = os.environ.get("WRANGLER") or shutil.which("wrangler") or "npx wrangler"
 results = []
 gemini_calls = []
+# reject_json_schema: act like a Gemini that doesn't know responseJsonSchema, to exercise the fallback
+gemini_mode = {"reject_json_schema": False}
+
+
+def schema_of(body):
+    gc = body["generationConfig"]
+    return gc.get("responseJsonSchema") or gc.get("responseSchema")
+
+
+def has_key(obj, key):
+    if isinstance(obj, dict):
+        return key in obj or any(has_key(v, key) for v in obj.values())
+    if isinstance(obj, list):
+        return any(has_key(v, key) for v in obj)
+    return False
 gemini_429 = {"left": 0}  # respond with 429 this many times before succeeding
 
 
@@ -62,7 +77,22 @@ class FakeGemini(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b'{"error": {"message": "rate limit"}}')
             return
-        schema = body["generationConfig"]["responseSchema"]
+        gc = body["generationConfig"]
+        # Like the real API: the OpenAPI-subset field rejects JSON Schema keys such as additionalProperties.
+        bad = None
+        if "responseSchema" in gc and has_key(gc["responseSchema"], "additionalProperties"):
+            bad = 'Invalid JSON payload received. Unknown name "additionalProperties" at \'generation_config.response_schema\': Cannot find field.'
+        elif gemini_mode["reject_json_schema"] and "responseJsonSchema" in gc:
+            bad = 'Invalid JSON payload received. Unknown name "responseJsonSchema" at \'generation_config\': Cannot find field.'
+        if bad:
+            out = json.dumps({"error": {"code": 400, "message": bad, "status": "INVALID_ARGUMENT"}}).encode()
+            self.send_response(400)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(out)))
+            self.end_headers()
+            self.wfile.write(out)
+            return
+        schema = schema_of(body)
         props = schema.get("properties", {})
         if "confidence" in props:
             content = {"name": "  <b>broken</b> stepper   motor ", "confidence": "high"}
@@ -183,7 +213,7 @@ def main():
             check(not outside, "every request from the page stays under /makeshift/", ", ".join(outside))
             browser.close()
 
-        scan_call = next((c for c in gemini_calls if "confidence" in c["body"]["generationConfig"]["responseSchema"]["properties"]), None)
+        scan_call = next((c for c in gemini_calls if "confidence" in schema_of(c["body"])["properties"]), None)
         check(scan_call and scan_call["auth"] == "test-key", "Worker sends the GEMINI_API_KEY secret in x-goog-api-key")
         check(scan_call and "/models/gemini-3.8-flash:generateContent" in scan_call["path"],
               "scan uses the configured Gemini vision model", scan_call and scan_call["path"])
@@ -230,6 +260,19 @@ def main():
         gemini_429["left"] = 2
         status, data = post(port, "/makeshift/api/generate-steps", {"idea": {"title": "Busy"}})
         check(status == 503 and data.get("error") == "ai_busy", "two Gemini rate limits in a row report the AI as busy", f"{status} {data.get('error')}")
+
+        # Every request so far used the JSON-schema field; the live 400 came from the OpenAPI-subset field.
+        check(all("responseJsonSchema" in c["body"]["generationConfig"] for c in gemini_calls[:before]),
+              "Worker sends standard JSON Schema in responseJsonSchema")
+        gemini_mode["reject_json_schema"] = True
+        before = len(gemini_calls)
+        status, data = post(port, "/makeshift/api/generate-steps", {"idea": {"title": "Fallback"}})
+        retry = gemini_calls[-1]["body"]["generationConfig"] if len(gemini_calls) > before else {}
+        check(status == 200 and len(gemini_calls) - before == 2 and "responseSchema" in retry
+              and not has_key(retry.get("responseSchema"), "additionalProperties"),
+              "if Gemini rejects responseJsonSchema, the Worker retries with a stripped responseSchema",
+              f"{status}, {len(gemini_calls) - before} calls")
+        gemini_mode["reject_json_schema"] = False
         gemini_429["left"] = 0
 
         status, data = post(port, "/makeshift/api/identify-material", {"image": "data:image/png;base64,AAAA"}, origin=None)
