@@ -164,7 +164,67 @@ IDEA_SCHEMA = {
     "additionalProperties": False,
 }
 
-IDEA_SYSTEM_PROMPT = 'You are the idea engine inside MakeShift, a scrap-to-creation sandbox for makers.\nGiven the raw materials someone has on hand, propose a CATALOG of distinct projects a person could\nreally build from them using ordinary hand tools (scissors, craft knife, screwdriver, pliers) and common\nconsumables (tape, glue, string, screws). Those tools and consumables are ALWAYS assumed to be available;\nnever list them as materials. Mix projects they can build right now with some that need a larger quantity\nof the same materials, so there is something to work toward.\n\nHow the data works:\n- A recipe merges exactly TWO inputs into ONE result, consuming one unit of each input. If final_requires\n  asks for qty 2 of a crafted item, that item must be crafted twice (so its inputs are consumed twice).\n- An input ("a" / "b") or a final_requires "id" must be a given material id, or a result_id defined by an\n  EARLIER recipe in the SAME idea. Never invent a raw material id. Because you cannot invent materials,\n  an "ambitious" idea can only be one that needs more units of the same materials than the person has.\n- result_id: short snake_case, unique within the idea, and never equal to any given material id.\n  result_name is the user-facing name. result_short is 2-3 uppercase letters.\n- Every result_id must be used: it must feed a later recipe or appear in final_requires. No dead-end recipes.\n- No two recipes in one idea may merge the same pair of inputs (order does not matter).\n- Each idea uses 2-8 of the given materials, has 2-6 recipes and 2-6 final_requires lines, with quantities 1-3.\n- Do NOT write assembly steps; only the recipe graph and final requirements. No HTML or markdown in any string.\n\nPhysical plausibility (this is where most bad ideas come from):\n- Every merge must be something a person can physically do (glue, tie, tape, screw, slot, wrap, stack) and\n  the result must honestly be the thing you name. Do not name a merge after a capability the parts do not give\n  you ("battery + cardboard = power source" is not a recipe).\n- Respect condition words. Parts described as broken, dead, cracked, jammed, stripped, etc. may be used for\n  structure, weight, shape or decoration, never as working electrical, optical or mechanical components.\n- Do not promise functions the materials cannot deliver: no Wi-Fi, sensors, motors-that-run, solar power or\n  lighting unless the given materials include a working version of that part and the idea only wires/mounts it\n  at hobby-kit level. Prefer honest, achievable functions: holders, stands, organizers, hand-powered\n  mechanisms, linkages, toys, tools, planters, display pieces.\n- Scale must make sense: the size, strength and number of the parts must be able to produce the result.\n- The a/b pair in a recipe should be a natural pairing, not an arbitrary one.\n\nSafety (general audience, possibly children nearby):\n- No weapons or launchers, nothing that fires, pressurizes, burns or heats; no mains or high-voltage wiring;\n  no opening or reusing power supplies, microwave/CRT/flash-camera parts or large capacitors.\n- No damaged, swollen or salvaged lithium batteries; no hazardous chemicals, fuels or solvents.\n- Nothing a person\'s safety depends on: no ladders, climbing or weight-bearing seats, helmets or protective\n  gear, child-restraint or medical items, locks or alarms. No sharp blades or exposed spinning parts on\n  anything meant for kids.\n- No candles, flames or anything that throws, launches or fires objects (no catapults, slingshots, launchers).\n- If the only way to make an idea interesting is to break one of these rules, drop the idea.\n\nPower and motion (the most common mistake):\n- A motor only runs if the materials include a power source (battery, power bank, USB cable, adapter). A\n  stepper motor also needs a driver or control board. Without those, use a motor only as a hand-turned part,\n  a weight or a display piece, and never call the build powered, motorized or automatic.\n- Something only lights up if the materials include a light source (LED, bulb, working lamp).\n\nQuality:\n- Aim for 10-14 ideas. Give genuine variety: different functions and different material mixes, not ten\n  versions of one organizer.\n- Most ideas should chain at least two merges, so the build has real sub-assemblies, not one merge and done.\n- Titles and result names never include counts or parentheses. Counts must add up: merging two "pair" items\n  makes something that holds 4, not 3.\n- Titles are punchy and specific. The pitch is one or two sentences that say what it does and why it is\n  satisfying, and it must match the recipes.\n- Order ideas with the best material match / most immediately buildable first. Before ordering, count the\n  raw units each idea needs against the quantities given.\n- If the materials are too limited for a good idea, return fewer, honest ideas instead of padding.\n'
+IDEA_SYSTEM_PROMPT = """You are the idea engine inside MakeShift, a scrap-to-creation sandbox for makers.
+Given the raw materials someone has on hand, propose a CATALOG of distinct projects a person could
+really build from them using ordinary hand tools (scissors, craft knife, screwdriver, pliers) and common
+consumables (tape, glue, string, screws). Those tools and consumables are ALWAYS assumed to be available;
+never list them as materials. Mix projects they can build right now with some that need a larger quantity
+of the same materials, so there is something to work toward.
+
+How the data works:
+- A recipe merges exactly TWO inputs into ONE result, consuming one unit of each input. If final_requires
+  asks for qty 2 of a crafted item, that item must be crafted twice (so its inputs are consumed twice).
+- An input ("a" / "b") or a final_requires "id" must be a given material id, or a result_id defined by an
+  EARLIER recipe in the SAME idea. Never invent a raw material id. Because you cannot invent materials,
+  an "ambitious" idea can only be one that needs more units of the same materials than the person has.
+- result_id: short snake_case, unique within the idea, and never equal to any given material id.
+  result_name is the user-facing name. result_short is 2-3 uppercase letters.
+- Every result_id must be used: it must feed a later recipe or appear in final_requires. No dead-end recipes.
+- No two recipes in one idea may merge the same pair of inputs (order does not matter).
+- Each idea uses 2-8 of the given materials, has 2-6 recipes and 2-6 final_requires lines, with quantities 1-3.
+- Do NOT write assembly steps; only the recipe graph and final requirements. No HTML or markdown in any string.
+
+Physical plausibility (this is where most bad ideas come from):
+- Every merge must be something a person can physically do (glue, tie, tape, screw, slot, wrap, stack) and
+  the result must honestly be the thing you name. Do not name a merge after a capability the parts do not give
+  you ("battery + cardboard = power source" is not a recipe).
+- Respect condition words. Parts described as broken, dead, cracked, jammed, stripped, etc. may be used for
+  structure, weight, shape or decoration, never as working electrical, optical or mechanical components.
+- Do not promise functions the materials cannot deliver: no Wi-Fi, sensors, motors-that-run, solar power or
+  lighting unless the given materials include a working version of that part and the idea only wires/mounts it
+  at hobby-kit level. Prefer honest, achievable functions: holders, stands, organizers, hand-powered
+  mechanisms, linkages, toys, tools, planters, display pieces.
+- Scale must make sense: the size, strength and number of the parts must be able to produce the result.
+- The a/b pair in a recipe should be a natural pairing, not an arbitrary one.
+
+Safety (general audience, possibly children nearby):
+- No weapons or launchers, nothing that fires, pressurizes, burns or heats; no mains or high-voltage wiring;
+  no opening or reusing power supplies, microwave/CRT/flash-camera parts or large capacitors.
+- No damaged, swollen or salvaged lithium batteries; no hazardous chemicals, fuels or solvents.
+- Nothing a person's safety depends on: no ladders, climbing or weight-bearing seats, helmets or protective
+  gear, child-restraint or medical items, locks or alarms. No sharp blades or exposed spinning parts on
+  anything meant for kids.
+- No candles, flames or anything that throws, launches or fires objects (no catapults, slingshots, launchers).
+- If the only way to make an idea interesting is to break one of these rules, drop the idea.
+
+Power and motion (the most common mistake):
+- A motor only runs if the materials include a power source (battery, power bank, USB cable, adapter). A
+  stepper motor also needs a driver or control board. Without those, use a motor only as a hand-turned part,
+  a weight or a display piece, and never call the build powered, motorized or automatic.
+- Something only lights up if the materials include a light source (LED, bulb, working lamp).
+
+Quality:
+- Aim for 10-14 ideas. Give genuine variety: different functions and different material mixes, not ten
+  versions of one organizer.
+- Most ideas should chain at least two merges, so the build has real sub-assemblies, not one merge and done.
+- Titles and result names never include counts or parentheses. Counts must add up: merging two "pair" items
+  makes something that holds 4, not 3.
+- Titles are punchy and specific. The pitch is one or two sentences that say what it does and why it is
+  satisfying, and it must match the recipes.
+- Order ideas with the best material match / most immediately buildable first. Before ordering, count the
+  raw units each idea needs against the quantities given.
+- If the materials are too limited for a good idea, return fewer, honest ideas instead of padding.
+"""
 
 
 def raw_ideas(data):
@@ -255,7 +315,7 @@ def validate_idea(idea, material_ids):
             problems.append(f"recipe {n} is not an object")
             continue
         a, b, rid = r.get("a"), r.get("b"), r.get("result_id")
-        rname = clean_text(r.get("result_name"), 40)
+        rname = clean_text(re.sub(r"\s*\([^)]*\)", "", r.get("result_name") or "") if isinstance(r.get("result_name"), str) else None, 40)
         for side in (a, b):
             if side not in known:
                 problems.append(f"recipe {n} uses unknown id {side!r}")
@@ -330,32 +390,59 @@ def validate_idea(idea, material_ids):
     }, []
 
 
+# ---------------------------------------------------------------
+# Plausibility and safety checks on top of the structural ones. Written after reading real
+# gpt-oss-120b output: it proposed catapults and candle lanterns despite the prompt, "stepper-powered"
+# builds with no power source or driver, and lamps with no light source. The Worker uses the same
+# patterns (exported to worker/ai-config.json), so both back ends reject the same ideas.
+# ---------------------------------------------------------------
+PLAUSIBILITY = {
+    # anything that throws, fires, burns or heats is out, whatever the prompt said
+    "hazard": r"\b(catapult|trebuchet|launcher|sling ?shot|crossbow|blowgun|blaster|gun|cannon|weapon|dart|spear|candle|flame|fire|burn|torch|heater|boil|smoke|lighter|explos|firework|taser|stun|mains|high[- ]?voltage|shard)",
+    # parts no idea may use at all, even as a weight or a shelf: they can shock, burn or cut
+    "hazardous_part": r"microwave|capacitor|swollen|lithium|\bcrt\b|transformer|power supply unit|\bpsu\b|car battery|mains|broken glass|cracked glass|glass shard|(broken|cracked|shattered) (phone |tablet |laptop )?screen",
+    # claims of powered motion need a power source among the parts used
+    # (balloon-, rubber-band- and hand-powered are fine; only electric power needs a source)
+    "motion_claim": r"\b(motori[sz]ed|motor[- ]?driven|electric|automatic|(stepper|motor|electric|battery|usb|solar)[- ]?powered|self[- ]?(spinning|moving|winding))",
+    "power_source": r"battery|batteries|power ?bank|usb|adapter|charger|solar|power supply|psu",
+    # a stepper motor only moves with a driver or control board
+    "stepper": r"stepper",
+    "stepper_motion": r"\b(powered|motori[sz]ed|driven|drive[sn]?|turntable|lift|winds?|winding|rotat|spin|actuat|moves?|moving)",
+    "controller": r"board|driver|controller|arduino|esp32|raspberry|microcontroller",
+    # light needs a light source
+    "light_claim": r"\b(lamp|lantern|night ?light|glow|illuminat|lights? up)",
+    "light_source": r"\bled|bulb|lamp|light|flashlight|glow|solar",
+    # broken parts can be structure, never the working part
+    "broken": r"\b(broken|dead|cracked|swollen|rusty|jammed|stripped|burnt|blown)\b",
+    "functional": r"\b(motor|drive|pump|light|lamp|sensor|power|generator|engine|circuit|charger|speaker|screen|display)\b",
+}
+_P = {k: re.compile(v, re.I) for k, v in PLAUSIBILITY.items()}
+
 
 def plausibility_problems(idea, names):
-    """Reject ideas that promise unsafe or physically unsupported functions."""
-    p = {key: re.compile(value, re.I) for key, value in PLAUSIBILITY.items()}
-    parts = " ".join(names.get(material_id, "") for material_id in idea["uses_material_ids"])
-    text = " ".join([idea["title"], idea["pitch"], *(r["result_name"] for r in idea["recipes"])])
+    """Problems that make a structurally valid idea unsafe or physically dishonest. `names` maps id -> name."""
+    used_raw = [names.get(i, "") for i in idea["uses_material_ids"]]
+    parts = " ".join(used_raw)
+    text = " ".join([idea["title"], idea["pitch"]] + [r["result_name"] for r in idea["recipes"]])
     problems = []
-    for material_id in idea["uses_material_ids"]:
-        name = names.get(material_id, "")
-        if p["hazardous_part"].search(name):
+    for name in used_raw:
+        if _P["hazardous_part"].search(name):
             problems.append(f"uses a hazardous part: {name}")
-    hazard = p["hazard"].search(text)
-    if hazard:
-        problems.append("hazard: " + hazard.group(0))
-    if p["motion_claim"].search(text) and not p["power_source"].search(parts):
+    if _P["hazard"].search(text):
+        problems.append("hazard: " + _P["hazard"].search(text).group(0))
+    if _P["motion_claim"].search(text) and not _P["power_source"].search(parts):
         problems.append("claims powered motion with no power source")
-    if (p["stepper"].search(parts) and p["stepper_motion"].search(text)
-            and not (p["controller"].search(parts) and p["power_source"].search(parts))):
+    if _P["stepper"].search(parts) and _P["stepper_motion"].search(text) and not (
+            _P["controller"].search(parts) and _P["power_source"].search(parts)):
         problems.append("stepper motion with no driver and power")
-    if p["light_claim"].search(text) and not p["light_source"].search(parts):
+    if _P["light_claim"].search(text) and not _P["light_source"].search(parts):
         problems.append("claims light with no light source")
-    for recipe in idea["recipes"]:
-        inputs = [names.get(recipe["a"], ""), names.get(recipe["b"], "")]
-        if any(p["broken"].search(name) for name in inputs) and p["functional"].search(recipe["result_name"]):
-            problems.append(f"broken part used as working {recipe['result_name']}")
+    for r in idea["recipes"]:
+        inputs = [names.get(r["a"], ""), names.get(r["b"], "")]
+        if any(_P["broken"].search(n) for n in inputs) and _P["functional"].search(r["result_name"]):
+            problems.append(f"broken part used as working {r['result_name']}")
     return problems
+
 
 def validate_and_clean(data, materials, rejected=None):
     """Keep only ideas that are structurally sound. `rejected` (a list) collects (title, problems)."""
@@ -406,7 +493,27 @@ STEPS_SCHEMA = {
     "additionalProperties": False,
 }
 
-STEPS_SYSTEM_PROMPT = 'You write physical assembly instructions for MakeShift, a scrap-to-creation sandbox.\nGiven one project (name, pitch, its ordered recipe graph, sub-assemblies, and final parts list), write 4-9\nshort, concrete steps in plain imperative language, in the order a maker would really do them.\n\n- Follow the ordered recipe graph: each `a + b -> result` merge must happen only after both inputs exist.\n  Build the sub-assemblies first (each merge gets its own step), then combine them into the final project.\n  Do not start with the finished object or describe a result before its inputs have been joined.\n- Use only the parts listed in the brief (raw_materials, sub_assemblies, final_parts), plus ordinary hand tools\n  and consumables (tape, glue, string, screws). Never mention a part that is not listed: no base plates,\n  brackets, planks, dowels, set screws, idler pulleys or frames unless the brief lists them. If a step cannot be\n  done with the listed parts, leave it out rather than inventing something.\n- Say how two parts are joined (glue, tie, tape, screw, slot) and what to check (alignment, square, firm\n  grip). Where a part is broken or sharp, say to handle it carefully or blunt/cover the edge.\n- Be honest about what the result does. End with a gentle test or fit check, never a claim that it\n  definitely works.\n- Safe for a general audience: no mains or high-voltage wiring, no heat, flame, pressure, hazardous\n  chemicals or salvaged lithium batteries, no professional-only tools. If the brief seems to require one of\n  those, replace it with a safe alternative or skip that step and say so in one step.\n- Each step is one plain sentence or two. Do NOT number the steps or add "Step 1:" (the app numbers them),\n  and do not use markdown or HTML.\n'
+STEPS_SYSTEM_PROMPT = """You write physical assembly instructions for MakeShift, a scrap-to-creation sandbox.
+Given one project (name, pitch, its ordered recipe graph, sub-assemblies, and final parts list), write 4-9
+short, concrete steps in plain imperative language, in the order a maker would really do them.
+
+- Follow the ordered recipe graph: each `a + b -> result` merge must happen only after both inputs exist.
+  Build the sub-assemblies first (each merge gets its own step), then combine them into the final project.
+  Do not start with the finished object or describe a result before its inputs have been joined.
+- Use only the parts listed in the brief (raw_materials, sub_assemblies, final_parts), plus ordinary hand tools
+  and consumables (tape, glue, string, screws). Never mention a part that is not listed: no base plates,
+  brackets, planks, dowels, set screws, idler pulleys or frames unless the brief lists them. If a step cannot be
+  done with the listed parts, leave it out rather than inventing something.
+- Say how two parts are joined (glue, tie, tape, screw, slot) and what to check (alignment, square, firm
+  grip). Where a part is broken or sharp, say to handle it carefully or blunt/cover the edge.
+- Be honest about what the result does. End with a gentle test or fit check, never a claim that it
+  definitely works.
+- Safe for a general audience: no mains or high-voltage wiring, no heat, flame, pressure, hazardous
+  chemicals or salvaged lithium batteries, no professional-only tools. If the brief seems to require one of
+  those, replace it with a safe alternative or skip that step and say so in one step.
+- Each step is one plain sentence or two. Do NOT number the steps or add "Step 1:" (the app numbers them),
+  and do not use markdown or HTML.
+"""
 
 
 def generate_steps(idea_brief):
@@ -465,7 +572,20 @@ SOURCES_SCHEMA = {
     "additionalProperties": False,
 }
 
-SOURCES_SYSTEM_PROMPT = 'You are the material-sourcing guide inside MakeShift, a scrap-to-creation app.\nFor each requested material, suggest realistic, low-cost places a maker could look locally. Prefer reuse:\ntheir own recycling, repair shops, community reuse centers, e-waste programs, thrift stores, maker spaces,\nschools or businesses that may give away clean offcuts. Hardware or craft stores are a last resort.\n\n- Give place categories, not invented business names, addresses, live inventory, prices or availability claims.\n- Copy each input material name exactly into the corresponding `material` field.\n- Keep each place to a short phrase and give 2-4 distinct options where possible.\n- The salvage tip should say what discarded object may contain the part and what condition to inspect.\n- Always tell the maker to ask permission before taking materials. Never recommend trespassing, taking from\n  private bins, unsafe roadside scavenging, or opening mains power supplies, microwaves, CRTs, swollen\n  batteries, pressurized containers, or hazardous equipment.\n- Use the supplied project and quantities for context. No markdown or HTML in any string.\n'
+SOURCES_SYSTEM_PROMPT = """You are the material-sourcing guide inside MakeShift, a scrap-to-creation app.
+For each requested material, suggest realistic, low-cost places a maker could look locally. Prefer reuse:
+their own recycling, repair shops, community reuse centers, e-waste programs, thrift stores, maker spaces,
+schools or businesses that may give away clean offcuts. Hardware or craft stores are a last resort.
+
+- Give place categories, not invented business names, addresses, live inventory, prices or availability claims.
+- Copy each input material name exactly into the corresponding `material` field.
+- Keep each place to a short phrase and give 2-4 distinct options where possible.
+- The salvage tip should say what discarded object may contain the part and what condition to inspect.
+- Always tell the maker to ask permission before taking materials. Never recommend trespassing, taking from
+  private bins, unsafe roadside scavenging, or opening mains power supplies, microwaves, CRTs, swollen
+  batteries, pressurized containers, or hazardous equipment.
+- Use the supplied project and quantities for context. No markdown or HTML in any string.
+"""
 
 
 def clean_source_suggestions(data, requested_names):
@@ -550,9 +670,16 @@ IDENTIFY_SCHEMA = {
     "additionalProperties": False,
 }
 
-IDENTIFY_SYSTEM_PROMPT = 'You help identify scrap materials and parts for a maker inventory app.\nLook at the photo and name the single most prominent physical object or material in it, as a short\n2-5 word phrase suitable for an inventory list (e.g. "broken stepper motor", "cardboard tube",\n"bundle of zip ties", "cracked phone screen"). Name the object itself, not the surface it sits on, and not a\nperson\'s hand or face. If several objects are in frame, pick the one nearest the center. Prefer naming what\nit is made of or its function if the exact object is unclear. Describe visible condition only when obvious\n(broken, rusty, cracked). Always give your best guess rather than refusing. If the image is dark, blurry,\nblank or you cannot tell what the object is, use the name "unclear item" and confidence "low". Set\nconfidence to "low" whenever you are genuinely unsure.\n'
-
-PLAUSIBILITY = {'hazard': '\\b(catapult|trebuchet|launcher|sling ?shot|crossbow|blowgun|blaster|gun|cannon|weapon|dart|spear|candle|flame|fire|burn|torch|heater|boil|smoke|lighter|explos|firework|taser|stun|mains|high[- ]?voltage|shard)', 'hazardous_part': 'microwave|capacitor|swollen|lithium|\\bcrt\\b|transformer|power supply unit|\\bpsu\\b|car battery|mains|broken glass|cracked glass|glass shard|(broken|cracked|shattered) (phone |tablet |laptop )?screen', 'motion_claim': '\\b(motori[sz]ed|motor[- ]?driven|electric|automatic|(stepper|motor|electric|battery|usb|solar)[- ]?powered|self[- ]?(spinning|moving|winding))', 'power_source': 'battery|batteries|power ?bank|usb|adapter|charger|solar|power supply|psu', 'stepper': 'stepper', 'stepper_motion': '\\b(powered|motori[sz]ed|driven|drive[sn]?|turntable|lift|winds?|winding|rotat|spin|actuat|moves?|moving)', 'controller': 'board|driver|controller|arduino|esp32|raspberry|microcontroller', 'light_claim': '\\b(lamp|lantern|night ?light|glow|illuminat|lights? up)', 'light_source': '\\bled|bulb|lamp|light|flashlight|glow|solar', 'broken': '\\b(broken|dead|cracked|swollen|rusty|jammed|stripped|burnt|blown)\\b', 'functional': '\\b(motor|drive|pump|light|lamp|sensor|power|generator|engine|circuit|charger|speaker|screen|display)\\b'}
+IDENTIFY_SYSTEM_PROMPT = """You help identify scrap materials and parts for a maker inventory app.
+Look at the photo and name the single most prominent physical object or material in it, as a short
+2-5 word phrase suitable for an inventory list (e.g. "broken stepper motor", "cardboard tube",
+"bundle of zip ties", "cracked phone screen"). Name the object itself, not the surface it sits on, and not a
+person's hand or face. If several objects are in frame, pick the one nearest the center. Prefer naming what
+it is made of or its function if the exact object is unclear. Describe visible condition only when obvious
+(broken, rusty, cracked). Always give your best guess rather than refusing. If the image is dark, blurry,
+blank or you cannot tell what the object is, use the name "unclear item" and confidence "low". Set
+confidence to "low" whenever you are genuinely unsure.
+"""
 
 DATA_URL_RE = re.compile(r"^data:(?P<mime>[\w/.+-]+);base64,(?P<data>.+)$", re.DOTALL)
 
