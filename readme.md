@@ -32,7 +32,7 @@ To host a public version, follow [DEPLOYMENT.md](DEPLOYMENT.md).
 
 1. **Pick a recipe** from the Recipe Catalog. Search by name or filter by category.
 2. **Merge parts.** Drag two parts onto the bench. Parts that fit together merge into a new piece, for example Stepper Motor + Pulley makes a Drive Unit.
-3. **Fill the checklist.** The bar under the bench turns each requirement green once you have enough.
+3. **Fill the checklist.** The bar under the bench turns each requirement green once you have enough. Parts marked **as-is** go straight into the build with no merging, and parts on the bench still count.
 4. **Build it.** Press Build It, check off each step, add a photo, and earn a badge.
 
 ## Add a recipe
@@ -50,6 +50,7 @@ python3 cube-mvp/tests/pack_test.py <recipe_id>
 |---------|--------|
 | `python3 cube-mvp/tests/smoke.py` | Server endpoints and the full Robot Arm build in a headless browser |
 | `python3 cube-mvp/tests/pack_test.py` | Builds all 100 pack recipes end to end |
+| `python3 cube-mvp/tests/bench_count_test.py` | Parts on the bench count toward the checklist, including as-is parts |
 | `python3 cube-mvp/tests/test_recipes.py` | AI recipe validation rules |
 | `python3 cube-mvp/tests/scan_browser.py` | Camera scan flow with a fake camera |
 | `cd cube-mvp && npm i --no-save jsdom && node tests/scan_logic.test.js` | Camera scan permission and timeout paths |
