@@ -485,6 +485,7 @@ body {
 
 /* ---------- Scan modal ---------- */
 .scan-modal { max-width: 420px; }
+.scan-privacy { font-size: 11px; line-height: 1.4; color: var(--text-dim); margin: -4px 0 10px; }
 .scan-camera-wrap {
   position: relative;
   background: #000;

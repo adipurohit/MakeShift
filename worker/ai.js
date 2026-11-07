@@ -232,6 +232,21 @@ export function cleanMaterials(materials) {
 }
 
 // ---------------- Gemini calls ----------------
+// Gemini has two schema fields. responseJsonSchema takes standard JSON Schema (what server.py sends through
+// the SDK's response_json_schema). The older responseSchema takes an OpenAPI subset and rejects keys such
+// as additionalProperties with a 400. Send responseJsonSchema; if Gemini rejects the request over the schema,
+// retry once with responseSchema and a schema stripped down to that subset.
+const OPENAPI_SUBSET_DROP = new Set(["additionalProperties", "$schema", "$id", "$defs", "title", "default"]);
+export function toOpenApiSchema(schema) {
+  if (Array.isArray(schema)) return schema.map(toOpenApiSchema);
+  if (!isObj(schema)) return schema;
+  const out = {};
+  for (const [k, v] of Object.entries(schema)) if (!OPENAPI_SUBSET_DROP.has(k)) out[k] = toOpenApiSchema(v);
+  return out;
+}
+const isSchemaRejection = (status, message) =>
+  status === 400 && /response_?json_?schema|response_?schema|Unknown name|Invalid JSON payload/i.test(message || "");
+
 export class ApiError extends Error {}
 export class BusyError extends ApiError {}
 
@@ -255,7 +270,8 @@ async function chatJson(env, system, user, name, schema, maxTokens, model) {
       maxOutputTokens: maxTokens,
       responseMimeType: "application/json",
       // responseJsonSchema takes standard JSON Schema (our schemas use additionalProperties, minItems, ...).
-      // The older responseSchema is an OpenAPI subset and answers 400 "Unknown name additionalProperties".
+      // The older responseSchema is an OpenAPI subset and answers 400 "Unknown name additionalProperties", so it is
+      // only used as a fallback below, with the schema reduced by toOpenApiSchema().
       // cube-mvp/server.py uses the same mode (response_json_schema).
       responseJsonSchema: schema,
     },
@@ -269,6 +285,14 @@ async function chatJson(env, system, user, name, schema, maxTokens, model) {
   let res;
   try {
     res = await send();
+    if (res.status === 400) {
+      const peek = await res.clone().json().catch(() => ({}));
+      if (isSchemaRejection(400, peek.error?.message)) {
+        delete body.generationConfig.responseJsonSchema;
+        body.generationConfig.responseSchema = toOpenApiSchema(schema);
+        res = await send();
+      }
+    }
     // Retry one transient Gemini rate limit, respecting Retry-After but never sleeping indefinitely.
     if (res.status === 429) {
       const retryAfter = Number.parseFloat(res.headers.get("retry-after"));

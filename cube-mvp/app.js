@@ -721,7 +721,7 @@ function offlineSourceSuggestions(materials) {
       material: material.name,
       places: hints.places,
       salvage_tip: hints.tip,
-      safety_note: "Ask permission before taking materials; avoid damaged batteries and hazardous equipment.",
+      safety_note: "", // one permission reminder sits at the top of the panel instead of on every card
     };
   });
 }
@@ -757,9 +757,9 @@ function renderSourceSuggestions(result, materials) {
   panel.replaceChildren();
   const note = document.createElement("p");
   note.className = "source-mode-note";
-  note.textContent = result.fallback
-    ? "Common reuse ideas shown offline. Add an API key for project-specific AI suggestions."
-    : "AI suggestions — check locally and ask before taking anything.";
+  note.textContent = (result.fallback
+    ? "Common sources for each part type, shown offline."
+    : "AI suggestions for where these parts turn up. Check locally.") + " Always ask before taking anything.";
   panel.appendChild(note);
   const byName = new Map(materials.map((m) => [m.name.toLowerCase(), m]));
   result.suggestions.forEach((suggestion) => {

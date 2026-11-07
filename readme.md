@@ -65,5 +65,5 @@ Browser tests need Playwright: `pip install playwright && python3 -m playwright 
 
 - [TASKS.md](TASKS.md): task board and status
 - [PITCH.md](PITCH.md): pitch script and live-demo plan
-- [DEPLOYMENT.md](DEPLOYMENT.md): hosting on Render
+- [DEPLOYMENT.md](DEPLOYMENT.md): hosting on Cloudflare and turning on the AI
 - [cube-mvp/README.md](cube-mvp/README.md): how the app works under the hood
