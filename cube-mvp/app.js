@@ -149,6 +149,20 @@ function ctx() {
 function invFor(idea) {
   return idea.offline ? offlineBox(idea.id).inventory : state.inventory;
 }
+function benchFor(idea) {
+  return idea.offline ? offlineBox(idea.id).bench : state.bench;
+}
+// Parts count toward a build whether they sit in the parts list or on the bench.
+function haveFor(idea, id) {
+  return (invFor(idea)[id] || 0) + benchFor(idea).filter((t) => t.itemId === id).length;
+}
+// Final requirements that no merge produces or consumes: they go into the build as-is.
+function asIsIds(idea) {
+  const resolved = resolveIdea(idea);
+  const touched = new Set();
+  resolved.recipes.forEach((r) => { touched.add(r.a); touched.add(r.b); touched.add(r.result); });
+  return new Set(Object.keys(resolved.finalRequires).filter((id) => !touched.has(id)));
+}
 function qty(id) { return ctx().inventory[id] || 0; }
 function addQty(id, n) {
   const c = ctx();
@@ -341,7 +355,7 @@ async function generateIdeas() {
   toast("Generating build ideas...");
 
   try {
-    const res = await fetch("/api/generate-ideas", {
+    const res = await fetch("api/generate-ideas", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ materials: rawMaterials }),
@@ -383,8 +397,7 @@ function readyPercent(idea) {
   const resolved = resolveIdea(idea);
   const entries = Object.entries(resolved.finalRequires);
   if (entries.length === 0) return 0;
-  const inv = invFor(idea);
-  const ready = entries.filter(([id, need]) => (inv[id] || 0) >= need).length;
+  const ready = entries.filter(([id, need]) => haveFor(idea, id) >= need).length;
   return Math.round((ready / entries.length) * 100);
 }
 
@@ -481,19 +494,20 @@ function renderRequirements() {
   activeEl.hidden = false;
 
   const resolved = resolveIdea(idea);
-  const inv = invFor(idea);
+  const asIs = asIsIds(idea);
   const entries = Object.entries(resolved.finalRequires);
   const reqList = document.getElementById("reqList");
   reqList.innerHTML = "";
   let readyCount = 0;
   entries.forEach(([id, need]) => {
-    const have = inv[id] || 0;
+    const have = haveFor(idea, id);
     const ok = have >= need;
     if (ok) readyCount++;
     const item = state.items[id];
     const li = document.createElement("li");
     li.className = "req-item " + (ok ? "green" : "red");
-    li.innerHTML = `<span>${item ? item.name : id}</span><span class="req-count">${have} / ${need}</span>`;
+    if (asIs.has(id)) li.title = "Goes into the build as-is. No merging needed.";
+    li.innerHTML = `<span>${item ? item.name : id}${asIs.has(id) ? ' <span class="req-asis">as-is</span>' : ""}</span><span class="req-count">${have} / ${need}</span>`;
     reqList.appendChild(li);
   });
   document.getElementById("progressFill").style.width = (entries.length ? readyCount / entries.length * 100 : 0) + "%";
@@ -617,10 +631,9 @@ function renderHolograms(idea) {
     finalCard.innerHTML = `<span class="final-hologram-label">Final build</span><strong>${idea.title}</strong><span class="final-hologram-arrow">← assemble these parts</span>`;
     row.appendChild(finalCard);
     const resolved = resolveIdea(idea);
-    const inv = invFor(idea);
     Object.entries(resolved.finalRequires).forEach(([id, need]) => {
       const item = state.items[id];
-      const have = inv[id] || 0;
+      const have = haveFor(idea, id);
       const chip = document.createElement("div");
       chip.className = "hologram-chip" + (have >= need ? " satisfied" : "");
       chip.innerHTML = `<span class="chip-icon" style="background:${item.color}">${iconSvg(item)}</span>${item.name} ${have}/${need}`;
@@ -636,8 +649,18 @@ function initBuildButton() {
     if (!idea) return;
     const resolved = resolveIdea(idea);
     const inv = invFor(idea);
-    Object.entries(resolved.finalRequires).forEach(([id, need]) => { inv[id] -= need; });
+    const box = idea.offline ? offlineBox(idea.id) : state;
+    Object.entries(resolved.finalRequires).forEach(([id, need]) => {
+      const fromInv = Math.min(inv[id] || 0, need);
+      inv[id] = (inv[id] || 0) - fromInv;
+      let rest = need - fromInv;
+      box.bench = box.bench.filter((t) => {
+        if (rest > 0 && t.itemId === id) { rest--; return false; }
+        return true;
+      });
+    });
     saveState();
+    renderBench();
     renderPalette();
     renderRequirements();
     openAssemblyModal(idea);
@@ -805,6 +828,20 @@ function attachTokenDrag2D(el, tok) {
   });
 }
 
+let lastNoMergeHint = 0;
+function explainNoMerge(idA, idB) {
+  if (Date.now() - lastNoMergeHint < 1500) return;
+  lastNoMergeHint = Date.now();
+  const idea = findIdea(state.activeIdeaId);
+  const asIs = idea ? asIsIds(idea) : new Set();
+  const nameA = (state.items[idA] || {}).name || idA;
+  const nameB = (state.items[idB] || {}).name || idB;
+  const bare = asIs.has(idA) ? nameA : asIs.has(idB) ? nameB : null;
+  toast(bare
+    ? `${bare} doesn't combine with anything. It goes into the build as-is and still counts on the bench.`
+    : `${nameA} and ${nameB} don't fit together. Check the recipe's merges in the checklist.`);
+}
+
 function overlap2D(a, b) {
   return Math.abs(a.x - b.x) < 50 && Math.abs(a.y - b.y) < 36;
 }
@@ -819,6 +856,7 @@ function tryMergeAt(movedTok) {
     const el = document.querySelector(`.bench-token[data-uid="${movedTok.uid}"]`);
     if (el) { el.classList.add("shake"); setTimeout(() => el.classList.remove("shake"), 320); }
     shake3DMesh(movedTok.uid);
+    explainNoMerge(movedTok.itemId, partner.itemId);
     return;
   }
 
@@ -1011,7 +1049,6 @@ function render3DHolograms(idea) {
   if (!idea) return;
   three.renderer.domElement.dataset.finalPreview = idea.title;
   const resolved = resolveIdea(idea);
-  const inv = invFor(idea);
   const entries = Object.entries(resolved.finalRequires);
   const finalGeo = projectGeometry(idea);
   const finalMat = new THREE.MeshStandardMaterial({
@@ -1036,7 +1073,7 @@ function render3DHolograms(idea) {
   entries.forEach(([id, need], i) => {
     const item = state.items[id];
     if (!item) return;
-    const have = inv[id] || 0;
+    const have = haveFor(idea, id);
     const satisfied = have >= need;
     const geo = meshGeometryFor(item);
     const mat = new THREE.MeshBasicMaterial({
@@ -1155,6 +1192,7 @@ function tryMergeAt3D(uid) {
   const recipe = findRecipe(movedTok.itemId, partner.itemId);
   if (!recipe) {
     shake3DMesh(uid);
+    explainNoMerge(movedTok.itemId, partner.itemId);
     return;
   }
 
@@ -1206,7 +1244,7 @@ async function openAssemblyModal(idea) {
         }, {})),
         final_parts: Object.entries(resolved.finalRequires).map(([id, q]) => `${state.items[id].name} x${q}`),
       };
-      const res = await fetch("/api/generate-steps", {
+      const res = await fetch("api/generate-steps", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idea: brief }),
@@ -1506,7 +1544,7 @@ async function captureScan() {
   const abort = scanAbort;
   const timer = setTimeout(() => abort.abort(), SCAN_TIMEOUT_MS);
   try {
-    const res = await fetch("/api/identify-material", {
+    const res = await fetch("api/identify-material", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ image: dataUrl }),

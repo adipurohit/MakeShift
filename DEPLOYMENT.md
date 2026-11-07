@@ -1,54 +1,71 @@
-# Deploy MakeShift on Render
+# Deploy MakeShift
 
-The repository includes a Render Blueprint for a single Python web service. It serves the frontend and the three optional Anthropic-backed API endpoints from one origin.
+MakeShift is set up to run at **adipurohit.com/makeshift** on Cloudflare. A Render setup for the Python server also exists, at the end of this file.
 
-## Current deployment
+## Cloudflare (adipurohit.com/makeshift)
 
-- URL: [https://makeshift-cube-demo.onrender.com](https://makeshift-cube-demo.onrender.com)
-- Render service: `makeshift-cube-demo`
-- Deploy branch: `main`
-- Verified 2026-11-07 at commit `b945f83`: `python cube-mvp/tests/smoke.py --base-url https://makeshift-cube-demo.onrender.com` passed all 23 checks, including the 100-recipe pack plus Robot Arm, the complete build flow, 3D, mobile width, and console-error checks. The automated Robot Arm stage path completed in 6.3 seconds before narration.
-- `ANTHROPIC_API_KEY` is not configured in Render. The offline catalog and Robot Arm work publicly; camera identification and generated ideas/steps correctly return the no-key fallback until a dedicated capped key is added.
+A Cloudflare Worker named `makeshift` serves the app. The config lives in [`wrangler.jsonc`](wrangler.jsonc):
 
-## Create the service
+- **Static app**: `scripts/build-web.sh` copies only the browser files into `dist/makeshift/`.
+- **AI endpoints**: [`worker/`](worker/) answers `/makeshift/api/generate-ideas`, `generate-steps`, `suggest-sources`, and `identify-material` (the camera scan), the same four endpoints `server.py` answers locally. Prompts and schemas come from `server.py` through `worker/ai-config.json`.
+- **Route**: `adipurohit.com/makeshift*`. A route takes priority over the portfolio Worker for those paths only, so the rest of adipurohit.com is untouched.
+- **Rate limit**: about 20 AI calls per visitor per minute, so a public page can't drain the key. Requests from other websites are refused.
 
-1. Merge this branch into the branch Render will deploy.
-2. In the Render Dashboard, choose **New → Blueprint**.
-3. Connect `https://github.com/adipurohit/MakeShift`.
-4. Select the branch containing `render.yaml` and create the Blueprint.
-5. When prompted for `ANTHROPIC_API_KEY`, enter a dedicated project key with an appropriate spending limit. Never commit the key or paste it into an issue, pull request, or chat.
-6. Wait for the service health check at `/` to pass, then copy the generated `https://…onrender.com` URL.
+### First-time setup
 
-Render builds from `cube-mvp/`, installs the pinned Python SDK, starts `server.py`, and supplies the public listening port through the `PORT` environment variable.
+1. In the Cloudflare dashboard, go to **Workers & Pages → Create → Connect GitHub**, and give the Cloudflare app access to `adipurohit/MakeShift`.
+2. Pick the repo. Keep the Worker name `makeshift`, which must match `wrangler.jsonc`. Keep the default deploy command `npx wrangler deploy`. Deploy.
+3. Every push to `main` redeploys.
 
-## Verify the deployment
+### Turn on the AI features (camera scan, AI ideas, AI steps)
 
-Open the public URL in a private browser window and verify:
+The AI runs on Groq. Add your Groq key as an encrypted secret, never in the repo:
 
-- The MakeShift workspace, local Three.js assets, and offline Robot Arm recipe load without console errors.
-- The 2D and 3D controls work.
-- Reset restores the deterministic offline state.
-- With the hosted key enabled, **Buildable Now** generates ideas and assembly steps.
-- Denying camera permission exposes the manual-entry fallback.
-- No API key or secret appears in page source, browser requests, repository files, or error messages.
+1. **Workers & Pages → makeshift → Settings → Variables and Secrets → Add**.
+2. Type: **Secret**. Name: `GROQ_API_KEY`. Value: your Groq key (starts with `gsk_`).
+3. Select **Deploy**. The secret takes effect right away, with no code change.
 
-The offline Robot Arm remains usable when the API key is absent or the Anthropic API is unavailable.
+Without the secret, the catalog recipes work and the AI features show a short notice.
 
-## Rotate or remove the key
+Set a spending limit on the key in the Groq console. Anyone who opens the site uses your key through the Worker, within the rate limit above.
 
-After the event or demo window:
+Optional variables (type **Text**): `GROQ_TEXT_MODEL` and `GROQ_VISION_MODEL` override the models, same as in `cube-mvp/.env`.
 
-1. Remove `ANTHROPIC_API_KEY` from the Render service or suspend the service.
-2. Revoke the deployed key in the Anthropic console.
-3. Create a new limited key before any future hosted demo instead of reusing the old one.
+### Change a prompt
 
-## Local behavior
+Edit the prompt in `cube-mvp/server.py`, then run:
 
-Local startup is unchanged:
+```bash
+python3 scripts/export-ai-config.py
+```
+
+`cube-mvp/tests/worker_parity_test.py` fails if you forget, and checks the Worker and `server.py` treat AI output identically.
+
+### Test the Worker locally
+
+```bash
+python3 cube-mvp/tests/worker_e2e_test.py
+```
+
+Runs the Worker with `wrangler dev` against a stand-in Groq server: page load, camera scan in a browser, ideas, steps, and the guards. No real key needed.
+
+### Rotate or remove the key
+
+Delete or replace the `GROQ_API_KEY` secret in the Worker settings, then revoke the old key in the Groq console.
+
+## Render (Python server)
+
+[`render.yaml`](render.yaml) runs `cube-mvp/server.py` as one web service.
+
+The existing Render deployment is [https://makeshift-cube-demo.onrender.com](https://makeshift-cube-demo.onrender.com), service `makeshift-cube-demo`, tracking `main`. It was last fully smoke-tested at commit `b945f83`; rerun the hosted smoke suite after merging this branch.
+
+1. In the Render Dashboard, choose **New → Blueprint** and connect `adipurohit/MakeShift`.
+2. When prompted for `GROQ_API_KEY`, enter a dedicated key with a spending limit.
+3. Wait for the health check at `/` to pass.
+
+Render supplies the listening port through `PORT`. Locally, without `PORT`, the server listens on 8743:
 
 ```bash
 cd cube-mvp
 python3 server.py
 ```
-
-Without `PORT`, the server continues to listen on port `8743`.
