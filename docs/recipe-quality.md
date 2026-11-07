@@ -46,10 +46,10 @@ All 4 step guides invented parts that weren't in the build: "set screw", "idler 
 
 ## Rerun
 
-With a Groq key on your machine:
+With a Gemini key on your machine:
 
 ```bash
-export GROQ_API_KEY=gsk_...
+export GEMINI_API_KEY=AIza...
 python3 cube-mvp/tests/recipe_quality.py --steps
 ```
 

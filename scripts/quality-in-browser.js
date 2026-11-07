@@ -1,9 +1,9 @@
 // Run the recipe-quality material lists through the live site from your browser.
-// Use when the Groq key lives only in Cloudflare and recipe_quality.py can't call Groq directly.
+// Use when the Gemini key lives only in Cloudflare and recipe_quality.py can't call Gemini directly.
 //
 // 1. Open https://adipurohit.com/makeshift/ in Chrome.
 // 2. Open DevTools (Cmd+Option+J or Ctrl+Shift+J), paste this file into the Console, press Enter.
-// 3. Wait about 15 minutes. Calls run a minute apart to stay inside Groq's free tier.
+// 3. Wait about 15 minutes. Calls run a minute apart to stay inside Gemini's free tier.
 // 4. Results print as a table and are kept in window.qualityRun. Copy them with: copy(window.qualityRun)
 (async () => {
   const LISTS = [
