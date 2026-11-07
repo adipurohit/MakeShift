@@ -152,6 +152,7 @@ How the data works:
 - result_id: short snake_case, unique within the idea, and never equal to any given material id.
   result_name is the user-facing name. result_short is 2-3 uppercase letters.
 - Every result_id must be used: it must feed a later recipe or appear in final_requires. No dead-end recipes.
+- No two recipes in one idea may merge the same pair of inputs (order does not matter).
 - Each idea uses 2-8 of the given materials, has 2-6 recipes and 2-6 final_requires lines, with quantities 1-3.
 - Do NOT write assembly steps; only the recipe graph and final requirements. No HTML or markdown in any string.
 
@@ -258,6 +259,7 @@ def validate_idea(idea, material_ids):
     used_results = set()
     used_raw = set()
     recipes = []
+    seen_pairs = set()
     for n, r in enumerate(recipes_in, 1):
         if not isinstance(r, dict):
             problems.append(f"recipe {n} is not an object")
@@ -271,6 +273,13 @@ def validate_idea(idea, material_ids):
                 used_results.add(side)
             else:
                 used_raw.add(side)
+        # app.js findRecipe() matches the unordered pair with .find(), so a repeated pair makes the
+        # second result unreachable and the idea unbuildable (recipes/validate.py enforces the same).
+        pair = frozenset((a, b))
+        if pair in seen_pairs:
+            problems.append(f"recipe {n} repeats the pair {a!r} + {b!r}")
+            continue
+        seen_pairs.add(pair)
         if not isinstance(rid, str) or not re.fullmatch(r"[A-Za-z0-9_]{1,40}", rid or ""):
             problems.append(f"recipe {n} has an invalid result_id {rid!r}")
             continue

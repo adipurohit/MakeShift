@@ -1,5 +1,7 @@
 # Tasks 1 & 4: camera-scan test and recipe-quality pass
 
+Commands below run from the repo root, matching `recipes/README.md` and `TASKS.md`. Code lives in `cube-mvp/`; this doc sits at the root next to `PITCH.md` and `DEPLOYMENT.md`.
+
 **Status: code audit + fixes + test tooling are done. The two things that need real hardware / a real API key are NOT done.**
 This was worked in a sandbox with no camera, no browser and no `ANTHROPIC_API_KEY`, so nothing below claims a live
 camera capture or a real model output was observed.
@@ -9,11 +11,11 @@ camera capture or a real model output was observed.
 | | What | How |
 |---|---|---|
 | Task 1 | Live camera + vision test on a real device | Checklist at the bottom. ~10 minutes. |
-| Task 4 | Run the generator on real material lists and read the output | `python3 tests/recipe_quality.py --steps`, then read `recipe_quality_report.md` and tick the verdict boxes. Before/after prompt comparison needs this run (git-stash the prompt change to get the "before"). |
+| Task 4 | Run the generator on real material lists and read the output | `python3 cube-mvp/tests/recipe_quality.py --steps`, then read `cube-mvp/tests/recipe_quality_report.md` and tick the verdict boxes. Before/after prompt comparison needs this run (git-stash the prompt change to get the "before"). |
 
 ## Task 1: camera scan
 
-Verified here: (a) the scan state machine against a mocked camera/fetch in jsdom (`node tests/scan_logic.test.js`, 11 tests); (b) the full flow in a real headless Chromium using its synthetic camera (`python3 tests/scan_browser.py`: real `getUserMedia`, real frames, JPEG capture, downscale, retake, Esc/release, fallback). Neither is a physical webcam.
+Verified here: (a) the scan state machine against a mocked camera/fetch in jsdom (`cd cube-mvp && npm i --no-save jsdom && node tests/scan_logic.test.js`, 11 tests); (b) the full flow in a real headless Chromium using its synthetic camera (`python3 cube-mvp/tests/scan_browser.py`: real `getUserMedia`, real frames, JPEG capture, downscale, retake, Esc/release, fallback). Neither is a physical webcam.
 Run against the *old* `app.js` these tests fail 8 of 11; against the new code all pass.
 
 Bugs found by reading the code and fixed (`app.js` scan section, `server.py` identify endpoint):
@@ -38,14 +40,14 @@ Findings, each grounded in the code, not in observed model output:
 
 - **Prompt contradiction.** "More ambitious ones that would need a bit more material" conflicts with "never invent a material id". Ideas can only ask for *more units of the same materials*. Prompt now says so.
 - **Schema bounds not enforced.** `minItems: 6` / `maxItems` aren't enforced by constrained decoding (only minItems 0/1 is), and may be rejected outright depending on SDK handling. They are now moved into the field description (`api_schema()`) and enforced server-side.
-- **Validator trusted the model too much.** It didn't check: result ids colliding with material ids or each other (silently overwrites an item), dead-end recipes, quantities, duplicate ids/titles, recipe/line-item counts. `uses_material_ids` is used by `app.js` (`rawIdsForIdea`) to decide which ids are raw inventory, so one omission by the model would mis-namespace a raw material and break that idea. It is now recomputed from the recipe graph.
+- **Validator trusted the model too much.** It didn't check: repeated merge pairs (`app.js` `findRecipe` uses `.find()` on the unordered pair, so a repeat makes the second result unreachable; `recipes/validate.py` already enforces this for the offline pack), result ids colliding with material ids or each other (silently overwrites an item), dead-end recipes, quantities, duplicate ids/titles, recipe/line-item counts. `uses_material_ids` is used by `app.js` (`rawIdsForIdea`) to decide which ids are raw inventory, so one omission by the model would mis-namespace a raw material and break that idea. It is now recomputed from the recipe graph.
 - **Model text goes into `innerHTML`** in `app.js` (pitch, step text, item names). Server now strips markup from all model strings. (`app.js` itself still uses `innerHTML`; separate cleanup.)
 - **Steps prompt asked for "numbered" steps** but the UI numbers them → likely "1. 1. Glue…". Prompt now forbids numbering and the server strips it.
 - **Plausibility/safety gaps in the prompts:** no rule about broken parts ("Dead Nozzle" used as a working component), capabilities the parts can't provide (wifi, motors, light), salvaged lithium cells / PSUs / capacitors / microwave parts, load-bearing or safety items, or variety (six variants of one organizer). All added. Padding to 6 ideas when materials are scarce is now discouraged (server accepts fewer).
 - **Steps phase is blind to the recipe graph.** `app.js` sends sub-assembly *names* and final parts but not which part merges into which, so steps can't reliably follow build order. Fixing needs a small `app.js` change (include `recipes` in `brief`), which is outside task 4's file scope, so not done.
 
-Tests: `python3 tests/test_recipes.py` (15 offline tests for the validator, sanitizer, schema stripping, input checks).
-Harness: `tests/recipe_quality.py`: 12 scenarios built to stress different failure modes (hazardous parts, nearly-empty inventory, broken parts, etc.), heuristic flags, reviewer checkboxes.
+Tests: `python3 cube-mvp/tests/test_recipes.py` (15 offline tests for the validator, sanitizer, schema stripping, input checks).
+Harness: `cube-mvp/tests/recipe_quality.py`: 12 scenarios built to stress different failure modes (hazardous parts, nearly-empty inventory, broken parts, etc.), heuristic flags, reviewer checkboxes.
 
 Risk to watch on first real run: tighter prompts + stricter validation could lower the number of ideas that survive. The report prints returned vs. kept and every rejection reason so you can see if validation is too strict.
 

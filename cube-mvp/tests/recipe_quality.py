@@ -120,7 +120,7 @@ def main():
     ap.add_argument("--only", nargs="*", type=int, help="1-based scenario numbers")
     ap.add_argument("--steps", action="store_true", help="also generate assembly steps for each idea")
     ap.add_argument("--stub", action="store_true", help="no API calls; canned output to test the harness")
-    ap.add_argument("--out", default="recipe_quality_report.md")
+    ap.add_argument("--out", default=str(Path(__file__).resolve().parent / "recipe_quality_report.md"))
     args = ap.parse_args()
     if not args.stub and not __import__("os").environ.get("ANTHROPIC_API_KEY"):
         sys.exit("ANTHROPIC_API_KEY is not set (use --stub to test the harness without it).")
