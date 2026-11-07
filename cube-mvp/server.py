@@ -577,12 +577,16 @@ For each requested material, suggest realistic, low-cost places a maker could lo
 their own recycling, repair shops, community reuse centers, e-waste programs, thrift stores, maker spaces,
 schools or businesses that may give away clean offcuts. Hardware or craft stores are a last resort.
 
+- Lead with donor objects: the specific discarded things that usually contain this exact part, and where those
+  turn up. Good: "Dead flatbed scanner (stepper motor plus smooth rod), e-waste drop-off". Bad: "Thrift store".
 - Give place categories, not invented business names, addresses, live inventory, prices or availability claims.
 - Copy each input material name exactly into the corresponding `material` field.
 - Keep each place to a short phrase and give 2-4 distinct options where possible.
-- The salvage tip should say what discarded object may contain the part and what condition to inspect.
-- Always tell the maker to ask permission before taking materials. Never recommend trespassing, taking from
-  private bins, unsafe roadside scavenging, or opening mains power supplies, microwaves, CRTs, swollen
+- The salvage tip says how to get the part out of the donor object (which screws, which connector) and what
+  condition to check (rust, cracked housing, stiff bearings).
+- The app already reminds people to ask permission, once, at the top. Leave safety_note empty unless this part
+  has its own risk, like springs under tension, sharp sheet metal, or glass. Never recommend trespassing, taking
+  from private bins, unsafe roadside scavenging, or opening mains power supplies, microwaves, CRTs, swollen
   batteries, pressurized containers, or hazardous equipment.
 - Use the supplied project and quantities for context. No markdown or HTML in any string.
 """
@@ -709,6 +713,13 @@ def identify_material(data_url):
     return {"name": name, "confidence": confidence}
 
 
+# One canonical public URL. On Render (which sets RENDER=true on every service) the old
+# makeshift-cube-demo.onrender.com copy redirects every request to the Cloudflare site, so a judge can't
+# land on a copy with no AI and a cold start. CANONICAL_URL overrides the target; set it empty to serve.
+CANONICAL_URL = os.environ.get(
+    "CANONICAL_URL", "https://adipurohit.com/makeshift/" if os.environ.get("RENDER") else "").rstrip("/")
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(DIR), **kwargs)
@@ -716,7 +727,36 @@ class Handler(SimpleHTTPRequestHandler):
     def log_message(self, fmt, *args):
         print("[server]", fmt % args)
 
+    def _redirect_to_canonical(self):
+        if self.path == "/healthz":  # host health checks get a plain 200, never the redirect
+            body = b"ok"
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            if self.command != "HEAD":
+                self.wfile.write(body)
+            return True
+        if not CANONICAL_URL:
+            return False
+        # 308 keeps the method, so a stray POST to /api/... lands on the same endpoint there
+        self.send_response(308 if self.command == "POST" else 301)
+        self.send_header("Location", CANONICAL_URL + self.path)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+        return True
+
+    def do_GET(self):
+        if not self._redirect_to_canonical():
+            super().do_GET()
+
+    def do_HEAD(self):
+        if not self._redirect_to_canonical():
+            super().do_HEAD()
+
     def do_POST(self):
+        if self._redirect_to_canonical():
+            return
         routes = {
             "/api/generate-ideas": self._handle_generate_ideas,
             "/api/generate-steps": self._handle_generate_steps,

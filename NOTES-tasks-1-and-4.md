@@ -1,5 +1,7 @@
 # Tasks 1 & 4: camera-scan test and recipe-quality pass
 
+> **Historical note, updated 2026-11-07.** This file was written while the app used the Anthropic API. The app has since moved to Groq and then to Google Gemini (`GEMINI_API_KEY`, models in `cube-mvp/server.py`). Where this file says Anthropic or `ANTHROPIC_API_KEY`, read Gemini or `GEMINI_API_KEY`. The real-model quality run it asks for is done: see [docs/recipe-quality.md](docs/recipe-quality.md). The physical-webcam test is still open.
+
 Commands below run from the repo root, matching `recipes/README.md` and `TASKS.md`. Code lives in `cube-mvp/`; this doc sits at the root next to `PITCH.md` and `DEPLOYMENT.md`.
 
 **Status: code audit + fixes + test tooling are done. The two things that need real hardware / a real API key are NOT done.**
