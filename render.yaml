@@ -1,12 +1,12 @@
 # RETIRED as a demo URL. This service now redirects every request to the canonical site,
-# https://adipurohit.com/makeshift/ (see CANONICAL_URL in cube-mvp/server.py), so judges can't land on a
+# https://adipurohit.com/makeshift/ (see CANONICAL_URL in app/server.py), so judges can't land on a
 # copy with no AI and a cold start. Delete the service in the Render dashboard whenever convenient.
 services:
   - type: web
     name: makeshift-cube-demo
     runtime: python
     plan: free
-    rootDir: cube-mvp
+    rootDir: app
     buildCommand: pip install -r requirements.txt
     startCommand: python server.py
     healthCheckPath: /healthz

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-The Cloudflare Worker (worker/ai.js) must treat AI output exactly like cube-mvp/server.py.
+The Cloudflare Worker (worker/ai.js) must treat AI output exactly like app/server.py.
 
 1. worker/ai-config.json matches what scripts/export-ai-config.py generates from server.py,
    so both back ends send identical prompts and schemas.
 2. 500 generated model responses (valid, broken, and hostile) go through server.py's
    validate_and_clean / clean_steps / clean_text and the Worker's JS ports. Outputs must match.
 
-Usage: python3 cube-mvp/tests/worker_parity_test.py      (needs Node 18+)
+Usage: python3 app/tests/worker_parity_test.py      (needs Node 18+)
 Exit code 0 = in sync, 1 = drift found.
 """
 import importlib.util
@@ -19,7 +19,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "cube-mvp"))
+sys.path.insert(0, str(ROOT / "app"))
 import server  # noqa: E402
 
 spec = importlib.util.spec_from_file_location("export_ai_config", ROOT / "scripts" / "export-ai-config.py")
@@ -171,7 +171,7 @@ def main():
     else:
         print("[PASS] worker/ai-config.json matches server.py prompts, schemas, and limits")
 
-    app_js = (ROOT / "cube-mvp" / "app.js").read_text()
+    app_js = (ROOT / "app" / "app.js").read_text()
     want = "const HAZARDOUS_PART = new RegExp(" + json.dumps(server.PLAUSIBILITY["hazardous_part"]) + ', "i");'
     if want in app_js:
         print("[PASS] app.js hazardous-part warning matches server.py")

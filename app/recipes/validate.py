@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Validate cube-mvp/recipes/pack.json, the offline recipe pack.
+Validate app/recipes/pack.json, the offline recipe pack.
 
 Run after adding or editing a recipe:
-    python3 cube-mvp/recipes/validate.py
+    python3 app/recipes/validate.py
 
 Checks every recipe is playable in the app: each merge uses parts that exist,
 no two merges in one recipe share the same pair, every part and sub-assembly

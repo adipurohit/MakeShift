@@ -44,6 +44,8 @@ VISION_MODEL = os.environ.get("GEMINI_VISION_MODEL", TEXT_MODEL)
 # Gemini 3 Flash thinks at "medium" by default, which took 100+ s per request on the live site.
 # "low" is the floor for gemini-3.8-flash. Set GEMINI_THINKING_LEVEL=off to send no thinking setting.
 THINKING_LEVEL = os.environ.get("GEMINI_THINKING_LEVEL", "low")
+# When the main model is overloaded (Gemini answered "503: high demand" during testing), try this one once.
+FALLBACK_MODEL = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-3.6-flash")
 
 
 def gemini_client():
@@ -69,18 +71,21 @@ def chat_json(system, user, name, schema, max_tokens, model=None):
                 ))
         contents = [types.Content(role="user", parts=parts)]
 
-    response = gemini_client().models.generate_content(
-        model=model or TEXT_MODEL,
-        contents=contents,
-        config=types.GenerateContentConfig(
-            system_instruction=system,
-            max_output_tokens=max_tokens,
-            response_mime_type="application/json",
-            response_json_schema=api_schema(schema),
-            **thinking_config(types),
-        ),
+    config = types.GenerateContentConfig(
+        system_instruction=system,
+        max_output_tokens=max_tokens,
+        response_mime_type="application/json",
+        response_json_schema=api_schema(schema),
+        **thinking_config(types),
     )
-    return response
+    model = model or TEXT_MODEL
+    try:
+        return gemini_client().models.generate_content(model=model, contents=contents, config=config)
+    except Exception as e:
+        # Same rule as the Worker: an overloaded or rate-limited model gets one try on the backup model.
+        if getattr(e, "code", None) not in (429, 503) or not FALLBACK_MODEL or FALLBACK_MODEL in ("off", model):
+            raise
+        return gemini_client().models.generate_content(model=FALLBACK_MODEL, contents=contents, config=config)
 
 
 def thinking_config(types):
@@ -810,7 +815,7 @@ class Handler(SimpleHTTPRequestHandler):
                 return
             self._send_json(503, {
                 "error": "no_api_key",
-                "message": "No GEMINI_API_KEY configured on the server. Set it in cube-mvp/.env and restart the server, or use the offline example idea instead.",
+                "message": "No GEMINI_API_KEY configured on the server. Set it in app/.env and restart the server, or use the offline example idea instead.",
             })
             return
 
@@ -901,7 +906,7 @@ class Handler(SimpleHTTPRequestHandler):
         if code == 429:
             return "Rate limited by the Gemini API. Wait a moment and try again."
         if code in (401, 403) or (code == 400 and "api key" in detail.lower()):
-            return "The API key was rejected. Check GEMINI_API_KEY in cube-mvp/.env."
+            return "The API key was rejected. Check GEMINI_API_KEY in app/.env."
         if code == 404:
             return f"Gemini model not found ({detail}). Set GEMINI_TEXT_MODEL or GEMINI_VISION_MODEL to a current model."
         if isinstance(code, int):

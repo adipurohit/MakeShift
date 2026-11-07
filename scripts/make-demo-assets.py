@@ -2,7 +2,7 @@
 """
 Regenerate the README screenshots and the fallback demo video from the real app.
 
-Runs cube-mvp/server.py locally with AI off (the demo path that never needs Wi-Fi), then drives a
+Runs app/server.py locally with AI off (the demo path that never needs Wi-Fi), then drives a
 headless browser through the how-it-works screen, a full Robot Arm build, the 3D view, the assembly
 guide, and catalog matching for a typed-in inventory. Writes:
 
@@ -21,7 +21,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-APP = ROOT / "cube-mvp"
+APP = ROOT / "app"
 DOCS = ROOT / "docs"
 SHOTS = DOCS / "screenshots"
 PORT = 8743
@@ -122,7 +122,7 @@ def main():
             video = page.video.path()
             ctx.close()
 
-            phone = browser.new_context(viewport={"width": 390, "height": 844}, color_scheme="dark", device_scale_factor=2)
+            phone = browser.new_context(viewport={"width": 390, "height": 844}, color_scheme="dark")
             p2 = phone.new_page()
             p2.goto(BASE)
             p2.evaluate("localStorage.setItem('makeshift_intro_seen', '1')")

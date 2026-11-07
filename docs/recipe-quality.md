@@ -2,7 +2,7 @@
 
 **Question:** Are the AI recipes any good? Until this run, every AI test used a stand-in server, so nobody knew.
 
-**Method:** The 12 material lists in `cube-mvp/tests/recipe_quality.py` ran through the live site (adipurohit.com/makeshift), so through the real Groq model (`openai/gpt-oss-120b`) with the production prompts. The run produced 120 ideas plus step guides for 4 of them. Groq's free tier refused about half the first attempts with its own rate limit, so the run paced the remaining lists a minute apart. One reviewer (Claude) read every idea.
+**Method:** The 12 material lists in `app/tests/recipe_quality.py` ran through the live site (adipurohit.com/makeshift), so through the real Groq model (`openai/gpt-oss-120b`) with the production prompts. The run produced 120 ideas plus step guides for 4 of them. Groq's free tier refused about half the first attempts with its own rate limit, so the run paced the remaining lists a minute apart. One reviewer (Claude) read every idea.
 
 ## Results
 
@@ -50,7 +50,7 @@ With a Gemini key on your machine:
 
 ```bash
 export GEMINI_API_KEY=AIza...
-python3 cube-mvp/tests/recipe_quality.py --steps
+python3 app/tests/recipe_quality.py --steps
 ```
 
 Without the key (it lives only in Cloudflare): open adipurohit.com/makeshift, open the browser console, paste `scripts/quality-in-browser.js`, and wait about 15 minutes. It paces calls a minute apart to stay inside the free tier.

@@ -87,6 +87,10 @@ export default {
       });
     }
 
+    // aiEnv carries the bindings plus a trace of which Gemini model answered (the backup model may step in).
+    const trace = [];
+    const aiEnv = Object.assign(Object.create(env), { __trace: trace });
+    const model = () => trace[trace.length - 1];
     try {
       if (match[1] === "generate-ideas") {
         const materials = cleanMaterials(body.materials);
@@ -95,31 +99,31 @@ export default {
         const cacheKey = await ideasCacheKey(url, materials);
         const cached = await cacheGet(cacheKey);
         if (cached) return json(200, { ...cached, cached: true });
-        const ideas = await generateIdeas(env, materials);
-        if (ideas.length) await cachePut(cacheKey, { ideas });
+        const ideas = await generateIdeas(aiEnv, materials);
+        if (ideas.length) await cachePut(cacheKey, { ideas, model: model() });
         if (!ideas.length) {
           return json(502, { error: "no_valid_ideas", message: "The model's response didn't validate cleanly. Try again, or use the offline example idea." });
         }
-        return json(200, { ideas });
+        return json(200, { ideas, model: model() });
       }
       if (match[1] === "generate-steps") {
         const brief = body.idea;
         if (!brief || typeof brief !== "object" || Array.isArray(brief)) {
           return json(400, { error: "bad_request", message: "Missing idea details." });
         }
-        const steps = await generateSteps(env, brief);
+        const steps = await generateSteps(aiEnv, brief);
         if (!steps.length) return json(502, { error: "no_steps", message: "Couldn't generate assembly steps. Try again." });
-        return json(200, { assembly_steps: steps });
+        return json(200, { assembly_steps: steps, model: model() });
       }
       if (match[1] === "suggest-sources") {
         const materials = cleanSourceMaterials(body.materials);
         if (!materials.length) return json(400, { error: "no_materials", message: "No needed materials were provided." });
-        const suggestions = await generateSourceSuggestions(env, body.project, materials);
+        const suggestions = await generateSourceSuggestions(aiEnv, body.project, materials);
         if (!suggestions.length) return json(502, { error: "no_suggestions", message: "Couldn't generate sourcing suggestions. Try again." });
-        return json(200, { suggestions });
+        return json(200, { suggestions, model: model() });
       }
       if (!body.image) return json(400, { error: "bad_request", message: "No image provided." });
-      return json(200, await identifyMaterial(env, body.image));
+      return json(200, { ...(await identifyMaterial(aiEnv, body.image)), model: model() });
     } catch (e) {
       if (e instanceof BadImage) return json(400, { error: "bad_image", message: e.message });
       if (e instanceof BusyError) return json(503, { error: "ai_busy", message: e.message });

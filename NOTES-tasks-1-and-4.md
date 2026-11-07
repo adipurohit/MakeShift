@@ -1,8 +1,8 @@
 # Tasks 1 & 4: camera-scan test and recipe-quality pass
 
-> **Historical note, updated 2026-11-07.** This file was written while the app used the Anthropic API. The app has since moved to Groq and then to Google Gemini (`GEMINI_API_KEY`, models in `cube-mvp/server.py`). Where this file says Anthropic or `ANTHROPIC_API_KEY`, read Gemini or `GEMINI_API_KEY`. The real-model quality run it asks for is done: see [docs/recipe-quality.md](docs/recipe-quality.md). The physical-webcam test is still open.
+> **Historical note, updated 2026-11-07.** This file was written while the app used the Anthropic API. The app has since moved to Groq and then to Google Gemini (`GEMINI_API_KEY`, models in `app/server.py`). Where this file says Anthropic or `ANTHROPIC_API_KEY`, read Gemini or `GEMINI_API_KEY`. The real-model quality run it asks for is done: see [docs/recipe-quality.md](docs/recipe-quality.md). The physical-webcam test is still open.
 
-Commands below run from the repo root, matching `recipes/README.md` and `TASKS.md`. Code lives in `cube-mvp/`; this doc sits at the root next to `PITCH.md` and `DEPLOYMENT.md`.
+Commands below run from the repo root, matching `recipes/README.md` and `TASKS.md`. Code lives in `app/`; this doc sits at the root next to `PITCH.md` and `DEPLOYMENT.md`.
 
 **Status: code audit + fixes + test tooling are done. The two things that need real hardware / a real API key are NOT done.**
 This was worked in a sandbox with no camera, no browser and no `ANTHROPIC_API_KEY`, so nothing below claims a live
@@ -15,11 +15,11 @@ Follow-up verification on 2026-11-07 ran all 11 scan-state tests, all 10 synthet
 | | What | How |
 |---|---|---|
 | Task 1 | Live camera + vision test on a real device | Checklist at the bottom. ~10 minutes. |
-| Task 4 | Run the generator on real material lists and read the output | `python3 cube-mvp/tests/recipe_quality.py --steps`, then read `cube-mvp/tests/recipe_quality_report.md` and tick the verdict boxes. Before/after prompt comparison needs this run (git-stash the prompt change to get the "before"). |
+| Task 4 | Run the generator on real material lists and read the output | `python3 app/tests/recipe_quality.py --steps`, then read `app/tests/recipe_quality_report.md` and tick the verdict boxes. Before/after prompt comparison needs this run (git-stash the prompt change to get the "before"). |
 
 ## Task 1: camera scan
 
-Verified here: (a) the scan state machine against a mocked camera/fetch in jsdom (`cd cube-mvp && npm i --no-save jsdom && node tests/scan_logic.test.js`, 11 tests); (b) the full flow in a real headless Chromium using its synthetic camera (`python3 cube-mvp/tests/scan_browser.py`: real `getUserMedia`, real frames, JPEG capture, downscale, retake, Esc/release, fallback). Neither is a physical webcam.
+Verified here: (a) the scan state machine against a mocked camera/fetch in jsdom (`cd app && npm i --no-save jsdom && node tests/scan_logic.test.js`, 11 tests); (b) the full flow in a real headless Chromium using its synthetic camera (`python3 app/tests/scan_browser.py`: real `getUserMedia`, real frames, JPEG capture, downscale, retake, Esc/release, fallback). Neither is a physical webcam.
 Run against the *old* `app.js` these tests fail 8 of 11; against the new code all pass.
 
 Bugs found by reading the code and fixed (`app.js` scan section, `server.py` identify endpoint):
@@ -50,8 +50,8 @@ Findings, each grounded in the code, not in observed model output:
 - **Plausibility/safety gaps in the prompts:** no rule about broken parts ("Dead Nozzle" used as a working component), capabilities the parts can't provide (wifi, motors, light), salvaged lithium cells / PSUs / capacitors / microwave parts, load-bearing or safety items, or variety (six variants of one organizer). All added. Padding to 6 ideas when materials are scarce is now discouraged (server accepts fewer).
 - **Steps phase was blind to the recipe graph.** `app.js` now sends an ordered, human-readable `recipe_graph` with each steps request, and the steps prompt explicitly follows that graph so results are not described before their inputs exist.
 
-Tests: `python3 cube-mvp/tests/test_recipes.py` (16 offline tests for the validator, sanitizer, schema stripping, input checks).
-Harness: `cube-mvp/tests/recipe_quality.py`: 12 scenarios built to stress different failure modes (hazardous parts, nearly-empty inventory, broken parts, etc.), heuristic flags, reviewer checkboxes.
+Tests: `python3 app/tests/test_recipes.py` (16 offline tests for the validator, sanitizer, schema stripping, input checks).
+Harness: `app/tests/recipe_quality.py`: 12 scenarios built to stress different failure modes (hazardous parts, nearly-empty inventory, broken parts, etc.), heuristic flags, reviewer checkboxes.
 
 Risk to watch on first real run: tighter prompts + stricter validation could lower the number of ideas that survive. The report prints returned vs. kept and every rejection reason so you can see if validation is too strict.
 

@@ -6,15 +6,15 @@ The browser app (`index.html`, `app.js`, `parts.js`, `style.css`, `recipes/pack.
 
 Only the AI features need a back end: camera scan, AI ideas, AI steps, and AI sourcing. Two back ends answer the same four endpoints:
 
-| | Cloudflare Worker (`worker/`) | Python server (`cube-mvp/server.py`) |
+| | Cloudflare Worker (`worker/`) | Python server (`app/server.py`) |
 |---|---|---|
 | Used for | The public site, adipurohit.com/makeshift | Local development, with no Cloudflare account |
-| Key lives in | Worker secret `GEMINI_API_KEY` | `cube-mvp/.env` |
+| Key lives in | Worker secret `GEMINI_API_KEY` | `app/.env` |
 | Extras | Idea cache, per-session and per-network rate limits, origin check | None |
 
 ## Why the logic exists twice, and how it stays in sync
 
-The critique is right that this is duplicated logic. Cloudflare Workers run JavaScript, not Python, and the team prototypes in Python, so both exist. Three things keep them from drifting:
+This is duplicated logic, on purpose. Cloudflare Workers run JavaScript, not Python, and the team prototypes in Python, so both exist. Three things keep them from drifting:
 
 1. **One source for prompts and schemas.** `server.py` owns every prompt, schema, and limit. `scripts/export-ai-config.py` writes them to `worker/ai-config.json`, which the Worker imports. Nobody edits the JSON by hand.
 2. **A parity test.** `tests/worker_parity_test.py` fails if the JSON is out of date, and feeds 500 generated model responses through both validators, requiring identical output.

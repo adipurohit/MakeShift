@@ -7,10 +7,10 @@ checks the server uses, adds heuristic red flags, and writes a markdown report f
 judge ("would this actually work / is it safe / is it boring"). The flags only point at what to read first;
 they do not replace reading.
 
-    export GEMINI_API_KEY=...            # or put it in cube-mvp/.env
-    python3 cube-mvp/tests/recipe_quality.py                       # all 12 lists -> recipe_quality_report.md
-    python3 cube-mvp/tests/recipe_quality.py --only 3 7 --steps    # subset, also generate assembly steps
-    python3 cube-mvp/tests/recipe_quality.py --stub                # no API: checks the harness itself
+    export GEMINI_API_KEY=...            # or put it in app/.env
+    python3 app/tests/recipe_quality.py                       # all 12 lists -> recipe_quality_report.md
+    python3 app/tests/recipe_quality.py --only 3 7 --steps    # subset, also generate assembly steps
+    python3 app/tests/recipe_quality.py --stub                # no API: checks the harness itself
 
 Needs: pip install -r requirements.txt   (not needed for --stub)
 """
@@ -91,15 +91,20 @@ def flags_for(idea, materials):
     return flags
 
 
-def stub_generate(materials):
+def stub_generate(materials, rejected):
+    """Canned output: one plain idea that should pass, and one implausible idea the validator must reject."""
     ids = [m["id"] for m in materials]
     if len(ids) < 2:
-        return []
-    return server.validate_and_clean({"ideas": [{
-        "id": "stub", "title": "Stub Winch", "pitch": "A motorized winch with wifi.",
-        "recipes": [{"a": ids[0], "b": ids[1], "result_id": "unit", "result_name": "Motor Unit", "result_short": "MU"}],
-        "final_requires": [{"id": "unit", "qty": 2}, {"id": ids[0], "qty": 1}],
-    }]}, materials)
+        return [], 0
+    ideas = [
+        {"id": "stub_stand", "title": "Stub Stand", "pitch": "A simple stand made by joining two parts.",
+         "recipes": [{"a": ids[0], "b": ids[1], "result_id": "base", "result_name": "Base", "result_short": "BA"}],
+         "final_requires": [{"id": "base", "qty": 1}]},
+        {"id": "stub", "title": "Stub Winch", "pitch": "A motorized winch with wifi.",
+         "recipes": [{"a": ids[0], "b": ids[1], "result_id": "unit", "result_name": "Motor Unit", "result_short": "MU"}],
+         "final_requires": [{"id": "unit", "qty": 2}, {"id": ids[0], "qty": 1}]},
+    ]
+    return server.validate_and_clean({"ideas": ideas}, materials, rejected), len(ideas)
 
 
 def real_generate(materials, rejected):
@@ -131,7 +136,7 @@ def main():
         rejected = []
         try:
             if args.stub:
-                ideas, returned = stub_generate(materials), 1
+                ideas, returned = stub_generate(materials, rejected)
             else:
                 ideas, returned = real_generate(materials, rejected)
         except Exception as e:  # noqa: BLE001

@@ -1,6 +1,6 @@
 // Exercises the camera-scan state machine in app.js against a mocked camera + fetch (jsdom).
 // Not a substitute for a real-device test, but it covers the permission/race/timeout paths.
-//   cd cube-mvp && npm i --no-save jsdom && node tests/scan_logic.test.js
+//   cd app && npm i --no-save jsdom && node tests/scan_logic.test.js
 const fs = require("fs"), path = require("path"), assert = require("assert");
 const { JSDOM } = require("jsdom");
 

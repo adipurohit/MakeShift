@@ -6,7 +6,7 @@ Runs the local server with no API key, adds a few everyday parts (plural, lowerc
 type them), and checks the matching recipe rises to the top of Catalog matches and the catalog,
 with a parts badge, while the AI panel reports it is off.
 
-Usage: python3 cube-mvp/tests/catalog_match_test.py
+Usage: python3 app/tests/catalog_match_test.py
 Exit code 0 = all checks passed, 1 = at least one failure.
 """
 import socket

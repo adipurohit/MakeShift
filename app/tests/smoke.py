@@ -7,11 +7,11 @@ headless browser through the offline Robot Arm demo path (no API key needed):
 select recipe, craft every sub-assembly in the 2D bench, Build, check off
 steps, upload a photo, mark complete. Fails on any page console error.
 
-Usage (from the repo root or cube-mvp/):
-    python3 cube-mvp/tests/smoke.py            # offline mode, key forced off
-    python3 cube-mvp/tests/smoke.py --with-ai  # also call /api/generate-ideas with your real key
-    python3 cube-mvp/tests/smoke.py --headed   # watch the browser
-    python3 cube-mvp/tests/smoke.py --base-url https://example.onrender.com  # test a deployment
+Usage (from the repo root or app/):
+    python3 app/tests/smoke.py            # offline mode, key forced off
+    python3 app/tests/smoke.py --with-ai  # also call /api/generate-ideas with your real key
+    python3 app/tests/smoke.py --headed   # watch the browser
+    python3 app/tests/smoke.py --base-url https://example.onrender.com  # test a deployment
 
 Needs: pip install playwright && python3 -m playwright install chromium
 (If Playwright is missing, the HTTP checks still run and browser checks are skipped.)
@@ -93,7 +93,7 @@ def start_server(with_ai):
     env = os.environ.copy()
     env["PORT"] = str(PORT)
     if not with_ai:
-        # An empty value wins over cube-mvp/.env (load_dotenv skips keys already set),
+        # An empty value wins over app/.env (load_dotenv skips keys already set),
         # so the server runs in no-key mode without touching your .env.
         env["GEMINI_API_KEY"] = ""
     proc = subprocess.Popen(

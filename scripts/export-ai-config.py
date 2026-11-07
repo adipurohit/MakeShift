@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export the AI prompts, schemas, and limits from cube-mvp/server.py to worker/ai-config.json.
+"""Export the AI prompts, schemas, and limits from app/server.py to worker/ai-config.json.
 
 server.py is the single source of truth. The Cloudflare Worker reads the exported JSON, so
 both back ends send the model identical prompts. Run this after editing a prompt or schema:
@@ -19,15 +19,16 @@ OUT = ROOT / "worker" / "ai-config.json"
 
 
 def build():
-    for key in ("GEMINI_TEXT_MODEL", "GEMINI_VISION_MODEL", "GEMINI_THINKING_LEVEL"):
+    for key in ("GEMINI_TEXT_MODEL", "GEMINI_VISION_MODEL", "GEMINI_THINKING_LEVEL", "GEMINI_FALLBACK_MODEL"):
         os.environ.pop(key, None)
-    sys.path.insert(0, str(ROOT / "cube-mvp"))
+    sys.path.insert(0, str(ROOT / "app"))
     import server  # noqa: E402
 
     return {
-        "_note": "Generated from cube-mvp/server.py by scripts/export-ai-config.py. Do not edit by hand.",
+        "_note": "Generated from app/server.py by scripts/export-ai-config.py. Do not edit by hand.",
         "text_model": server.TEXT_MODEL,
         "thinking_level": server.THINKING_LEVEL,
+        "fallback_model": server.FALLBACK_MODEL,
         "vision_model": server.VISION_MODEL,
         "idea_system_prompt": server.IDEA_SYSTEM_PROMPT,
         "steps_system_prompt": server.STEPS_SYSTEM_PROMPT,
