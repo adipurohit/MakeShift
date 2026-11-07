@@ -32,9 +32,11 @@ def build():
         "vision_model": default("GROQ_VISION_MODEL"),
         "idea_system_prompt": server.IDEA_SYSTEM_PROMPT,
         "steps_system_prompt": server.STEPS_SYSTEM_PROMPT,
+        "sources_system_prompt": server.SOURCES_SYSTEM_PROMPT,
         "identify_system_prompt": server.IDENTIFY_SYSTEM_PROMPT,
         "idea_schema": server.api_schema(server.IDEA_SCHEMA),
         "steps_schema": server.api_schema(server.STEPS_SCHEMA),
+        "sources_schema": server.api_schema(server.SOURCES_SCHEMA),
         "identify_schema": server.api_schema(server.IDENTIFY_SCHEMA),
         "limits": {
             "min_ideas": server.MIN_IDEAS,

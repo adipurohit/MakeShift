@@ -120,6 +120,18 @@ class HelperTests(unittest.TestCase):
         self.assertEqual(server.clean_steps(steps), ["Glue the tube.", "Tie it", "Test gently", "Done"])
         self.assertEqual(len(server.clean_steps(["x"] * 20)), 9)
 
+    def test_source_suggestions_are_sanitized_and_scoped(self):
+        data = {"suggestions": [
+            {"material": "Cardboard", "places": ["<b>Reuse center</b>", "Reuse center", "Frame shop"],
+             "salvage_tip": "Use a <script>bad</script> clean box.", "safety_note": "Ask first."},
+            {"material": "Invented part", "places": ["Nowhere"], "salvage_tip": "", "safety_note": ""},
+        ]}
+        out = server.clean_source_suggestions(data, ["Cardboard"])
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["material"], "Cardboard")
+        self.assertEqual(out[0]["places"], ["Reuse center", "Frame shop"])
+        self.assertNotIn("<", out[0]["salvage_tip"])
+
     def test_identify_input_checks(self):
         for bad in (None, "", "not a data url", "data:text/html;base64,AAAA", "data:image/svg+xml;base64,AAAA"):
             with self.assertRaises(ValueError):
