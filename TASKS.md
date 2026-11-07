@@ -20,14 +20,14 @@ Work breakdown for the MakeShift demo (`app/`) so teammates and agents can pick 
 | 2 | Real part icons | Done (PR #6). |
 | 3 | 3D shapes per category | Done (PR #6). |
 | 4 | Recipe quality pass | Real-model run done: 120 ideas from `gpt-oss-120b`, report in [docs/recipe-quality.md](docs/recipe-quality.md). New plausibility checks reject 25 (hazardous parts, projectiles, unpowered motors, fake lights). **Still open:** re-measure step guides after the parts-list fix; about 15% of kept ideas are physically doubtful and need a judge pass or human review. |
-| 5 | Smoke test | Done. `smoke.py` passes 28/28 locally. Ten suites in total, listed in the README. |
+| 5 | Smoke test | Done. `smoke.py` passes 29/29 locally. Eleven suites in total, listed in the README; the Worker suite runs the app under /makeshift/ against a stand-in Gemini that rejects malformed requests like the real one. |
 | 6 | Hosted deploy | Done. One public URL: [adipurohit.com/makeshift](https://adipurohit.com/makeshift) on Cloudflare, AI via the `GEMINI_API_KEY` Worker secret. The old Render URL redirects there. **Open:** set a spending cap on the Gemini key. |
 | 7 | Pitch narrative | Draft done (`PITCH.md`); the complete deterministic UI path passes its automated rehearsal under 3:30. **Still open:** presenters rehearse the spoken delivery on the presentation laptop. |
 | 8 | Mobile + accessibility | Done. No horizontal overflow at 390px. |
 | - | Offline demo bug fixes | Done (PR #4). |
-| - | Offline recipe pack | Done. 100 recipes in `app/recipes/pack.json`, all verified by `app/tests/pack_test.py`. 16 deepened to 5 steps; catapult and stilts replaced. Ranked by the user's parts in Catalog matches, with no AI. |
+| - | Offline recipe pack | Done. 100 recipes in `app/recipes/pack.json`, all verified by `app/tests/pack_test.py`. 18 have 5+ measured steps (Robot Arm has 9); catapult and stilts replaced. Ranked by the user's parts in Catalog matches, with no AI. **Open:** 82 recipes still have 3 steps and 40 use a single merge; deepen them as time allows. |
 | - | Real-user testing | **Open.** Run [docs/user-testing.md](docs/user-testing.md) with 3-5 people and put their quotes in PITCH.md. |
-| - | Scan accuracy | **Open.** Photograph 30 real scrap items, then run `app/tests/scan_accuracy.py` (see the script). |
+| - | Scan accuracy | **Open.** Photograph 30 real scrap items, name each file after the item, then run `python3 scripts/scan_accuracy.py <folder>`. It reports top-1 accuracy and every miss. |
 
 ---
 
