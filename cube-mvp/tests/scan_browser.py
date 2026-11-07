@@ -45,6 +45,7 @@ try:
         page.route("**/api/identify-material", identify)
         page.goto(f"http://localhost:{PORT}/")
         page.evaluate("localStorage.clear()"); page.reload()
+        page.evaluate("localStorage.setItem('makeshift_intro_seen', '1')"); page.reload()  # skip the how-it-works screen
 
         page.click("#scanBtn")
         page.wait_for_function("document.getElementById('scanVideo').videoWidth > 0", timeout=8000)
@@ -78,7 +79,7 @@ try:
         page.route("**/api/identify-material", lambda r: r.abort())
         page.click("#scanBtn"); page.wait_for_function("document.getElementById('scanVideo').videoWidth > 0")
         page.click("#captureBtn"); page.wait_for_selector("#manualAddPanel:not([hidden])", timeout=5000)
-        check("reach the CUBE server" in page.inner_text("#scanStatus"), "unreachable server falls back to manual entry with a clear message")
+        check("reach the MakeShift server" in page.inner_text("#scanStatus"), "unreachable server falls back to manual entry with a clear message")
         check(not errors, "no console/page errors", "; ".join(errors)[:200])
         browser.close()
 finally:

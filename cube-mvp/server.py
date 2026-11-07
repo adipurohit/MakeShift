@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CUBE backend: serves the static demo files and exposes the AI endpoints, so the
+MakeShift backend: serves the static demo files and exposes the AI endpoints, so the
 Anthropic API key never reaches the browser.
 
   POST /api/generate-ideas    materials -> a catalog of buildable project ideas (no steps yet)
@@ -136,7 +136,7 @@ IDEA_SCHEMA = {
     "additionalProperties": False,
 }
 
-IDEA_SYSTEM_PROMPT = """You are the idea engine inside CUBE, a scrap-to-creation sandbox for makers.
+IDEA_SYSTEM_PROMPT = """You are the idea engine inside MakeShift, a scrap-to-creation sandbox for makers.
 Given the raw materials someone has on hand, propose a CATALOG of distinct projects a person could
 really build from them using ordinary hand tools (scissors, craft knife, screwdriver, pliers) and common
 consumables (tape, glue, string, screws). Those tools and consumables are ALWAYS assumed to be available;
@@ -385,7 +385,7 @@ STEPS_SCHEMA = {
     "additionalProperties": False,
 }
 
-STEPS_SYSTEM_PROMPT = """You write physical assembly instructions for CUBE, a scrap-to-creation sandbox.
+STEPS_SYSTEM_PROMPT = """You write physical assembly instructions for MakeShift, a scrap-to-creation sandbox.
 Given one project (name, pitch, the sub-assemblies it is built from, and the final parts list), write 4-9
 short, concrete steps in plain imperative language, in the order a maker would really do them.
 
@@ -631,5 +631,5 @@ class Handler(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     has_key = bool(os.environ.get("ANTHROPIC_API_KEY"))
-    print(f"CUBE server on http://localhost:{PORT}  (ANTHROPIC_API_KEY {'found' if has_key else 'NOT found — AI features will be unavailable, offline example still works'})")
+    print(f"MakeShift server on http://localhost:{PORT}  (ANTHROPIC_API_KEY {'found' if has_key else 'NOT found — AI features will be unavailable, offline example still works'})")
     ThreadingHTTPServer(("", PORT), Handler).serve_forever()
