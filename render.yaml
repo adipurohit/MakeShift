@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: makeshift-cube-demo
+    runtime: python
+    plan: free
+    rootDir: cube-mvp
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    healthCheckPath: /
+    autoDeployTrigger: commit
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
