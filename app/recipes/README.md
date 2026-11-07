@@ -24,6 +24,6 @@ A merge input is a raw part id or a `result_id` from an earlier merge in the sam
 ## Add or edit a recipe
 
 1. Edit `pack.json`.
-2. Run `python3 cube-mvp/recipes/validate.py`. The validator checks every merge uses real parts, no pair repeats, every part gets used, and the raw counts cover the build.
-3. Run `python3 cube-mvp/tests/pack_test.py <your_recipe_id>` to build the recipe in a headless browser.
+2. Run `python3 app/recipes/validate.py`. The validator checks every merge uses real parts, no pair repeats, every part gets used, and the raw counts cover the build.
+3. Run `python3 app/tests/pack_test.py <your_recipe_id>` to build the recipe in a headless browser.
 4. Reload the app. The recipe shows in the catalog under its category.

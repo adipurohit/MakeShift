@@ -7,7 +7,7 @@ encoding. The /api/identify-material reply is stubbed, so no API key is needed.
 This is not a physical-webcam test (no real lens, lighting or OS permission prompt), but it proves the
 whole front-end path works against a genuine MediaStream.
 
-    python3 cube-mvp/tests/scan_browser.py
+    python3 app/tests/scan_browser.py
 """
 import base64, json, subprocess, sys, time, urllib.request, os
 from pathlib import Path

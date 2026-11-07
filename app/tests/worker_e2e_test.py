@@ -8,7 +8,7 @@ reaches the Worker and gets a cleaned answer, ideas, steps, and source suggestio
 sends Gemini the right key, model, and schema, and the guards work (no key, wrong origin,
 bad image, rate limit).
 
-Usage: python3 cube-mvp/tests/worker_e2e_test.py
+Usage: python3 app/tests/worker_e2e_test.py
 Needs: Node 18+, `npx wrangler` (or WRANGLER=/path/to/wrangler), Playwright with Chromium.
 Exit code 0 = all checks passed, 1 = at least one failure.
 """
@@ -32,7 +32,7 @@ WRANGLER = os.environ.get("WRANGLER") or shutil.which("wrangler") or "npx wrangl
 results = []
 gemini_calls = []
 # reject_json_schema: act like a Gemini that doesn't know responseJsonSchema, to exercise the fallback
-gemini_mode = {"reject_json_schema": False, "reject_thinking": False}
+gemini_mode = {"reject_json_schema": False, "reject_thinking": False, "overloaded": set()}
 
 
 def schema_of(body):
@@ -76,6 +76,15 @@ class FakeGemini(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(b'{"error": {"message": "rate limit"}}')
+            return
+        if any(m in self.path for m in gemini_mode["overloaded"]):  # like Google's "high demand" answer
+            out = json.dumps({"error": {"code": 503, "status": "UNAVAILABLE", "message":
+                              "This model is currently experiencing high demand. Please try again later."}}).encode()
+            self.send_response(503)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(out)))
+            self.end_headers()
+            self.wfile.write(out)
             return
         gc = body["generationConfig"]
         # Like the real API: the OpenAPI-subset field rejects JSON Schema keys such as additionalProperties.
@@ -261,7 +270,8 @@ def main():
         check(status == 200 and len(gemini_calls) - before == 2, "a Gemini rate limit is retried once and then succeeds", f"{status}, {len(gemini_calls) - before} calls")
         gemini_429["left"] = 2
         status, data = post(port, "/makeshift/api/generate-steps", {"idea": {"title": "Busy"}})
-        check(status == 503 and data.get("error") == "ai_busy", "two Gemini rate limits in a row report the AI as busy", f"{status} {data.get('error')}")
+        check(status == 200 and data.get("model") == "gemini-3.6-flash",
+              "two Gemini rate limits in a row hand the request to the backup model", f"{status}, model {data.get('model')}")
 
         # Every request so far used the JSON-schema field; the live 400 came from the OpenAPI-subset field.
         check(all("responseJsonSchema" in c["body"]["generationConfig"] for c in gemini_calls[:before]),
@@ -285,6 +295,19 @@ def main():
         check(status == 200 and len(gemini_calls) - before == 2 and "thinkingConfig" not in retry,
               "if a model rejects the thinking setting, the Worker retries without it", f"{status}, {len(gemini_calls) - before} calls")
         gemini_mode["reject_thinking"] = False
+
+        gemini_mode["overloaded"] = {"gemini-3.8-flash"}
+        before = len(gemini_calls)
+        status, data = post(port, "/makeshift/api/generate-steps", {"idea": {"title": "Overloaded"}})
+        paths = [c["path"] for c in gemini_calls[before:]]
+        check(status == 200 and data.get("model") == "gemini-3.6-flash" and len(paths) == 2 and "gemini-3.6-flash" in paths[1],
+              "when the main model is overloaded, the backup model answers", f"{status}, model {data.get('model')}")
+        gemini_mode["overloaded"] = {"gemini-3.8-flash", "gemini-3.6-flash"}
+        status, data = post(port, "/makeshift/api/generate-steps", {"idea": {"title": "All overloaded"}})
+        check(status == 503 and data.get("error") == "ai_busy" and "Catalog matches still work" in data.get("message", "")
+              and "Gemini API error" not in data.get("message", ""),
+              "when both are overloaded, the app gets a plain busy message, not a raw API error", data.get("message", ""))
+        gemini_mode["overloaded"] = set()
         gemini_429["left"] = 0
 
         status, data = post(port, "/makeshift/api/identify-material", {"image": "data:image/png;base64,AAAA"}, origin=None)

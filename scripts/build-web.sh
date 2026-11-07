@@ -6,7 +6,7 @@ set -e
 OUT=dist/makeshift
 rm -rf dist
 mkdir -p "$OUT/vendor" "$OUT/recipes"
-cp cube-mvp/index.html cube-mvp/app.js cube-mvp/parts.js cube-mvp/style.css "$OUT/"
-cp cube-mvp/vendor/three.module.js cube-mvp/vendor/OrbitControls.js "$OUT/vendor/"
-cp cube-mvp/recipes/pack.json "$OUT/recipes/"
+cp app/index.html app/app.js app/parts.js app/style.css "$OUT/"
+cp app/vendor/three.module.js app/vendor/OrbitControls.js "$OUT/vendor/"
+cp app/recipes/pack.json "$OUT/recipes/"
 echo "Built $OUT"

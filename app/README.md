@@ -14,7 +14,7 @@ Selecting a recipe (left, right, or the pinned offline example) sets it as the a
 ## One-time setup: your API key
 
 ```bash
-cd cube-mvp
+cd app
 cp .env.example .env
 open -e .env
 ```
@@ -26,7 +26,7 @@ Paste your real Gemini API key from [Google AI Studio](https://aistudio.google.c
 ## Run it
 
 ```bash
-cd cube-mvp
+cd app
 python3 server.py
 ```
 

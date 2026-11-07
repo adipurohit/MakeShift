@@ -29,22 +29,22 @@ Without the secret, the catalog recipes work and the AI features show a short no
 
 Set a spending limit on the key in the Google AI Studio. Anyone who opens the site uses your key through the Worker, within the rate limit above.
 
-Optional variables (type **Text**): `GEMINI_TEXT_MODEL` and `GEMINI_VISION_MODEL` override the models, same as in `cube-mvp/.env`.
+Optional variables (type **Text**): `GEMINI_TEXT_MODEL` and `GEMINI_VISION_MODEL` override the models, same as in `app/.env`.
 
 ### Change a prompt
 
-Edit the prompt in `cube-mvp/server.py`, then run:
+Edit the prompt in `app/server.py`, then run:
 
 ```bash
 python3 scripts/export-ai-config.py
 ```
 
-`cube-mvp/tests/worker_parity_test.py` fails if you forget, and checks the Worker and `server.py` treat AI output identically.
+`app/tests/worker_parity_test.py` fails if you forget, and checks the Worker and `server.py` treat AI output identically.
 
 ### Test the Worker locally
 
 ```bash
-python3 cube-mvp/tests/worker_e2e_test.py
+python3 app/tests/worker_e2e_test.py
 ```
 
 Runs the Worker with `wrangler dev` against a stand-in Gemini server: page load, camera scan in a browser, ideas, steps, and the guards. No real key needed.
@@ -60,7 +60,7 @@ The old Render service, makeshift-cube-demo.onrender.com, still tracks `main`, b
 ## Run locally
 
 ```bash
-cd cube-mvp
+cd app
 python3 server.py              # http://localhost:8743, Python server
 ```
 
@@ -71,4 +71,4 @@ npm install
 npm run dev                    # http://localhost:8787/makeshift/
 ```
 
-For AI locally, put `GEMINI_API_KEY=...` in `cube-mvp/.env` for the Python server, or in `.dev.vars` at the repo root for Wrangler. Never commit either file.
+For AI locally, put `GEMINI_API_KEY=...` in `app/.env` for the Python server, or in `.dev.vars` at the repo root for Wrangler. Never commit either file.

@@ -77,7 +77,7 @@ Avoid exposed mains wiring, sharp unprotected edges, leaking batteries, resin, s
 
 - Ensure `task/fix-offline-demo` is merged. The offline recipe otherwise starts with only one timing belt and cannot be completed; that branch also fixes duplicate bench-token IDs after reload.
 - Include the mobile/accessibility and smoke-test branches if they have passed review, but neither is required for the desktop stage path.
-- Start from a clean checkout and run `python3 cube-mvp/server.py` from the repository root.
+- Start from a clean checkout and run `python3 app/server.py` from the repository root.
 - Open `http://localhost:8743` in the presentation browser.
 - Use the offline Robot Arm recipe even if an API key is configured.
 - Set browser zoom to 100%, close unrelated tabs, disable notifications, and prevent the laptop from sleeping.
@@ -117,7 +117,7 @@ Run the full offline path at least twice on the actual presentation laptop:
 
 - **Later on 2026-11-07:** The Robot Arm changed (printer frame part, sealed 12V adapter, spring-clip gripper, nine steps), and the canonical demo URL moved to adipurohit.com/makeshift. The two entries below describe older builds; rerun the timed rehearsal on the current one.
 - **2026-11-07, automated local + hosted rehearsal (`main` hosted at `b945f83`, historical):** The complete Robot Arm interaction passed from recipe selection through all nine crafting merges, all-green requirements, seven assembly steps, photo preview, completion badge, 3D canvas, and mobile-width check with no console errors. The interaction path took 6.3 seconds locally and 6.3 seconds on the public Render deployment before narration. This verifies the technical stage path; presenters still need to rehearse the spoken 3:30 script with physical props on the presentation laptop.
-- **2026-11-07, `add-cube-mvp-demo` at `f42bc8d`:** The app loaded locally, the offline Robot Arm recipe selected correctly, and its palette, holograms, and six requirement lines rendered as documented. The base branch supplied only one Timing Belt, confirming that the build cannot reach completion there. Complete the full timed rehearsal after `task/fix-offline-demo` is merged; that branch changes the starting quantity to two and fixes persisted bench-token IDs.
+- **2026-11-07, `add-app-demo` at `f42bc8d`:** The app loaded locally, the offline Robot Arm recipe selected correctly, and its palette, holograms, and six requirement lines rendered as documented. The base branch supplied only one Timing Belt, confirming that the build cannot reach completion there. Complete the full timed rehearsal after `task/fix-offline-demo` is merged; that branch changes the starting quantity to two and fixes persisted bench-token IDs.
 
 ## Differentiation and audience
 

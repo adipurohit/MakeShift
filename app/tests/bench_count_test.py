@@ -7,7 +7,7 @@ build as-is. A player who drops String and the Glow Jar on the bench to try
 combining them should still see both requirements green, get a hint that
 String goes in as-is, and be able to press Build, which uses up the bench parts.
 
-Usage: python3 cube-mvp/tests/bench_count_test.py
+Usage: python3 app/tests/bench_count_test.py
 Exit code 0 = all checks passed, 1 = at least one failure.
 """
 import os

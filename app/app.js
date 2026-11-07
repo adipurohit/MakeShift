@@ -121,7 +121,7 @@ function aiHeaders() {
    recipes/pack.json holds the built-in offline recipes. Each one plays in its
    own sandbox with its own parts, so every recipe works with no API key and
    no network. Add recipes by editing pack.json, then run
-   python3 cube-mvp/recipes/validate.py. */
+   python3 app/recipes/validate.py. */
 let RECIPE_PACK = [];
 async function loadRecipePack() {
   try {
@@ -520,7 +520,11 @@ function renderBuildableNow() {
     .map((idea, i) => ({ idea, i, short: buildPlan(idea).missingTotal }))
     .sort((x, y) => (x.short === 0 ? 0 : 1) - (y.short === 0 ? 0 : 1) || x.i - y.i)
     .map((x) => x.idea);
-  document.getElementById("buildableNowEmptyNote").classList.toggle("visible", ideas.length === 0);
+  const emptyNote = document.getElementById("buildableNowEmptyNote");
+  emptyNote.classList.toggle("visible", ideas.length === 0);
+  emptyNote.textContent = userMaterials().length
+    ? "Ideas for your parts appear a few seconds after you stop editing."
+    : "Add a few materials and ideas show up here.";
   const ready = ideas.filter((i) => buildPlan(i).missingTotal === 0).length;
   document.getElementById("ideasCount").textContent = ideas.length ? `${ready} of ${ideas.length} ready` : "";
   ideas.forEach((idea) => list.appendChild(buildIdeaRow(idea, true)));

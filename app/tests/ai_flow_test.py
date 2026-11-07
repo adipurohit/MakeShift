@@ -9,7 +9,7 @@ Checks that ideas:
 - come with a merge guide that walks the build and ticks off as you merge,
 - keep the idea being built when a refresh drops it, and don't refresh during merges.
 
-Usage: python3 cube-mvp/tests/ai_flow_test.py
+Usage: python3 app/tests/ai_flow_test.py
 Exit code 0 = all checks passed, 1 = at least one failure.
 """
 import json

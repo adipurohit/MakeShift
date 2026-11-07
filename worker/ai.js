@@ -1,5 +1,5 @@
 // MakeShift AI endpoints for the Cloudflare Worker.
-// A line-for-line port of the guards in cube-mvp/server.py. Prompts, schemas, and limits come
+// A line-for-line port of the guards in app/server.py. Prompts, schemas, and limits come
 // from ai-config.json, which scripts/export-ai-config.py generates from server.py.
 // tests/worker_parity_test.py checks this file gives the same results as server.py.
 import CFG from "./ai-config.json" with { type: "json" };
@@ -252,8 +252,20 @@ const GEMINI_TIMEOUT_MS = 55000;
 export class ApiError extends Error {}
 export class BusyError extends ApiError {}
 
+// Try the configured model; if Gemini reports it overloaded, rate limited or too slow, try the backup model once.
+// Google answered "503: model is experiencing high demand" during testing, which would sink a live demo.
 async function chatJson(env, system, user, name, schema, maxTokens, model) {
   model = model || env.GEMINI_TEXT_MODEL || CFG.text_model;
+  const fallback = env.GEMINI_FALLBACK_MODEL || CFG.fallback_model;
+  try {
+    return await chatJsonOnce(env, system, user, name, schema, maxTokens, model);
+  } catch (e) {
+    if (!(e instanceof BusyError) || !fallback || fallback === "off" || fallback === model) throw e;
+    return await chatJsonOnce(env, system, user, name, schema, maxTokens, fallback);
+  }
+}
+
+async function chatJsonOnce(env, system, user, name, schema, maxTokens, model) {
   const rawBase = env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta";
   const base = rawBase.endsWith("/") ? rawBase.slice(0, -1) : rawBase;
   const url = `${base}/models/${encodeURIComponent(model)}:generateContent`;
@@ -318,8 +330,8 @@ async function chatJson(env, system, user, name, schema, maxTokens, model) {
   if (res.status === 401 || res.status === 403) {
     throw new ApiError("The API key was rejected. Check the GEMINI_API_KEY secret in the Cloudflare Worker settings.");
   }
-  if (res.status === 429) {
-    throw new BusyError("The Gemini API is busy or rate limited. Wait a moment and try again. Catalog matches still work.");
+  if (res.status === 429 || res.status === 503) {
+    throw new BusyError("The AI service is overloaded right now. Wait a moment and try again. Catalog matches still work.");
   }
   if (!res.ok) throw new ApiError(`Gemini API error (${res.status}): ${detail}`);
 
@@ -327,11 +339,14 @@ async function chatJson(env, system, user, name, schema, maxTokens, model) {
   if (candidate?.finishReason === "MAX_TOKENS") throw new ApiError("The model ran out of room before finishing. Try again.");
   const text = (candidate?.content?.parts || []).map((part) => part.text || "").join("").trim();
   if (!text) throw new ApiError("The model returned an empty response. Try again.");
+  let parsed;
   try {
-    return JSON.parse(text);
+    parsed = JSON.parse(text);
   } catch {
     throw new ApiError("Unexpected error: the model's reply was not valid JSON.");
   }
+  if (Array.isArray(env.__trace)) env.__trace.push(model); // index.js reports which model answered
+  return parsed;
 }
 
 const rawIdeas = (data) => (isObj(data) && Array.isArray(data.ideas) ? data.ideas : []);

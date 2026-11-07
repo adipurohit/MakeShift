@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Play every recipe in cube-mvp/recipes/pack.json in a headless browser.
+Play every recipe in app/recipes/pack.json in a headless browser.
 
 For each recipe: pick it from the catalog, craft every sub-assembly by
 dragging parts onto the 2D bench, check all requirements turn green, open
 Build, and check the assembly guide shows the recipe's steps.
 
 Usage:
-    python3 cube-mvp/tests/pack_test.py              # all recipes
-    python3 cube-mvp/tests/pack_test.py jar_lantern  # one or more recipe ids
+    python3 app/tests/pack_test.py              # all recipes
+    python3 app/tests/pack_test.py jar_lantern  # one or more recipe ids
 
 Needs: pip install playwright && python3 -m playwright install chromium
 Exit code 0 = every recipe built, 1 = at least one failure.
