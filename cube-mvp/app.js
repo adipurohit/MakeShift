@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------
-   CUBE — Scrap to Creation. Fusion-style 3-panel layout:
+   MakeShift — Scrap to Creation. Fusion-style 3-panel layout:
    left = inventory + AI "buildable now", center = 2D/3D viewer,
    right = full recipe catalog. Shared crafting sandbox for every
    AI-generated idea; the offline Robot Arm example stays isolated
@@ -310,7 +310,7 @@ async function generateIdeas() {
 
   const btn = document.getElementById("refreshIdeasBtn");
   btn.disabled = true;
-  toast("✨ Generating build ideas...");
+  toast("Generating build ideas...");
 
   try {
     const res = await fetch("/api/generate-ideas", {
@@ -320,8 +320,8 @@ async function generateIdeas() {
     });
     const data = await res.json();
     if (!res.ok) {
-      toast("⚠️ " + (data.message || "Couldn't generate ideas") + " — offline example still works");
-      document.getElementById("generateError").textContent = "⚠️ " + (data.message || "Couldn't generate ideas.");
+      toast((data.message || "Couldn't generate ideas") + ". Catalog recipes still work.");
+      document.getElementById("generateError").textContent = data.message || "Couldn't generate ideas.";
       document.getElementById("generateError").classList.add("visible");
     } else {
       document.getElementById("generateError").classList.remove("visible");
@@ -331,10 +331,10 @@ async function generateIdeas() {
         state.activeIdeaId = null;
       }
       saveState();
-      toast(`✨ Generated ${state.ideaLibrary.length} ideas`);
+      toast(`Generated ${state.ideaLibrary.length} ideas`);
     }
   } catch (e) {
-    toast("⚠️ Couldn't reach the server — offline example still works");
+    toast("AI ideas need the local server. Catalog recipes still work.");
   }
 
   btn.disabled = false;
@@ -373,8 +373,7 @@ function buildIdeaRow(idea, compact) {
   row.className = "idea-row" + (idea.id === state.activeIdeaId ? " active" : "");
   const rp = readyPercent(idea);
   let badge;
-  if (idea.pack) badge = "";
-  else if (idea.offline) badge = `<span class="idea-badge offline-badge">offline</span>`;
+  if (idea.offline) badge = "";
   else if (rp === 100) badge = `<span class="idea-badge ready-badge">ready!</span>`;
   else badge = `<span class="idea-badge match-badge">${rp}% ready</span>`;
 
@@ -431,7 +430,7 @@ function setActiveIdea(id) {
   state.activeIdeaId = id;
   saveState();
   const idea = findIdea(id);
-  document.getElementById("activeRecipeLabel").textContent = idea ? "Building: " + idea.title : "No recipe selected";
+  document.getElementById("activeRecipeLabel").textContent = idea ? "Building: " + idea.title : "Pick a recipe from the catalog";
   renderPalette();
   renderBench();
   renderBuildableNow();
@@ -615,6 +614,10 @@ function renderBench2D() {
   bench.querySelectorAll(".bench-token").forEach((n) => n.remove());
   const tokens = ctx().bench;
   empty.style.display = tokens.length ? "none" : "flex";
+  const picked = !!findIdea(state.activeIdeaId);
+  empty.innerHTML = picked
+    ? "<strong>Drag two parts here</strong><span>Parts that fit together merge into a new piece.</span>"
+    : "<strong>Pick a recipe to start</strong><span>Choose any build from the catalog. Its parts appear on the left.</span>";
   tokens.forEach((tok) => {
     const item = state.items[tok.itemId];
     if (!item) return;
@@ -690,7 +693,7 @@ function tryMergeAt(movedTok) {
   const firstTime = !c.discovered.includes(recipe.result);
   if (firstTime) { c.discovered.push(recipe.result); }
   saveState();
-  toast((firstTime ? "✨ Discovered: " : "Crafted another: ") + state.items[recipe.result].name);
+  toast((firstTime ? "Discovered: " : "Crafted another: ") + state.items[recipe.result].name);
 
   renderBench();
   renderPalette();
@@ -1000,7 +1003,7 @@ function tryMergeAt3D(uid) {
   const firstTime = !c.discovered.includes(recipe.result);
   if (firstTime) c.discovered.push(recipe.result);
   saveState();
-  toast((firstTime ? "✨ Discovered: " : "Crafted another: ") + state.items[recipe.result].name);
+  toast((firstTime ? "Discovered: " : "Crafted another: ") + state.items[recipe.result].name);
 
   renderBench();
   renderPalette();
@@ -1123,7 +1126,7 @@ function renderBadges() {
   state.badges.forEach((b) => {
     const pill = document.createElement("span");
     pill.className = "badge-pill";
-    pill.textContent = "🏆 " + b.title;
+    pill.textContent = b.title;
     row.appendChild(pill);
   });
 }
@@ -1186,7 +1189,7 @@ function initScan() {
     const q = Math.max(1, parseInt(document.getElementById("scanQtyInput").value, 10) || 1);
     if (!name) return;
     addMaterial(name, q);
-    toast(`📸 Added "${name}" to inventory`);
+    toast(`Added "${name}" to inventory`);
     closeScanModal();
   });
   document.getElementById("manualConfirmBtn").addEventListener("click", () => {
@@ -1260,11 +1263,11 @@ async function captureScan() {
     document.getElementById("scanQtyInput").value = "1";
     document.getElementById("scanStatus").textContent = data.confidence === "low"
       ? "Not totally sure — please check this before adding."
-      : "Here's what CUBE thinks this is:";
+      : "Here's what MakeShift thinks this is:";
     showScanStep("result");
     preview.hidden = false;
   } catch (e) {
-    document.getElementById("scanStatus").textContent = "⚠️ " + e.message + " — type it in instead.";
+    document.getElementById("scanStatus").textContent = e.message + ". Type it in instead.";
     showScanStep("manual");
   }
 }
@@ -1279,12 +1282,12 @@ function initReset() {
     if (!armed) {
       armed = true;
       btn.textContent = "Click again to confirm";
-      armTimer = setTimeout(() => { armed = false; btn.textContent = "↺ Reset Demo"; }, 4000);
+      armTimer = setTimeout(() => { armed = false; btn.textContent = "Reset"; }, 4000);
       return;
     }
     clearTimeout(armTimer);
     armed = false;
-    btn.textContent = "↺ Reset Demo";
+    btn.textContent = "Reset";
 
     state = defaultState();
     saveState();
@@ -1309,7 +1312,7 @@ function renderAll() {
   renderBadges();
   document.getElementById("activeRecipeLabel").textContent = state.activeIdeaId
     ? "Building: " + (findIdea(state.activeIdeaId) || {}).title
-    : "No recipe selected — pick one from the catalog →";
+    : "Pick a recipe from the catalog";
 }
 
 async function init() {
@@ -1327,7 +1330,31 @@ async function init() {
   initAssemblyModal();
   initScan();
   initReset();
+  initIntro();
   renderAll();
+}
+
+/* ================= HOW IT WORKS ================= */
+const INTRO_KEY = "makeshift_intro_seen";
+function initIntro() {
+  const modal = document.getElementById("introModal");
+  const close = () => {
+    modal.classList.remove("visible");
+    try { localStorage.setItem(INTRO_KEY, "1"); } catch (e) {}
+  };
+  document.getElementById("introStartBtn").addEventListener("click", close);
+  document.getElementById("introDemoBtn").addEventListener("click", () => {
+    close();
+    setActiveIdea(OFFLINE_IDEA.id);
+  });
+  document.getElementById("helpBtn").addEventListener("click", () => modal.classList.add("visible"));
+  modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.classList.contains("visible")) close();
+  });
+  let seen = false;
+  try { seen = localStorage.getItem(INTRO_KEY) === "1"; } catch (e) {}
+  if (!seen) modal.classList.add("visible");
 }
 
 document.addEventListener("DOMContentLoaded", init);

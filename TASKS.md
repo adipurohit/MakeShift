@@ -1,6 +1,6 @@
-# MakeShift / CUBE — Task Board
+# MakeShift — Task Board
 
-Work breakdown for the CUBE demo (`cube-mvp/`) so teammates and agents can pick up pieces in parallel without stepping on each other. See [`cube-mvp/README.md`](cube-mvp/README.md) for how the app works end to end before picking a task.
+Work breakdown for the MakeShift demo (`cube-mvp/`) so teammates and agents can pick up pieces in parallel without stepping on each other. See [`cube-mvp/README.md`](cube-mvp/README.md) for how the app works end to end before picking a task.
 
 ## How to pick up a task
 
