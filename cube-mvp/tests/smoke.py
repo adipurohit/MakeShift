@@ -233,8 +233,9 @@ def browser_checks(headed):
             with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
                 f.write(TINY_PNG)
             page.set_input_files("#photoInput", f.name)
+            page.wait_for_selector("#photoPreview:not([hidden])")
+            page.wait_for_timeout(300)  # let the preview image load before the temp file goes away
             os.unlink(f.name)
-            page.wait_for_timeout(200)
             record(page.locator("#completeBtn").is_enabled(), "Complete button enables after steps + photo")
             page.click("#completeBtn")
             page.wait_for_selector("#completeModal.visible")
