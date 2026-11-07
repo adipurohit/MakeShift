@@ -36,7 +36,7 @@ const OFFLINE_IDEA = {
   rawMaterials: [
     { id: "stepper", name: "Stepper Motor", qty: 4 },
     { id: "pulley", name: "Pulley", qty: 2 },
-    { id: "belt", name: "Timing Belt", qty: 1 },
+    { id: "belt", name: "Timing Belt", qty: 2 }, // 2 joints x 1 belt each; at 1 the offline demo can't finish
     { id: "extrusion", name: "Al. Extrusion", qty: 2 },
     { id: "rod", name: "Smooth Rod", qty: 2 },
     { id: "bearing", name: "Linear Bearing", qty: 2 },
@@ -92,7 +92,10 @@ function defaultState() {
 }
 
 let state = loadState();
-let uidCounter = 1;
+// Bench tokens persist across reloads, so new uids must start past every saved
+// one. Restarting at 1 made a fresh token share a uid with a saved token, and
+// the merge check (t.uid !== movedTok.uid) then skipped the real partner.
+let uidCounter = 1 + Math.max(0, ...[...state.bench, ...state.offline.bench].map((t) => t.uid || 0));
 
 function loadState() {
   try {
