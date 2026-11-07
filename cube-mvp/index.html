@@ -41,12 +41,13 @@
 
     <div class="panel-section">
       <div class="panel-section-head">
-        <h3>AI Ideas</h3>
+        <h3>AI Ideas <span class="hint" id="ideasCount"></span></h3>
         <button class="icon-btn small" id="refreshIdeasBtn" title="Generate ideas from your inventory" aria-label="Generate ideas from your inventory"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
       </div>
-      <p class="panel-hint">Builds the AI suggests from your inventory. Needs the local server and an API key.</p>
+      <p class="panel-hint">Builds made only from the parts in your inventory. The list updates as you add or change parts.</p>
+      <div class="ideas-status" id="ideasStatus" role="status" hidden></div>
       <div id="buildableNowList"></div>
-      <div class="empty-note" id="buildableNowEmptyNote">Add materials, then generate ideas.</div>
+      <div class="empty-note" id="buildableNowEmptyNote">Add a few materials and ideas show up here.</div>
       <div class="error-banner" id="generateError"></div>
     </div>
   </aside>
@@ -96,6 +97,7 @@
           <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill"></div></div>
           <span id="progressLabel">0 / 0 ready</span>
         </div>
+        <div class="merge-guide" id="mergeGuide" hidden></div>
         <ul class="req-list" id="reqList"></ul>
         <button class="primary-btn big" id="buildBtn" disabled>Build It</button>
       </div>
@@ -108,7 +110,7 @@
       <h3>Recipe Catalog</h3>
       <span class="hint" id="catalogCount"></span>
     </div>
-    <p class="panel-hint">101 builds. Each one comes with its own parts.</p>
+    <p class="panel-hint">101 built-in builds bring their own parts. AI ideas use yours.</p>
     <div class="catalog-filter">
       <input type="search" id="catalogSearch" placeholder="Search recipes..." aria-label="Search recipes" autocomplete="off">
       <select id="catalogCategory" aria-label="Filter by category"><option value="">All categories</option></select>

@@ -145,14 +145,19 @@ def main():
         check(scan_call and scan_call["body"]["messages"][1]["content"][0]["image_url"]["url"].startswith("data:image/jpeg;base64,"),
               "scan forwards the captured photo")
 
+        before = len(groq_calls)
         status, data = post(port, "/makeshift/api/generate-ideas", {"materials": [
             {"id": "m_motor", "name": "Motor", "qty": 2}, {"id": "m_pulley", "name": "Pulley", "qty": 2},
-            {"id": "m_zip", "name": "Zip Tie", "qty": 5}]})
+            {"id": "m_zip", "name": "Zip Tie", "qty": 5}, {"id": "m_led", "name": "LED", "qty": 0}]})
         ideas = data.get("ideas", [])
         check(status == 200 and len(ideas) == 1 and ideas[0]["id"] == "crank" and ideas[0]["uses_material_ids"] == ["m_motor", "m_pulley", "m_zip"],
               "ideas come back validated: bad idea dropped, ids recomputed", json.dumps(ideas)[:160])
-        idea_call = groq_calls[-1]["body"]
+        idea_calls = [c["body"] for c in groq_calls[before:]]
+        idea_call = idea_calls[0]
         check(idea_call["model"] == "openai/gpt-oss-120b" and idea_call.get("reasoning_effort") == "low", "ideas use the text model from server.py")
+        check("m_led" not in idea_call["messages"][1]["content"], "parts with quantity 0 never reach the AI")
+        check(len(idea_calls) == 2 and "already in the catalog: Hand Crank" in idea_calls[1]["messages"][1]["content"],
+              "fewer than 10 valid ideas triggers one top-up call for different ones", f"{len(idea_calls)} idea call(s)")
 
         status, data = post(port, "/makeshift/api/generate-steps", {"idea": {"title": "Hand Crank"}})
         check(status == 200 and data.get("assembly_steps") == ["Glue the tube to the base.", "Tie the pulley on.", "Check it spins freely."],

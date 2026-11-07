@@ -128,7 +128,7 @@ def python_materials(materials):
          "qty": max(0, int(m.get("qty") or 0)) if str(m.get("qty", "")).lstrip("-").isdigit() else 1}
         for m in materials if isinstance(m, dict) and m.get("id") and m.get("name")
     ]
-    return [m for m in out if m["id"] and m["name"]]
+    return [m for m in out if m["id"] and m["name"] and m["qty"] > 0]
 
 
 NODE = r"""
