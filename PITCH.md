@@ -8,6 +8,8 @@
 
 **One-sentence version:** CUBE is a scrap-to-creation workspace that recognizes the parts people already have, proposes useful builds, and guides them from loose materials to a finished project.
 
+Lead with the familiar drawer of dead electronics, scrap wood, and broken parts—not with “this is an AI app.” The physical build is the point; AI is how CUBE helps a maker get there.
+
 The live demo should prove one idea, not tour every feature: a pile of parts from two broken 3D printers can become a working robot-arm plan. The offline Robot Arm recipe is the stage path because it is deterministic and does not need Wi-Fi or an API key. Describe the generative catalog and camera vision after the successful build instead of making the live result depend on either service.
 
 ## 3:30 live pitch
@@ -103,21 +105,35 @@ Run the full offline path at least twice on the actual presentation laptop:
 
 - **2026-11-07, `add-cube-mvp-demo` at `f42bc8d`:** The app loaded locally, the offline Robot Arm recipe selected correctly, and its palette, holograms, and six requirement lines rendered as documented. The base branch supplied only one Timing Belt, confirming that the build cannot reach completion there. Complete the full timed rehearsal after `task/fix-offline-demo` is merged; that branch changes the starting quantity to two and fixes persisted bench-token IDs.
 
+## Differentiation and audience
+
+- **Not a shopping list:** CUBE begins with parts the user already owns.
+- **Not a fixed tutorial library:** Connected mode generates recipes against the actual inventory.
+- **Not ideas that end as text:** The core loop ends in assembly guidance and a completion record.
+- **Designed to degrade gracefully:** Manual inventory entry and the offline Robot Arm keep the core experience usable when camera access, AI, or venue Wi-Fi fails.
+
+The first audiences are makers turning a “guilt pile” into a weekend project, schools and makerspaces teaching assembly and design thinking, and sustainability teams trying to standardize reuse instead of disposal.
+
 ## Likely judge questions
 
-**What is AI doing here?**  
+**What is AI doing here?**
+
 Vision suggests an editable inventory label from a photo. The idea engine turns a user's material IDs and quantities into validated recipe graphs, and assembly steps are generated only after a project is selected. The offline Robot Arm is intentionally pinned so the core experience remains demonstrable without an API call.
 
-**Is this really CAD?**  
+**Is this really CAD?**
+
 This MVP is a CAD-inspired planning and staging workspace, not a parametric mechanical solver. It proves the interaction loop—inventory, recipe graph, spatial staging, requirements, and assembly guidance. Parametric constraints and part-accurate models are later engineering work.
 
-**How do you prevent unsafe or impossible recommendations?**  
+**How do you prevent unsafe or impossible recommendations?**
+
 The current prompts prohibit weapons, hazardous chemicals, mains or high-voltage work, and professional-only procedures. That is a first guardrail, not a certification system. A production version needs deterministic safety rules, feasibility checks, confidence labels, and human review for higher-risk builds.
 
-**Who is it for?**  
+**Who is it for?**
+
 The first users are makerspaces, school labs, repair cafés, and hardware teams that accumulate useful parts but lack a fast way to catalog and repurpose them.
 
-**What comes next?**  
+**What comes next?**
+
 Part-specific geometry, constraint-aware fit checks, shared inventories, build history, sourcing for genuinely missing parts, and evaluation data that scores generated recipes for feasibility, safety, cost, and waste diverted.
 
 ## Honest MVP boundaries
