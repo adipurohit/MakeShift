@@ -1,0 +1,5671 @@
+{
+ "version": 1,
+ "recipes": [
+  {
+   "id": "jar_lantern",
+   "title": "Jar Lantern",
+   "category": "Lighting",
+   "difficulty": "Easy",
+   "pitch": "Pinch an LED onto a coin cell and drop it into a glass jar for a cordless table lantern.",
+   "rawMaterials": [
+    {
+     "id": "led",
+     "name": "LED",
+     "qty": 1
+    },
+    {
+     "id": "coin",
+     "name": "Coin Cell Battery",
+     "qty": 1
+    },
+    {
+     "id": "jar",
+     "name": "Glass Jar",
+     "qty": 1
+    },
+    {
+     "id": "string",
+     "name": "String",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "led",
+     "b": "coin",
+     "result_id": "ledpod",
+     "result_name": "LED Pod",
+     "result_short": "LP"
+    },
+    {
+     "a": "ledpod",
+     "b": "jar",
+     "result_id": "glowjar",
+     "result_name": "Glow Jar",
+     "result_short": "GJ"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "glowjar",
+     "qty": 1
+    },
+    {
+     "id": "string",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Slide the coin cell between the LED legs, long leg on the + side, and tape it tight.",
+    "Set the LED pod inside the jar, facing up.",
+    "Tie string under the jar lip and loop it into a carry handle."
+   ],
+   "extend": "Add a light sensor and transistor so the lantern turns on by itself at dusk."
+  },
+  {
+   "id": "bottle_lamp",
+   "title": "Bottle Desk Lamp",
+   "category": "Lighting",
+   "difficulty": "Easy",
+   "pitch": "A USB LED strip coiled inside a plastic bottle makes a soft desk lamp powered from any charger.",
+   "rawMaterials": [
+    {
+     "id": "ledstrip",
+     "name": "LED Strip",
+     "qty": 1
+    },
+    {
+     "id": "usbcable",
+     "name": "Old USB Cable",
+     "qty": 1
+    },
+    {
+     "id": "bottle",
+     "name": "Plastic Bottle",
+     "qty": 1
+    },
+    {
+     "id": "bottlecap",
+     "name": "Bottle Cap",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "ledstrip",
+     "b": "usbcable",
+     "result_id": "usblight",
+     "result_name": "USB Light Strip",
+     "result_short": "ULS"
+    },
+    {
+     "a": "usblight",
+     "b": "bottle",
+     "result_id": "lampbody",
+     "result_name": "Lamp Body",
+     "result_short": "LB"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "lampbody",
+     "qty": 1
+    },
+    {
+     "id": "bottlecap",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Solder or splice the LED strip to the USB cable: red to 5V, black to ground.",
+    "Coil the strip around the inside wall of the bottle and feed the cable out the neck.",
+    "Cut a notch in the bottle cap for the cable and screw the cap on as a base plug."
+   ],
+   "extend": "Spray the bottle with frosted paint or wrap in paper for an even, diffused glow."
+  },
+  {
+   "id": "solar_revival",
+   "title": "Solar Light Revival",
+   "category": "Lighting",
+   "difficulty": "Easy",
+   "pitch": "Bring a dead solar garden light back with a fresh rechargeable cell and give it a jar housing.",
+   "rawMaterials": [
+    {
+     "id": "brokenlight",
+     "name": "Broken Solar Garden Light",
+     "qty": 1
+    },
+    {
+     "id": "rechargeable",
+     "name": "Rechargeable AA Battery",
+     "qty": 1
+    },
+    {
+     "id": "jar",
+     "name": "Glass Jar",
+     "qty": 1
+    },
+    {
+     "id": "string",
+     "name": "String",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "brokenlight",
+     "b": "rechargeable",
+     "result_id": "revived",
+     "result_name": "Revived Solar Unit",
+     "result_short": "RSU"
+    },
+    {
+     "a": "revived",
+     "b": "jar",
+     "result_id": "solarjar",
+     "result_name": "Solar Jar Light",
+     "result_short": "SJL"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "solarjar",
+     "qty": 1
+    },
+    {
+     "id": "string",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Open the garden light, remove the dead battery, and fit the rechargeable AA in the same direction.",
+    "Cover the solar cell for 5 seconds to check the LED turns on.",
+    "Mount the solar unit in the jar lid, panel facing up, and hang the jar by string."
+   ],
+   "extend": "Group three revived jars on one rope for a solar string light."
+  },
+  {
+   "id": "auto_nightlight",
+   "title": "Auto Night Light",
+   "category": "Lighting",
+   "difficulty": "Medium",
+   "pitch": "A light sensor and transistor switch an LED on when the room goes dark.",
+   "rawMaterials": [
+    {
+     "id": "photocell",
+     "name": "Light Sensor",
+     "qty": 1
+    },
+    {
+     "id": "transistor",
+     "name": "Transistor",
+     "qty": 1
+    },
+    {
+     "id": "led",
+     "name": "LED",
+     "qty": 1
+    },
+    {
+     "id": "battholder",
+     "name": "AA Battery Holder",
+     "qty": 1
+    },
+    {
+     "id": "egg",
+     "name": "Egg Carton",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "photocell",
+     "b": "transistor",
+     "result_id": "darksensor",
+     "result_name": "Dark Sensor",
+     "result_short": "DS"
+    },
+    {
+     "a": "darksensor",
+     "b": "led",
+     "result_id": "autoled",
+     "result_name": "Auto LED",
+     "result_short": "AL"
+    },
+    {
+     "a": "autoled",
+     "b": "battholder",
+     "result_id": "nightcore",
+     "result_name": "Night Light Core",
+     "result_short": "NLC"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "nightcore",
+     "qty": 1
+    },
+    {
+     "id": "egg",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Wire the light sensor and transistor so the sensor pulls the transistor base low in daylight.",
+    "Connect the LED to the transistor collector through the battery holder.",
+    "Cover your hand over the sensor to test, then place the circuit under an egg carton cup as a shade."
+   ],
+   "extend": "Add a second LED and a button to pick between warm and cool colors."
+  },
+  {
+   "id": "clip_light",
+   "title": "Clip-On Book Light",
+   "category": "Lighting",
+   "difficulty": "Easy",
+   "pitch": "An LED pod glued onto a clothespin clips to any book or shelf edge.",
+   "rawMaterials": [
+    {
+     "id": "led",
+     "name": "LED",
+     "qty": 1
+    },
+    {
+     "id": "coin",
+     "name": "Coin Cell Battery",
+     "qty": 1
+    },
+    {
+     "id": "clothespin",
+     "name": "Clothespin",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "led",
+     "b": "coin",
+     "result_id": "ledpod",
+     "result_name": "LED Pod",
+     "result_short": "LP"
+    },
+    {
+     "a": "ledpod",
+     "b": "clothespin",
+     "result_id": "cliplight",
+     "result_name": "Clip Light",
+     "result_short": "CL"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "cliplight",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Tape the LED legs around the coin cell so it lights.",
+    "Glue the LED pod to the top of the clothespin, pointing forward.",
+    "Clip onto a book cover and angle the LED onto the page."
+   ],
+   "extend": "Add a slide switch between the LED and cell so you stop pulling the battery out."
+  },
+  {
+   "id": "tracing_lightbox",
+   "title": "Tracing Light Box",
+   "category": "Lighting",
+   "difficulty": "Easy",
+   "pitch": "An LED strip under a clear tray turns into a light table for tracing drawings.",
+   "rawMaterials": [
+    {
+     "id": "ledstrip",
+     "name": "LED Strip",
+     "qty": 1
+    },
+    {
+     "id": "usbcable",
+     "name": "Old USB Cable",
+     "qty": 1
+    },
+    {
+     "id": "tray",
+     "name": "Clear Plastic Tray",
+     "qty": 1
+    },
+    {
+     "id": "cardboard",
+     "name": "Cardboard Sheet",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "ledstrip",
+     "b": "usbcable",
+     "result_id": "usblight",
+     "result_name": "USB Light Strip",
+     "result_short": "ULS"
+    },
+    {
+     "a": "usblight",
+     "b": "tray",
+     "result_id": "lightbox",
+     "result_name": "Light Box",
+     "result_short": "LB"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "lightbox",
+     "qty": 1
+    },
+    {
+     "id": "cardboard",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Wire the LED strip to the USB cable, red to 5V and black to ground.",
+    "Zigzag the strip across a cardboard base sized to the tray.",
+    "Set the clear tray on top, lay paper on the tray, and plug in."
+   ],
+   "extend": "Tape a sheet of white paper under the tray to remove LED hot spots."
+  },
+  {
+   "id": "cabinet_bar",
+   "title": "Under-Cabinet Light Bar",
+   "category": "Lighting",
+   "difficulty": "Easy",
+   "pitch": "A USB LED strip on velcro sticks under a shelf and runs off a power bank.",
+   "rawMaterials": [
+    {
+     "id": "ledstrip",
+     "name": "LED Strip",
+     "qty": 1
+    },
+    {
+     "id": "usbcable",
+     "name": "Old USB Cable",
+     "qty": 1
+    },
+    {
+     "id": "velcro",
+     "name": "Velcro Strip",
+     "qty": 1
+    },
+    {
+     "id": "powerbank",
+     "name": "Power Bank",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "ledstrip",
+     "b": "usbcable",
+     "result_id": "usblight",
+     "result_name": "USB Light Strip",
+     "result_short": "ULS"
+    },
+    {
+     "a": "usblight",
+     "b": "velcro",
+     "result_id": "lightbar",
+     "result_name": "Velcro Light Bar",
+     "result_short": "VLB"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "lightbar",
+     "qty": 1
+    },
+    {
+     "id": "powerbank",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Wire the LED strip to the USB cable.",
+    "Stick the velcro hook side to the strip and the loop side under the cabinet.",
+    "Press the bar into place and plug into the power bank."
+   ],
+   "extend": "Add a motion sensor so the bar turns on when you reach in."
+  },
+  {
+   "id": "tincan_lantern",
+   "title": "Tin Can Lantern",
+   "category": "Lighting",
+   "difficulty": "Easy",
+   "pitch": "Punch a star pattern into a tin can and throw dots of light across the room.",
+   "rawMaterials": [
+    {
+     "id": "can",
+     "name": "Tin Can",
+     "qty": 1
+    },
+    {
+     "id": "nail",
+     "name": "Nails",
+     "qty": 1
+    },
+    {
+     "id": "led",
+     "name": "LED",
+     "qty": 1
+    },
+    {
+     "id": "coin",
+     "name": "Coin Cell Battery",
+     "qty": 1
+    },
+    {
+     "id": "hanger",
+     "name": "Wire Hanger",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "can",
+     "b": "nail",
+     "result_id": "punchedcan",
+     "result_name": "Punched Can",
+     "result_short": "PC"
+    },
+    {
+     "a": "led",
+     "b": "coin",
+     "result_id": "ledpod",
+     "result_name": "LED Pod",
+     "result_short": "LP"
+    },
+    {
+     "a": "ledpod",
+     "b": "punchedcan",
+     "result_id": "canlantern",
+     "result_name": "Can Lantern",
+     "result_short": "CL"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "canlantern",
+     "qty": 1
+    },
+    {
+     "id": "hanger",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Fill the can with water, freeze overnight, then tap a nail through in a pattern.",
+    "Thaw and dry the can, then set the LED pod inside.",
+    "Bend the hanger into a handle and hook through two holes at the rim."
+   ],
+   "extend": "Swap the coin cell LED for a solar unit from an old garden light."
+  },
+  {
+   "id": "bike_taillight",
+   "title": "Bike Tail Light",
+   "category": "Lighting",
+   "difficulty": "Easy",
+   "pitch": "A red LED, battery holder, and switch strap onto a seat post with inner tube rubber.",
+   "rawMaterials": [
+    {
+     "id": "led",
+     "name": "LED",
+     "qty": 1
+    },
+    {
+     "id": "battholder",
+     "name": "AA Battery Holder",
+     "qty": 1
+    },
+    {
+     "id": "switch",
+     "name": "Toggle Switch",
+     "qty": 1
+    },
+    {
+     "id": "bike",
+     "name": "Bike Inner Tube",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "led",
+     "b": "battholder",
+     "result_id": "lightcore",
+     "result_name": "Light Core",
+     "result_short": "LC"
+    },
+    {
+     "a": "lightcore",
+     "b": "switch",
+     "result_id": "switchedlight",
+     "result_name": "Switched Light",
+     "result_short": "SL"
+    },
+    {
+     "a": "switchedlight",
+     "b": "bike",
+     "result_id": "bikelight",
+     "result_name": "Bike Light",
+     "result_short": "BL"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "bikelight",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Wire the LED to the battery holder, adding a resistor if your LED needs one.",
+    "Splice the toggle switch into the red battery wire.",
+    "Cut a strip of inner tube and stretch it around the seat post to hold the light."
+   ],
+   "extend": "Add a 555 timer chip so the light blinks instead of staying on."
+  },
+  {
+   "id": "shadow_lamp",
+   "title": "Shadow Lamp",
+   "category": "Lighting",
+   "difficulty": "Easy",
+   "pitch": "Punch a pattern into a paper towel tube and light it from inside to throw shadows on the wall.",
+   "rawMaterials": [
+    {
+     "id": "paperroll",
+     "name": "Paper Towel Tube",
+     "qty": 1
+    },
+    {
+     "id": "nail",
+     "name": "Nails",
+     "qty": 1
+    },
+    {
+     "id": "led",
+     "name": "LED",
+     "qty": 1
+    },
+    {
+     "id": "coin",
+     "name": "Coin Cell Battery",
+     "qty": 1
+    },
+    {
+     "id": "cardboard",
+     "name": "Cardboard Sheet",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "paperroll",
+     "b": "nail",
+     "result_id": "punchedtube",
+     "result_name": "Punched Tube",
+     "result_short": "PT"
+    },
+    {
+     "a": "led",
+     "b": "coin",
+     "result_id": "ledpod",
+     "result_name": "LED Pod",
+     "result_short": "LP"
+    },
+    {
+     "a": "ledpod",
+     "b": "punchedtube",
+     "result_id": "shadowlamp",
+     "result_name": "Shadow Lamp",
+     "result_short": "SL"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "shadowlamp",
+     "qty": 1
+    },
+    {
+     "id": "cardboard",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Poke a pattern of holes along the tube with a nail.",
+    "Stand the tube on a cardboard base and drop the LED pod inside.",
+    "Turn off the room lights and watch the pattern on the walls."
+   ],
+   "extend": "Use a ring of three LEDs for brighter, sharper shadows."
+  },
+  {
+   "id": "bristlebot",
+   "title": "Bristlebot",
+   "category": "Robotics",
+   "difficulty": "Easy",
+   "pitch": "A phone vibration motor on a toothbrush head makes a tiny robot buzz across the table.",
+   "rawMaterials": [
+    {
+     "id": "vibmotor",
+     "name": "Phone Vibration Motor",
+     "qty": 1
+    },
+    {
+     "id": "coin",
+     "name": "Coin Cell Battery",
+     "qty": 1
+    },
+    {
+     "id": "toothbrush",
+     "name": "Toothbrush Head",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "vibmotor",
+     "b": "coin",
+     "result_id": "buzzcore",
+     "result_name": "Buzz Core",
+     "result_short": "BC"
+    },
+    {
+     "a": "buzzcore",
+     "b": "toothbrush",
+     "result_id": "bristlebot",
+     "result_name": "Bristlebot",
+     "result_short": "BR"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "bristlebot",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Touch the motor wires to the coin cell and tape them in place.",
+    "Stick the motor and cell on top of the toothbrush head with tape.",
+    "Set the bot on a smooth table and watch it scoot."
+   ],
+   "extend": "Build two and race them inside a cardboard arena."
+  },
+  {
+   "id": "scribble_bot",
+   "title": "Scribble Bot",
+   "category": "Robotics",
+   "difficulty": "Easy",
+   "pitch": "An off-balance motor shakes a plastic cup on marker legs into a drawing robot.",
+   "rawMaterials": [
+    {
+     "id": "dcmotor",
+     "name": "Small DC Motor",
+     "qty": 1
+    },
+    {
+     "id": "cork",
+     "name": "Wine Cork",
+     "qty": 1
+    },
+    {
+     "id": "battholder",
+     "name": "AA Battery Holder",
+     "qty": 1
+    },
+    {
+     "id": "cup",
+     "name": "Plastic Cup",
+     "qty": 1
+    },
+    {
+     "id": "markers",
+     "name": "Marker",
+     "qty": 3
+    }
+   ],
+   "recipes": [
+    {
+     "a": "dcmotor",
+     "b": "cork",
+     "result_id": "wobblemotor",
+     "result_name": "Wobble Motor",
+     "result_short": "WM"
+    },
+    {
+     "a": "wobblemotor",
+     "b": "battholder",
+     "result_id": "wobbledrive",
+     "result_name": "Wobble Drive",
+     "result_short": "WD"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "wobbledrive",
+     "qty": 1
+    },
+    {
+     "id": "cup",
+     "qty": 1
+    },
+    {
+     "id": "markers",
+     "qty": 3
+    }
+   ],
+   "assembly_steps": [
+    "Push a cork slice onto the motor shaft off-center to create a wobble.",
+    "Wire the motor to the battery holder.",
+    "Tape three markers around an upside-down cup as legs, mount the drive on top, and set it on paper."
+   ],
+   "extend": "Add a switch and try different cork sizes to change the drawing pattern."
+  },
+  {
+   "id": "band_car",
+   "title": "Rubber Band Car",
+   "category": "Robotics",
+   "difficulty": "Easy",
+   "pitch": "Wind a rubber band around the axle and let go to send a cardboard car down the hall.",
+   "rawMaterials": [
+    {
+     "id": "dowel",
+     "name": "Wooden Dowel",
+     "qty": 2
+    },
+    {
+     "id": "bottlecap",
+     "name": "Bottle Cap",
+     "qty": 2
+    },
+    {
+     "id": "cardboard",
+     "name": "Cardboard Sheet",
+     "qty": 1
+    },
+    {
+     "id": "rubber",
+     "name": "Rubber Band",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "dowel",
+     "b": "bottlecap",
+     "result_id": "wheelaxle",
+     "result_name": "Wheel Axle",
+     "result_short": "WA"
+    },
+    {
+     "a": "cardboard",
+     "b": "rubber",
+     "result_id": "bandchassis",
+     "result_name": "Band Chassis",
+     "result_short": "BC"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "wheelaxle",
+     "qty": 2
+    },
+    {
+     "id": "bandchassis",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Push each dowel through the center of two bottle caps to make axles.",
+    "Poke the axles through the sides of the cardboard chassis.",
+    "Hook a rubber band to the front of the chassis and wrap the other end around the rear axle, then wind and release."
+   ],
+   "extend": "Swap bottle caps for CDs to make bigger wheels and a longer run."
+  },
+  {
+   "id": "balloon_car",
+   "title": "Balloon Rocket Car",
+   "category": "Robotics",
+   "difficulty": "Easy",
+   "pitch": "A balloon taped to a straw pushes a plastic bottle car across the floor with air.",
+   "rawMaterials": [
+    {
+     "id": "balloon",
+     "name": "Balloon",
+     "qty": 1
+    },
+    {
+     "id": "straw",
+     "name": "Drinking Straw",
+     "qty": 1
+    },
+    {
+     "id": "dowel",
+     "name": "Wooden Dowel",
+     "qty": 2
+    },
+    {
+     "id": "bottlecap",
+     "name": "Bottle Cap",
+     "qty": 2
+    },
+    {
+     "id": "bottle",
+     "name": "Plastic Bottle",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "balloon",
+     "b": "straw",
+     "result_id": "jet",
+     "result_name": "Balloon Jet",
+     "result_short": "BJ"
+    },
+    {
+     "a": "dowel",
+     "b": "bottlecap",
+     "result_id": "wheelaxle",
+     "result_name": "Wheel Axle",
+     "result_short": "WA"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "jet",
+     "qty": 1
+    },
+    {
+     "id": "wheelaxle",
+     "qty": 2
+    },
+    {
+     "id": "bottle",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Tape the balloon neck tight around one end of the straw.",
+    "Push the axles through holes in the bottle's sides.",
+    "Tape the jet on top, blow up the balloon through the straw, pinch, set down, and let go."
+   ],
+   "extend": "Add a second balloon jet and measure the distance gain."
+  },
+  {
+   "id": "solar_car",
+   "title": "Solar Car",
+   "category": "Robotics",
+   "difficulty": "Medium",
+   "pitch": "A small solar panel drives a DC motor geared to a cardboard car's back axle.",
+   "rawMaterials": [
+    {
+     "id": "solar",
+     "name": "Small Solar Panel",
+     "qty": 1
+    },
+    {
+     "id": "dcmotor",
+     "name": "Small DC Motor",
+     "qty": 1
+    },
+    {
+     "id": "gear",
+     "name": "Plastic Gear",
+     "qty": 1
+    },
+    {
+     "id": "dowel",
+     "name": "Wooden Dowel",
+     "qty": 2
+    },
+    {
+     "id": "bottlecap",
+     "name": "Bottle Cap",
+     "qty": 2
+    },
+    {
+     "id": "cardboard",
+     "name": "Cardboard Sheet",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "solar",
+     "b": "dcmotor",
+     "result_id": "solarmotor",
+     "result_name": "Solar Motor",
+     "result_short": "SM"
+    },
+    {
+     "a": "solarmotor",
+     "b": "gear",
+     "result_id": "solardrive",
+     "result_name": "Solar Drive",
+     "result_short": "SD"
+    },
+    {
+     "a": "dowel",
+     "b": "bottlecap",
+     "result_id": "wheelaxle",
+     "result_name": "Wheel Axle",
+     "result_short": "WA"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "solardrive",
+     "qty": 1
+    },
+    {
+     "id": "wheelaxle",
+     "qty": 2
+    },
+    {
+     "id": "cardboard",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Wire the solar panel to the motor and check the shaft spins in sunlight.",
+    "Press a gear on the motor shaft so the gear meshes with a gear or rubber band on the rear axle.",
+    "Mount the axles and drive on the cardboard chassis and test in full sun."
+   ],
+   "extend": "Add a small rechargeable cell so the car keeps rolling in shade."
+  },
+  {
+   "id": "hydraulic_arm",
+   "title": "Hydraulic Arm",
+   "category": "Robotics",
+   "difficulty": "Medium",
+   "pitch": "Water-filled syringes push popsicle-stick links, so you move the arm by squeezing a plunger.",
+   "rawMaterials": [
+    {
+     "id": "syringe",
+     "name": "Plastic Syringe",
+     "qty": 4
+    },
+    {
+     "id": "tubing",
+     "name": "Silicone Tubing",
+     "qty": 2
+    },
+    {
+     "id": "popsicle",
+     "name": "Popsicle Stick",
+     "qty": 3
+    },
+    {
+     "id": "fastener",
+     "name": "Brass Fastener",
+     "qty": 3
+    },
+    {
+     "id": "cardboard",
+     "name": "Cardboard Sheet",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "syringe",
+     "b": "tubing",
+     "result_id": "halfline",
+     "result_name": "Half Line",
+     "result_short": "HL"
+    },
+    {
+     "a": "halfline",
+     "b": "syringe",
+     "result_id": "hydline",
+     "result_name": "Hydraulic Line",
+     "result_short": "HL"
+    },
+    {
+     "a": "popsicle",
+     "b": "fastener",
+     "result_id": "armlink",
+     "result_name": "Arm Link",
+     "result_short": "AL"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "hydline",
+     "qty": 2
+    },
+    {
+     "id": "armlink",
+     "qty": 3
+    },
+    {
+     "id": "cardboard",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Fill one syringe with water, connect tubing, and push the water into a second syringe to remove air.",
+    "Join popsicle sticks with brass fasteners to make three hinged links.",
+    "Glue the links to a cardboard base and fix one syringe of each line across a joint."
+   ],
+   "extend": "Add a third line and a clothespin gripper on the end."
+  },
+  {
+   "id": "usb_fan",
+   "title": "USB Desk Fan",
+   "category": "Robotics",
+   "difficulty": "Easy",
+   "pitch": "Cut blades from a plastic bottle, mount them on a small motor, and power from USB.",
+   "rawMaterials": [
+    {
+     "id": "bottle",
+     "name": "Plastic Bottle",
+     "qty": 1
+    },
+    {
+     "id": "bottlecap",
+     "name": "Bottle Cap",
+     "qty": 1
+    },
+    {
+     "id": "dcmotor",
+     "name": "Small DC Motor",
+     "qty": 1
+    },
+    {
+     "id": "usbcable",
+     "name": "Old USB Cable",
+     "qty": 1
+    },
+    {
+     "id": "can",
+     "name": "Tin Can",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "bottle",
+     "b": "bottlecap",
+     "result_id": "propeller",
+     "result_name": "Bottle Propeller",
+     "result_short": "BP"
+    },
+    {
+     "a": "propeller",
+     "b": "dcmotor",
+     "result_id": "fanhead",
+     "result_name": "Fan Head",
+     "result_short": "FH"
+    },
+    {
+     "a": "fanhead",
+     "b": "usbcable",
+     "result_id": "usbfan",
+     "result_name": "USB Fan",
+     "result_short": "UF"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "usbfan",
+     "qty": 1
+    },
+    {
+     "id": "can",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut the bottle's top into four blades and twist each blade slightly.",
+    "Glue the bottle cap to the motor shaft and the blades onto the cap.",
+    "Wire the motor to the USB cable and stand the fan on a tin can."
+   ],
+   "extend": "Add a switch and a second speed using a resistor."
+  },
+  {
+   "id": "pan_tilt",
+   "title": "Pan-Tilt Mount",
+   "category": "Robotics",
+   "difficulty": "Medium",
+   "pitch": "Two servos on brackets aim a phone camera from an Arduino.",
+   "rawMaterials": [
+    {
+     "id": "servo",
+     "name": "Servo Motor",
+     "qty": 2
+    },
+    {
+     "id": "bracket",
+     "name": "L-Bracket",
+     "qty": 2
+    },
+    {
+     "id": "arduino",
+     "name": "Arduino Board",
+     "qty": 1
+    },
+    {
+     "id": "battholder",
+     "name": "AA Battery Holder",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "servo",
+     "b": "bracket",
+     "result_id": "servomount",
+     "result_name": "Servo Mount",
+     "result_short": "SM"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "servomount",
+     "qty": 2
+    },
+    {
+     "id": "arduino",
+     "qty": 1
+    },
+    {
+     "id": "battholder",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Screw each servo to an L-bracket.",
+    "Stack the tilt mount on top of the pan servo horn.",
+    "Wire both servos to the Arduino and run the Sweep example to test."
+   ],
+   "extend": "Add a joystick or two potentiometers for manual control."
+  },
+  {
+   "id": "tendon_hand",
+   "title": "Cardboard Robot Hand",
+   "category": "Robotics",
+   "difficulty": "Easy",
+   "pitch": "Pull strings threaded through straws to curl cardboard fingers, like tendons in a real hand.",
+   "rawMaterials": [
+    {
+     "id": "straw",
+     "name": "Drinking Straw",
+     "qty": 4
+    },
+    {
+     "id": "string",
+     "name": "String",
+     "qty": 4
+    },
+    {
+     "id": "cardboard",
+     "name": "Cardboard Sheet",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "straw",
+     "b": "string",
+     "result_id": "tendon",
+     "result_name": "Tendon",
+     "result_short": "TE"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "tendon",
+     "qty": 4
+    },
+    {
+     "id": "cardboard",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Trace your hand on cardboard, cut it out, and crease each finger at the knuckles.",
+    "Cut straws into short pieces and glue them along each finger.",
+    "Thread a string through each finger's straws and tie it at the fingertip, then pull."
+   ],
+   "extend": "Tie the strings to servo horns so an Arduino curls the fingers."
+  },
+  {
+   "id": "mini_conveyor",
+   "title": "Mini Conveyor",
+   "category": "Robotics",
+   "difficulty": "Medium",
+   "pitch": "An inner tube belt wraps two dowel rollers, and a DC motor drives one end.",
+   "rawMaterials": [
+    {
+     "id": "dcmotor",
+     "name": "Small DC Motor",
+     "qty": 1
+    },
+    {
+     "id": "dowel",
+     "name": "Wooden Dowel",
+     "qty": 2
+    },
+    {
+     "id": "bike",
+     "name": "Bike Inner Tube",
+     "qty": 1
+    },
+    {
+     "id": "wood",
+     "name": "Scrap Wood",
+     "qty": 1
+    },
+    {
+     "id": "battholder",
+     "name": "AA Battery Holder",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "dcmotor",
+     "b": "dowel",
+     "result_id": "driveroller",
+     "result_name": "Drive Roller",
+     "result_short": "DR"
+    },
+    {
+     "a": "driveroller",
+     "b": "bike",
+     "result_id": "beltloop",
+     "result_name": "Belt Loop",
+     "result_short": "BL"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "beltloop",
+     "qty": 1
+    },
+    {
+     "id": "dowel",
+     "qty": 1
+    },
+    {
+     "id": "wood",
+     "qty": 1
+    },
+    {
+     "id": "battholder",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Glue the motor shaft into a hole drilled in one dowel.",
+    "Set both rollers across a wooden frame and stretch the inner tube around them.",
+    "Wire the motor to the battery holder and adjust roller spacing until the belt tracks straight."
+   ],
+   "extend": "Add a light sensor at the end to stop the belt when an object arrives."
+  },
+  {
+   "id": "selfwater_planter",
+   "title": "Self-Watering Planter",
+   "category": "Garden",
+   "difficulty": "Easy",
+   "pitch": "A cut bottle with a cloth wick pulls water up to the soil so plants water themselves.",
+   "rawMaterials": [
+    {
+     "id": "bottle",
+     "name": "Plastic Bottle",
+     "qty": 1
+    },
+    {
+     "id": "tshirt",
+     "name": "Old T-Shirt",
+     "qty": 1
+    },
+    {
+     "id": "pot",
+     "name": "Plant Pot",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "bottle",
+     "b": "tshirt",
+     "result_id": "wickbottle",
+     "result_name": "Wick Bottle",
+     "result_short": "WB"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "wickbottle",
+     "qty": 1
+    },
+    {
+     "id": "pot",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut the bottle in half and flip the top into the bottom like a funnel.",
+    "Push a strip of T-shirt through the neck as a wick.",
+    "Fill the base with water and the top with soil and a plant."
+   ],
+   "extend": "Add a clear window strip so you see the water level."
+  },
+  {
+   "id": "drip_bottle",
+   "title": "Bottle Drip Irrigator",
+   "category": "Garden",
+   "difficulty": "Easy",
+   "pitch": "A bottle with pinholes in the cap drips water slowly into a pot over a day.",
+   "rawMaterials": [
+    {
+     "id": "bottlecap",
+     "name": "Bottle Cap",
+     "qty": 1
+    },
+    {
+     "id": "nail",
+     "name": "Nails",
+     "qty": 1
+    },
+    {
+     "id": "bottle",
+     "name": "Plastic Bottle",
+     "qty": 1
+    },
+    {
+     "id": "pot",
+     "name": "Plant Pot",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "bottlecap",
+     "b": "nail",
+     "result_id": "dripcap",
+     "result_name": "Drip Cap",
+     "result_short": "DC"
+    },
+    {
+     "a": "dripcap",
+     "b": "bottle",
+     "result_id": "dripper",
+     "result_name": "Bottle Dripper",
+     "result_short": "BD"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "dripper",
+     "qty": 1
+    },
+    {
+     "id": "pot",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Poke two small holes in the bottle cap with a hot nail.",
+    "Fill the bottle, screw on the cap, and cut the bottom off for refills.",
+    "Push the bottle neck-down into the soil next to the plant."
+   ],
+   "extend": "Run tubing from one big bucket to several drip caps."
+  },
+  {
+   "id": "auto_waterer",
+   "title": "Auto Plant Waterer",
+   "category": "Garden",
+   "difficulty": "Medium",
+   "pitch": "A moisture sensor tells an Arduino when to run a USB pump from a water bucket.",
+   "rawMaterials": [
+    {
+     "id": "moisture",
+     "name": "Moisture Sensor",
+     "qty": 1
+    },
+    {
+     "id": "arduino",
+     "name": "Arduino Board",
+     "qty": 1
+    },
+    {
+     "id": "usbpump",
+     "name": "USB Water Pump",
+     "qty": 1
+    },
+    {
+     "id": "tubing",
+     "name": "Silicone Tubing",
+     "qty": 1
+    },
+    {
+     "id": "bucket",
+     "name": "Plastic Bucket",
+     "qty": 1
+    },
+    {
+     "id": "powerbank",
+     "name": "Power Bank",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "moisture",
+     "b": "arduino",
+     "result_id": "brain",
+     "result_name": "Plant Brain",
+     "result_short": "PB"
+    },
+    {
+     "a": "usbpump",
+     "b": "tubing",
+     "result_id": "waterline",
+     "result_name": "Water Line",
+     "result_short": "WL"
+    },
+    {
+     "a": "brain",
+     "b": "waterline",
+     "result_id": "waterer",
+     "result_name": "Auto Waterer",
+     "result_short": "AW"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "waterer",
+     "qty": 1
+    },
+    {
+     "id": "bucket",
+     "qty": 1
+    },
+    {
+     "id": "powerbank",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Wire the moisture sensor to an analog pin and the pump through a transistor to a digital pin.",
+    "Drop the pump in the bucket and run the tubing to the pot.",
+    "Upload a sketch that runs the pump for 3 seconds when the reading crosses your dry threshold."
+   ],
+   "extend": "Log moisture readings to the serial monitor and graph a week of data."
+  },
+  {
+   "id": "egg_seeds",
+   "title": "Egg Carton Seed Starter",
+   "category": "Garden",
+   "difficulty": "Easy",
+   "pitch": "An egg carton under plastic wrap acts as a mini greenhouse for seedlings.",
+   "rawMaterials": [
+    {
+     "id": "egg",
+     "name": "Egg Carton",
+     "qty": 1
+    },
+    {
+     "id": "wrap",
+     "name": "Plastic Wrap",
+     "qty": 1
+    },
+    {
+     "id": "tray",
+     "name": "Clear Plastic Tray",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "egg",
+     "b": "wrap",
+     "result_id": "greenhouse",
+     "result_name": "Mini Greenhouse",
+     "result_short": "MG"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "greenhouse",
+     "qty": 1
+    },
+    {
+     "id": "tray",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Fill each egg cup with soil and press in a seed.",
+    "Set the carton on a tray and stretch plastic wrap over the top.",
+    "Mist daily and remove the wrap once sprouts touch it."
+   ],
+   "extend": "Cut the cups apart and plant them straight into the ground, since the carton breaks down."
+  },
+  {
+   "id": "pallet_garden",
+   "title": "Vertical Pallet Garden",
+   "category": "Garden",
+   "difficulty": "Medium",
+   "pitch": "Pallet planks and fabric pockets turn a wall into an herb garden.",
+   "rawMaterials": [
+    {
+     "id": "plank",
+     "name": "Pallet Plank",
+     "qty": 4
+    },
+    {
+     "id": "fabric",
+     "name": "Fabric Scrap",
+     "qty": 3
+    },
+    {
+     "id": "screws",
+     "name": "Screws",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "plank",
+     "b": "fabric",
+     "result_id": "planterpocket",
+     "result_name": "Planter Pocket",
+     "result_short": "PP"
+    },
+    {
+     "a": "plank",
+     "b": "screws",
+     "result_id": "frame",
+     "result_name": "Plank Frame",
+     "result_short": "PF"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "planterpocket",
+     "qty": 3
+    },
+    {
+     "id": "frame",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Screw two planks into a ladder-style frame.",
+    "Staple fabric under three more planks to form deep pockets.",
+    "Screw the pockets across the frame, fill with soil, and lean against a sunny wall."
+   ],
+   "extend": "Add the bottle drip irrigator at the top pocket so water trickles down."
+  },
+  {
+   "id": "bucket_compost",
+   "title": "Bucket Composter",
+   "category": "Garden",
+   "difficulty": "Easy",
+   "pitch": "Drill holes in a bucket and lid to make an airflow compost bin for kitchen scraps.",
+   "rawMaterials": [
+    {
+     "id": "bucket",
+     "name": "Plastic Bucket",
+     "qty": 1
+    },
+    {
+     "id": "nail",
+     "name": "Nails",
+     "qty": 1
+    },
+    {
+     "id": "tray",
+     "name": "Clear Plastic Tray",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "bucket",
+     "b": "nail",
+     "result_id": "ventbucket",
+     "result_name": "Vented Bucket",
+     "result_short": "VB"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "ventbucket",
+     "qty": 1
+    },
+    {
+     "id": "tray",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Punch holes around the bucket sides and bottom with a hot nail.",
+    "Set the bucket on a tray to catch drips.",
+    "Layer scraps with dry leaves and stir weekly."
+   ],
+   "extend": "Stack a second bucket inside so finished compost drops out the bottom."
+  },
+  {
+   "id": "rain_gauge",
+   "title": "Rain Gauge",
+   "category": "Garden",
+   "difficulty": "Easy",
+   "pitch": "A straight-sided bottle with a ruler scale measures rainfall.",
+   "rawMaterials": [
+    {
+     "id": "bottle",
+     "name": "Plastic Bottle",
+     "qty": 1
+    },
+    {
+     "id": "markers",
+     "name": "Marker",
+     "qty": 1
+    },
+    {
+     "id": "gravel",
+     "name": "Gravel",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "bottle",
+     "b": "markers",
+     "result_id": "scaledbottle",
+     "result_name": "Scaled Bottle",
+     "result_short": "SB"
+    },
+    {
+     "a": "scaledbottle",
+     "b": "gravel",
+     "result_id": "raingauge",
+     "result_name": "Rain Gauge",
+     "result_short": "RG"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "raingauge",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut the top off the bottle and flip it in as a funnel.",
+    "Add gravel to the bottom for weight, add water up to a starting line, and mark centimeters above it.",
+    "Set the gauge in an open spot and read it after each rain."
+   ],
+   "extend": "Log readings and compare with the local weather service."
+  },
+  {
+   "id": "bird_feeder",
+   "title": "Bottle Bird Feeder",
+   "category": "Garden",
+   "difficulty": "Easy",
+   "pitch": "Two dowels through a bottle make perches, and seeds pour out of holes above them.",
+   "rawMaterials": [
+    {
+     "id": "bottle",
+     "name": "Plastic Bottle",
+     "qty": 1
+    },
+    {
+     "id": "dowel",
+     "name": "Wooden Dowel",
+     "qty": 1
+    },
+    {
+     "id": "string",
+     "name": "String",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "bottle",
+     "b": "dowel",
+     "result_id": "perchbottle",
+     "result_name": "Perch Bottle",
+     "result_short": "PB"
+    },
+    {
+     "a": "perchbottle",
+     "b": "string",
+     "result_id": "feeder",
+     "result_name": "Bird Feeder",
+     "result_short": "BF"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "feeder",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Push a dowel through the bottle near the bottom, and cut a small hole above each end.",
+    "Fill the bottle with birdseed and close the cap.",
+    "Tie string around the neck and hang the feeder from a branch."
+   ],
+   "extend": "Add an old phone camera to snap visitors."
+  },
+  {
+   "id": "bug_hotel",
+   "title": "Bug Hotel",
+   "category": "Garden",
+   "difficulty": "Easy",
+   "pitch": "A tin can packed with straws and paper tubes gives solitary bees a place to nest.",
+   "rawMaterials": [
+    {
+     "id": "can",
+     "name": "Tin Can",
+     "qty": 1
+    },
+    {
+     "id": "straw",
+     "name": "Drinking Straw",
+     "qty": 1
+    },
+    {
+     "id": "paperroll",
+     "name": "Paper Towel Tube",
+     "qty": 1
+    },
+    {
+     "id": "string",
+     "name": "String",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "can",
+     "b": "straw",
+     "result_id": "nestcan",
+     "result_name": "Nest Can",
+     "result_short": "NC"
+    },
+    {
+     "a": "nestcan",
+     "b": "paperroll",
+     "result_id": "bughotel",
+     "result_name": "Bug Hotel",
+     "result_short": "BH"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "bughotel",
+     "qty": 1
+    },
+    {
+     "id": "string",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut straws and paper tubes to the can's depth.",
+    "Pack them in tight so none fall out.",
+    "Hang the can on its side, opening facing south, out of the rain."
+   ],
+   "extend": "Mount several cans in a wooden box to make a bug apartment block."
+  },
+  {
+   "id": "hose_sprinkler",
+   "title": "Hose Sprinkler",
+   "category": "Garden",
+   "difficulty": "Easy",
+   "pitch": "A bottle with nail holes on a hose end makes a lawn sprinkler.",
+   "rawMaterials": [
+    {
+     "id": "bottle",
+     "name": "Plastic Bottle",
+     "qty": 1
+    },
+    {
+     "id": "nail",
+     "name": "Nails",
+     "qty": 1
+    },
+    {
+     "id": "hose",
+     "name": "Garden Hose",
+     "qty": 1
+    },
+    {
+     "id": "tape",
+     "name": "Duct Tape",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "bottle",
+     "b": "nail",
+     "result_id": "holebottle",
+     "result_name": "Holed Bottle",
+     "result_short": "HB"
+    },
+    {
+     "a": "holebottle",
+     "b": "hose",
+     "result_id": "sprinkler",
+     "result_name": "Bottle Sprinkler",
+     "result_short": "BS"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "sprinkler",
+     "qty": 1
+    },
+    {
+     "id": "tape",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Poke rows of holes along one side of the bottle.",
+    "Push the hose into the bottle neck and wrap with duct tape until watertight.",
+    "Lay the bottle holes-up and turn on the water slowly."
+   ],
+   "extend": "Mount the sprinkler on a servo to sweep the spray."
+  },
+  {
+   "id": "phone_stand",
+   "title": "Cardboard Phone Stand",
+   "category": "Home & Desk",
+   "difficulty": "Easy",
+   "pitch": "Two interlocking cardboard pieces hold a phone at a viewing angle.",
+   "rawMaterials": [
+    {
+     "id": "cardboard",
+     "name": "Cardboard Sheet",
+     "qty": 1
+    },
+    {
+     "id": "tape",
+     "name": "Duct Tape",
+     "qty": 1
+    },
+    {
+     "id": "bottlecap",
+     "name": "Bottle Cap",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "cardboard",
+     "b": "tape",
+     "result_id": "standbase",
+     "result_name": "Stand Base",
+     "result_short": "SB"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "standbase",
+     "qty": 1
+    },
+    {
+     "id": "bottlecap",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut two cardboard pieces with matching slots, one tilted back 20 degrees.",
+    "Slide the pieces together and tape the joint.",
+    "Glue a bottle cap at the front lip so the phone stays put."
+   ],
+   "extend": "Cut a hole at the back to feed a charging cable through."
+  },
+  {
+   "id": "cable_clips",
+   "title": "Desk Cable Clips",
+   "category": "Home & Desk",
+   "difficulty": "Easy",
+   "pitch": "Binder clips taped to the desk edge keep charging cables from falling behind.",
+   "rawMaterials": [
+    {
+     "id": "binder",
+     "name": "Binder Clip",
+     "qty": 4
+    },
+    {
+     "id": "tape",
+     "name": "Duct Tape",
+     "qty": 4
+    }
+   ],
+   "recipes": [
+    {
+     "a": "binder",
+     "b": "tape",
+     "result_id": "cableclip",
+     "result_name": "Cable Clip",
+     "result_short": "CC"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "cableclip",
+     "qty": 4
+    }
+   ],
+   "assembly_steps": [
+    "Tape each binder clip to the back edge of the desk.",
+    "Thread a cable through each clip's metal handle.",
+    "Label each clip with a strip of tape."
+   ],
+   "extend": "Add a wooden block to hold the clips and screw it to the desk."
+  },
+  {
+   "id": "can_organizer",
+   "title": "Tin Can Pencil Caddy",
+   "category": "Home & Desk",
+   "difficulty": "Easy",
+   "pitch": "Three tin cans glued onto a board hold pens, scissors, and rulers.",
+   "rawMaterials": [
+    {
+     "id": "can",
+     "name": "Tin Can",
+     "qty": 3
+    },
+    {
+     "id": "fabric",
+     "name": "Fabric Scrap",
+     "qty": 3
+    },
+    {
+     "id": "wood",
+     "name": "Scrap Wood",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "can",
+     "b": "fabric",
+     "result_id": "wrappedcan",
+     "result_name": "Wrapped Can",
+     "result_short": "WC"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "wrappedcan",
+     "qty": 3
+    },
+    {
+     "id": "wood",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Wrap each can in fabric scrap and glue the edge.",
+    "Glue the three cans upright onto the wood base, tallest at the back.",
+    "Sort pens, scissors, and rulers into each can."
+   ],
+   "extend": "Add a magnet to the base to hold paper clips."
+  },
+  {
+   "id": "headphone_hook",
+   "title": "Headphone Hook",
+   "category": "Home & Desk",
+   "difficulty": "Easy",
+   "pitch": "A bent hanger clamped under the desk holds headphones.",
+   "rawMaterials": [
+    {
+     "id": "hanger",
+     "name": "Wire Hanger",
+     "qty": 1
+    },
+    {
+     "id": "binder",
+     "name": "Binder Clip",
+     "qty": 1
+    },
+    {
+     "id": "tape",
+     "name": "Duct Tape",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "hanger",
+     "b": "binder",
+     "result_id": "deskhook",
+     "result_name": "Desk Hook",
+     "result_short": "DH"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "deskhook",
+     "qty": 1
+    },
+    {
+     "id": "tape",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Bend the hanger into a J shape about 10 cm deep.",
+    "Clamp the flat end under the desk edge with the binder clip.",
+    "Wrap the hook in duct tape so it won't scratch the headband."
+   ],
+   "extend": "Add a second hook for a cable and a small shelf for the case."
+  },
+  {
+   "id": "cooling_pad",
+   "title": "Laptop Cooling Pad",
+   "category": "Home & Desk",
+   "difficulty": "Medium",
+   "pitch": "A PC fan powered by USB pushes air under a laptop on a cardboard stand.",
+   "rawMaterials": [
+    {
+     "id": "fan",
+     "name": "PC Fan",
+     "qty": 1
+    },
+    {
+     "id": "usbcable",
+     "name": "Old USB Cable",
+     "qty": 1
+    },
+    {
+     "id": "cardboard",
+     "name": "Cardboard Sheet",
+     "qty": 1
+    },
+    {
+     "id": "mesh",
+     "name": "Window Screen Mesh",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "fan",
+     "b": "usbcable",
+     "result_id": "usbpcfan",
+     "result_name": "USB PC Fan",
+     "result_short": "UPF"
+    },
+    {
+     "a": "usbpcfan",
+     "b": "cardboard",
+     "result_id": "coolingpad",
+     "result_name": "Cooling Pad",
+     "result_short": "CP"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "coolingpad",
+     "qty": 1
+    },
+    {
+     "id": "mesh",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Splice the fan wires to the USB cable. Most 12V fans spin slower but safe on 5V.",
+    "Cut a hole in a slanted cardboard stand and mount the fan under it.",
+    "Cover the hole with window screen mesh so fingers stay out."
+   ],
+   "extend": "Add a second fan and a switch."
+  },
+  {
+   "id": "key_holder",
+   "title": "Magnetic Key Holder",
+   "category": "Home & Desk",
+   "difficulty": "Easy",
+   "pitch": "Magnets glued into a plank hold keys by the door.",
+   "rawMaterials": [
+    {
+     "id": "wood",
+     "name": "Scrap Wood",
+     "qty": 1
+    },
+    {
+     "id": "magnet",
+     "name": "Magnet",
+     "qty": 1
+    },
+    {
+     "id": "hook",
+     "name": "Screw Hook",
+     "qty": 2
+    }
+   ],
+   "recipes": [
+    {
+     "a": "wood",
+     "b": "magnet",
+     "result_id": "magstrip",
+     "result_name": "Magnet Strip",
+     "result_short": "MS"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "magstrip",
+     "qty": 1
+    },
+    {
+     "id": "hook",
+     "qty": 2
+    }
+   ],
+   "assembly_steps": [
+    "Glue a magnet into a shallow hole at the center of the wood.",
+    "Screw two hooks into the wood bottom for keys with plastic heads.",
+    "Mount the holder by the door with screws."
+   ],
+   "extend": "Add an LED that turns on when keys are missing, using a reed switch."
+  },
+  {
+   "id": "drawer_dividers",
+   "title": "Drawer Dividers",
+   "category": "Home & Desk",
+   "difficulty": "Easy",
+   "pitch": "Paper towel tubes cut to height sort cables and small items in a drawer.",
+   "rawMaterials": [
+    {
+     "id": "paperroll",
+     "name": "Paper Towel Tube",
+     "qty": 6
+    },
+    {
+     "id": "tape",
+     "name": "Duct Tape",
+     "qty": 6
+    },
+    {
+     "id": "shoebox",
+     "name": "Shoe Box",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "paperroll",
+     "b": "tape",
+     "result_id": "cutroll",
+     "result_name": "Cut Roll",
+     "result_short": "CR"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "cutroll",
+     "qty": 6
+    },
+    {
+     "id": "shoebox",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut tubes to the drawer's height.",
+    "Tape them together in a grid inside a shoe box.",
+    "Slide the box into the drawer and roll cables into each tube."
+   ],
+   "extend": "Label each tube by cable type."
+  },
+  {
+   "id": "plank_shelf",
+   "title": "Floating Plank Shelf",
+   "category": "Home & Desk",
+   "difficulty": "Medium",
+   "pitch": "A pallet plank on two L-brackets makes a sturdy wall shelf.",
+   "rawMaterials": [
+    {
+     "id": "plank",
+     "name": "Pallet Plank",
+     "qty": 1
+    },
+    {
+     "id": "sandpaper",
+     "name": "Sandpaper",
+     "qty": 1
+    },
+    {
+     "id": "bracket",
+     "name": "L-Bracket",
+     "qty": 2
+    },
+    {
+     "id": "screws",
+     "name": "Screws",
+     "qty": 2
+    }
+   ],
+   "recipes": [
+    {
+     "a": "plank",
+     "b": "sandpaper",
+     "result_id": "smoothplank",
+     "result_name": "Smooth Plank",
+     "result_short": "SP"
+    },
+    {
+     "a": "bracket",
+     "b": "screws",
+     "result_id": "mount",
+     "result_name": "Shelf Mount",
+     "result_short": "SM"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "smoothplank",
+     "qty": 1
+    },
+    {
+     "id": "mount",
+     "qty": 2
+    }
+   ],
+   "assembly_steps": [
+    "Sand the plank smooth, edges and face.",
+    "Screw the brackets into wall studs at the same height.",
+    "Set the plank on top and screw up through the brackets."
+   ],
+   "extend": "Add an LED strip under the shelf for a display light."
+  },
+  {
+   "id": "doorstop",
+   "title": "Denim Doorstop",
+   "category": "Home & Desk",
+   "difficulty": "Easy",
+   "pitch": "A jeans leg filled with dry rice holds a door open.",
+   "rawMaterials": [
+    {
+     "id": "jeans",
+     "name": "Old Jeans",
+     "qty": 1
+    },
+    {
+     "id": "rice",
+     "name": "Dry Rice",
+     "qty": 1
+    },
+    {
+     "id": "zip",
+     "name": "Zip Tie",
+     "qty": 2
+    }
+   ],
+   "recipes": [
+    {
+     "a": "jeans",
+     "b": "rice",
+     "result_id": "riceleg",
+     "result_name": "Rice-Filled Leg",
+     "result_short": "RFL"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "riceleg",
+     "qty": 1
+    },
+    {
+     "id": "zip",
+     "qty": 2
+    }
+   ],
+   "assembly_steps": [
+    "Cut a 20 cm length of jean leg.",
+    "Zip-tie one end, fill with rice, then zip-tie the other end.",
+    "Fold the ends under and push against the door."
+   ],
+   "extend": "Sew a fabric handle on top for carrying."
+  },
+  {
+   "id": "cork_coasters",
+   "title": "Cork Coasters",
+   "category": "Home & Desk",
+   "difficulty": "Easy",
+   "pitch": "Wine cork slices glued into a circle make coasters.",
+   "rawMaterials": [
+    {
+     "id": "cork",
+     "name": "Wine Cork",
+     "qty": 4
+    },
+    {
+     "id": "cardboard",
+     "name": "Cardboard Sheet",
+     "qty": 4
+    }
+   ],
+   "recipes": [
+    {
+     "a": "cork",
+     "b": "cardboard",
+     "result_id": "corkdisc",
+     "result_name": "Cork Disc",
+     "result_short": "CD"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "corkdisc",
+     "qty": 4
+    }
+   ],
+   "assembly_steps": [
+    "Slice corks into 1 cm rounds.",
+    "Glue the rounds tight on a cardboard circle.",
+    "Trim the edge and seal with clear glue."
+   ],
+   "extend": "Burn designs into the cork with a hot nail."
+  },
+  {
+   "id": "spice_rack",
+   "title": "Jar Lid Spice Rack",
+   "category": "Storage",
+   "difficulty": "Easy",
+   "pitch": "Jar lids screwed under a shelf let spice jars hang and twist off.",
+   "rawMaterials": [
+    {
+     "id": "lid",
+     "name": "Jar Lid",
+     "qty": 4
+    },
+    {
+     "id": "screws",
+     "name": "Screws",
+     "qty": 4
+    },
+    {
+     "id": "jar",
+     "name": "Glass Jar",
+     "qty": 4
+    },
+    {
+     "id": "plank",
+     "name": "Pallet Plank",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "lid",
+     "b": "screws",
+     "result_id": "hanglid",
+     "result_name": "Hanging Lid",
+     "result_short": "HL"
+    },
+    {
+     "a": "hanglid",
+     "b": "jar",
+     "result_id": "hangjar",
+     "result_name": "Hanging Jar",
+     "result_short": "HJ"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "hangjar",
+     "qty": 4
+    },
+    {
+     "id": "plank",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Screw each lid to the plank bottom.",
+    "Fill the jars and twist them into the lids.",
+    "Mount the plank under a cabinet."
+   ],
+   "extend": "Label lids with marker so you know the contents from below."
+  },
+  {
+   "id": "bag_dispenser",
+   "title": "Bag Dispenser",
+   "category": "Storage",
+   "difficulty": "Easy",
+   "pitch": "A cut bottle on the wall stores plastic bags and dispenses them one at a time.",
+   "rawMaterials": [
+    {
+     "id": "bottle",
+     "name": "Plastic Bottle",
+     "qty": 1
+    },
+    {
+     "id": "screws",
+     "name": "Screws",
+     "qty": 1
+    },
+    {
+     "id": "bag",
+     "name": "Plastic Bag",
+     "qty": 10
+    }
+   ],
+   "recipes": [
+    {
+     "a": "bottle",
+     "b": "screws",
+     "result_id": "wallbottle",
+     "result_name": "Wall Bottle",
+     "result_short": "WB"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "wallbottle",
+     "qty": 1
+    },
+    {
+     "id": "bag",
+     "qty": 10
+    }
+   ],
+   "assembly_steps": [
+    "Cut the bottom off the bottle.",
+    "Screw the bottle neck-down to a wall.",
+    "Stuff bags in the top and pull them from the neck."
+   ],
+   "extend": "Wrap the bottle in fabric to match the room."
+  },
+  {
+   "id": "pvc_shoerack",
+   "title": "PVC Shoe Rack",
+   "category": "Storage",
+   "difficulty": "Medium",
+   "pitch": "PVC pipe sections stacked in a pyramid hold one shoe pair per tube.",
+   "rawMaterials": [
+    {
+     "id": "pvc",
+     "name": "PVC Pipe",
+     "qty": 3
+    },
+    {
+     "id": "zip",
+     "name": "Zip Tie",
+     "qty": 3
+    },
+    {
+     "id": "wood",
+     "name": "Scrap Wood",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "pvc",
+     "b": "zip",
+     "result_id": "pipepair",
+     "result_name": "Pipe Pair",
+     "result_short": "PP"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "pipepair",
+     "qty": 3
+    },
+    {
+     "id": "wood",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut pipe into 30 cm lengths.",
+    "Zip-tie pipes into pairs and stack them into a pyramid.",
+    "Glue the pyramid onto a wooden base."
+   ],
+   "extend": "Spray-paint the pipes and add a top shelf."
+  },
+  {
+   "id": "pvc_toolwall",
+   "title": "PVC Tool Wall",
+   "category": "Storage",
+   "difficulty": "Medium",
+   "pitch": "Short PVC sleeves screwed to a plank hold screwdrivers and pliers on a wall.",
+   "rawMaterials": [
+    {
+     "id": "pvc",
+     "name": "PVC Pipe",
+     "qty": 5
+    },
+    {
+     "id": "screws",
+     "name": "Screws",
+     "qty": 5
+    },
+    {
+     "id": "plank",
+     "name": "Pallet Plank",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "pvc",
+     "b": "screws",
+     "result_id": "toolsleeve",
+     "result_name": "Tool Sleeve",
+     "result_short": "TS"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "toolsleeve",
+     "qty": 5
+    },
+    {
+     "id": "plank",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut pipe into 5 cm sleeves.",
+    "Screw the sleeves along the plank, openings up.",
+    "Mount the plank on the wall and drop tools in."
+   ],
+   "extend": "Add a magnet strip along the top for drill bits."
+  },
+  {
+   "id": "cable_box",
+   "title": "Cable Box",
+   "category": "Storage",
+   "difficulty": "Easy",
+   "pitch": "A shoe box with side holes hides a power strip and its cable mess.",
+   "rawMaterials": [
+    {
+     "id": "shoebox",
+     "name": "Shoe Box",
+     "qty": 1
+    },
+    {
+     "id": "nail",
+     "name": "Nails",
+     "qty": 1
+    },
+    {
+     "id": "tape",
+     "name": "Duct Tape",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "shoebox",
+     "b": "nail",
+     "result_id": "ventbox",
+     "result_name": "Holed Box",
+     "result_short": "HB"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "ventbox",
+     "qty": 1
+    },
+    {
+     "id": "tape",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut a slot in each end of the box for cables.",
+    "Punch vent holes in the lid.",
+    "Set the power strip inside, route cables out the slots, and tape the edges."
+   ],
+   "extend": "Cover with fabric for a cleaner look."
+  },
+  {
+   "id": "tshirt_bag",
+   "title": "No-Sew T-Shirt Bag",
+   "category": "Storage",
+   "difficulty": "Easy",
+   "pitch": "Cut and knot an old T-shirt into a strong shopping bag.",
+   "rawMaterials": [
+    {
+     "id": "tshirt",
+     "name": "Old T-Shirt",
+     "qty": 1
+    },
+    {
+     "id": "string",
+     "name": "String",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "tshirt",
+     "b": "string",
+     "result_id": "tshirtbag",
+     "result_name": "T-Shirt Bag",
+     "result_short": "TSB"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "tshirtbag",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut off the sleeves and widen the neck to make handles.",
+    "Cut 8 cm fringe along the bottom hem.",
+    "Tie each front fringe to its back pair, then tie neighbors together."
+   ],
+   "extend": "Line the bag with a second shirt for heavier loads."
+  },
+  {
+   "id": "magazine_file",
+   "title": "Cereal Box File",
+   "category": "Storage",
+   "difficulty": "Easy",
+   "pitch": "A cereal box cut at an angle holds magazines and notebooks.",
+   "rawMaterials": [
+    {
+     "id": "cereal",
+     "name": "Cereal Box",
+     "qty": 2
+    },
+    {
+     "id": "fabric",
+     "name": "Fabric Scrap",
+     "qty": 2
+    }
+   ],
+   "recipes": [
+    {
+     "a": "cereal",
+     "b": "fabric",
+     "result_id": "boxfile",
+     "result_name": "Box File",
+     "result_short": "BF"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "boxfile",
+     "qty": 2
+    }
+   ],
+   "assembly_steps": [
+    "Cut the cereal box diagonally from top back to halfway down the front.",
+    "Glue fabric over the outside.",
+    "Line two files on a shelf."
+   ],
+   "extend": "Add a label pocket on the front."
+  },
+  {
+   "id": "underbed_box",
+   "title": "Under-Bed Roller Box",
+   "category": "Storage",
+   "difficulty": "Medium",
+   "pitch": "Caster wheels under a shallow wooden box let you roll storage under the bed.",
+   "rawMaterials": [
+    {
+     "id": "wood",
+     "name": "Scrap Wood",
+     "qty": 1
+    },
+    {
+     "id": "screws",
+     "name": "Screws",
+     "qty": 5
+    },
+    {
+     "id": "caster",
+     "name": "Caster Wheel",
+     "qty": 4
+    }
+   ],
+   "recipes": [
+    {
+     "a": "wood",
+     "b": "screws",
+     "result_id": "shallowbox",
+     "result_name": "Shallow Box",
+     "result_short": "SB"
+    },
+    {
+     "a": "caster",
+     "b": "screws",
+     "result_id": "castermount",
+     "result_name": "Caster Mount",
+     "result_short": "CM"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "shallowbox",
+     "qty": 1
+    },
+    {
+     "id": "castermount",
+     "qty": 4
+    }
+   ],
+   "assembly_steps": [
+    "Screw scrap wood into a 15 cm deep box.",
+    "Screw a caster on each corner.",
+    "Add a rope handle at one end."
+   ],
+   "extend": "Add a hinged lid to keep dust out."
+  },
+  {
+   "id": "jeans_organizer",
+   "title": "Jeans Pocket Organizer",
+   "category": "Storage",
+   "difficulty": "Easy",
+   "pitch": "Back pockets cut from old jeans and stapled to a plank hold small items.",
+   "rawMaterials": [
+    {
+     "id": "jeans",
+     "name": "Old Jeans",
+     "qty": 1
+    },
+    {
+     "id": "plank",
+     "name": "Pallet Plank",
+     "qty": 1
+    },
+    {
+     "id": "hook",
+     "name": "Screw Hook",
+     "qty": 2
+    }
+   ],
+   "recipes": [
+    {
+     "a": "jeans",
+     "b": "plank",
+     "result_id": "pocketboard",
+     "result_name": "Pocket Board",
+     "result_short": "PB"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "pocketboard",
+     "qty": 1
+    },
+    {
+     "id": "hook",
+     "qty": 2
+    }
+   ],
+   "assembly_steps": [
+    "Cut the back pockets off the jeans, leaving 2 cm of fabric around each one.",
+    "Staple the pockets in a grid onto the plank, open side up.",
+    "Screw two hooks into the top edge and hang the board by the door."
+   ],
+   "extend": "Add a mirror in the center for an entryway station."
+  },
+  {
+   "id": "jar_hardware",
+   "title": "Hardware Jar Wall",
+   "category": "Storage",
+   "difficulty": "Easy",
+   "pitch": "Clear jars sorted on a shelf with labeled lids show every screw size.",
+   "rawMaterials": [
+    {
+     "id": "jar",
+     "name": "Glass Jar",
+     "qty": 6
+    },
+    {
+     "id": "lid",
+     "name": "Jar Lid",
+     "qty": 6
+    },
+    {
+     "id": "plank",
+     "name": "Pallet Plank",
+     "qty": 1
+    },
+    {
+     "id": "bracket",
+     "name": "L-Bracket",
+     "qty": 2
+    }
+   ],
+   "recipes": [
+    {
+     "a": "jar",
+     "b": "lid",
+     "result_id": "labeledjar",
+     "result_name": "Labeled Jar",
+     "result_short": "LJ"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "labeledjar",
+     "qty": 6
+    },
+    {
+     "id": "plank",
+     "qty": 1
+    },
+    {
+     "id": "bracket",
+     "qty": 2
+    }
+   ],
+   "assembly_steps": [
+    "Write a size on each lid with marker.",
+    "Fill each jar with one fastener type.",
+    "Mount the plank on brackets and line up the jars."
+   ],
+   "extend": "Glue a sample of each fastener on the lid."
+  },
+  {
+   "id": "phone_amp",
+   "title": "Passive Phone Amp",
+   "category": "Sound",
+   "difficulty": "Easy",
+   "pitch": "A paper towel tube between two cups makes your phone louder without power.",
+   "rawMaterials": [
+    {
+     "id": "paperroll",
+     "name": "Paper Towel Tube",
+     "qty": 2
+    },
+    {
+     "id": "cup",
+     "name": "Plastic Cup",
+     "qty": 2
+    },
+    {
+     "id": "cardboard",
+     "name": "Cardboard Sheet",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "paperroll",
+     "b": "cup",
+     "result_id": "horn",
+     "result_name": "Horn",
+     "result_short": "HO"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "horn",
+     "qty": 2
+    },
+    {
+     "id": "cardboard",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut a phone-width slot in the center of the tube.",
+    "Cut a hole in each cup side and push the tube ends in.",
+    "Glue to a cardboard base and drop the phone in the slot."
+   ],
+   "extend": "Swap cups for a bigger cone to boost volume."
+  },
+  {
+   "id": "bt_speaker",
+   "title": "Bluetooth Speaker Revival",
+   "category": "Sound",
+   "difficulty": "Medium",
+   "pitch": "A Bluetooth audio module and amp board give an old speaker a second life.",
+   "rawMaterials": [
+    {
+     "id": "btmodule",
+     "name": "Bluetooth Audio Module",
+     "qty": 1
+    },
+    {
+     "id": "ampboard",
+     "name": "Amp Board",
+     "qty": 1
+    },
+    {
+     "id": "speaker",
+     "name": "Old Speaker",
+     "qty": 1
+    },
+    {
+     "id": "powerbank",
+     "name": "Power Bank",
+     "qty": 1
+    },
+    {
+     "id": "shoebox",
+     "name": "Shoe Box",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "btmodule",
+     "b": "ampboard",
+     "result_id": "audioboard",
+     "result_name": "Audio Board",
+     "result_short": "AB"
+    },
+    {
+     "a": "audioboard",
+     "b": "speaker",
+     "result_id": "livespeaker",
+     "result_name": "Live Speaker",
+     "result_short": "LS"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "livespeaker",
+     "qty": 1
+    },
+    {
+     "id": "powerbank",
+     "qty": 1
+    },
+    {
+     "id": "shoebox",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Wire the Bluetooth module output to the amp board input.",
+    "Connect the amp output to the speaker terminals.",
+    "Mount everything in a shoe box enclosure and power from the power bank."
+   ],
+   "extend": "Add a second speaker for stereo."
+  },
+  {
+   "id": "can_phone",
+   "title": "Tin Can Telephone",
+   "category": "Sound",
+   "difficulty": "Easy",
+   "pitch": "Two cans on a tight string carry your voice across the yard.",
+   "rawMaterials": [
+    {
+     "id": "can",
+     "name": "Tin Can",
+     "qty": 2
+    },
+    {
+     "id": "nail",
+     "name": "Nails",
+     "qty": 2
+    },
+    {
+     "id": "string",
+     "name": "String",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "can",
+     "b": "nail",
+     "result_id": "holecan",
+     "result_name": "Holed Can",
+     "result_short": "HC"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "holecan",
+     "qty": 2
+    },
+    {
+     "id": "string",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Punch a small hole in each can bottom.",
+    "Thread the string through and knot it inside.",
+    "Pull the string tight and talk into one can."
+   ],
+   "extend": "Branch a third can on the line for a party line."
+  },
+  {
+   "id": "band_guitar",
+   "title": "Rubber Band Guitar",
+   "category": "Sound",
+   "difficulty": "Easy",
+   "pitch": "Rubber bands stretched over a shoe box sound different pitches.",
+   "rawMaterials": [
+    {
+     "id": "shoebox",
+     "name": "Shoe Box",
+     "qty": 1
+    },
+    {
+     "id": "rubber",
+     "name": "Rubber Band",
+     "qty": 1
+    },
+    {
+     "id": "paperroll",
+     "name": "Paper Towel Tube",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "shoebox",
+     "b": "rubber",
+     "result_id": "guitarbody",
+     "result_name": "Guitar Body",
+     "result_short": "GB"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "guitarbody",
+     "qty": 1
+    },
+    {
+     "id": "paperroll",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut a round hole in the shoe box lid.",
+    "Stretch rubber bands of different widths across the hole.",
+    "Glue a tube on as a neck and pluck."
+   ],
+   "extend": "Add a pencil bridge under the bands to tune."
+  },
+  {
+   "id": "bottle_xylo",
+   "title": "Bottle Xylophone",
+   "category": "Sound",
+   "difficulty": "Easy",
+   "pitch": "Bottles filled to different levels ring out a scale.",
+   "rawMaterials": [
+    {
+     "id": "bottle",
+     "name": "Plastic Bottle",
+     "qty": 5
+    },
+    {
+     "id": "markers",
+     "name": "Marker",
+     "qty": 5
+    },
+    {
+     "id": "dowel",
+     "name": "Wooden Dowel",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "bottle",
+     "b": "markers",
+     "result_id": "tunedbottle",
+     "result_name": "Tuned Bottle",
+     "result_short": "TB"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "tunedbottle",
+     "qty": 5
+    },
+    {
+     "id": "dowel",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Mark a fill line on each bottle, a little higher on each one.",
+    "Fill each bottle with water to its line and line them up.",
+    "Tap with a dowel and adjust levels until you hear a scale."
+   ],
+   "extend": "Add food coloring per note and write a song chart."
+  },
+  {
+   "id": "doorbell",
+   "title": "Buzzer Doorbell",
+   "category": "Sound",
+   "difficulty": "Easy",
+   "pitch": "A push button and piezo buzzer make a battery doorbell.",
+   "rawMaterials": [
+    {
+     "id": "button",
+     "name": "Push Button",
+     "qty": 1
+    },
+    {
+     "id": "buzzer",
+     "name": "Piezo Buzzer",
+     "qty": 1
+    },
+    {
+     "id": "battholder",
+     "name": "AA Battery Holder",
+     "qty": 1
+    },
+    {
+     "id": "wire",
+     "name": "Hookup Wire",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "button",
+     "b": "buzzer",
+     "result_id": "bellcore",
+     "result_name": "Bell Core",
+     "result_short": "BC"
+    },
+    {
+     "a": "bellcore",
+     "b": "battholder",
+     "result_id": "doorbell",
+     "result_name": "Doorbell",
+     "result_short": "DO"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "doorbell",
+     "qty": 1
+    },
+    {
+     "id": "wire",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Wire the button in series with the buzzer.",
+    "Connect to the battery holder.",
+    "Mount the button outside the door and run wire to the buzzer inside."
+   ],
+   "extend": "Use an Arduino to play a tune instead of a beep."
+  },
+  {
+   "id": "bucket_drum",
+   "title": "Bucket Drum",
+   "category": "Sound",
+   "difficulty": "Easy",
+   "pitch": "A balloon stretched over a bucket makes a deep drum.",
+   "rawMaterials": [
+    {
+     "id": "bucket",
+     "name": "Plastic Bucket",
+     "qty": 1
+    },
+    {
+     "id": "balloon",
+     "name": "Balloon",
+     "qty": 1
+    },
+    {
+     "id": "dowel",
+     "name": "Wooden Dowel",
+     "qty": 2
+    }
+   ],
+   "recipes": [
+    {
+     "a": "bucket",
+     "b": "balloon",
+     "result_id": "drumhead",
+     "result_name": "Drum Head",
+     "result_short": "DH"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "drumhead",
+     "qty": 1
+    },
+    {
+     "id": "dowel",
+     "qty": 2
+    }
+   ],
+   "assembly_steps": [
+    "Cut the neck off a balloon.",
+    "Stretch the balloon over the bucket rim and tape the edge.",
+    "Play with two dowel sticks."
+   ],
+   "extend": "Add bottle caps on a wire as a jingle."
+  },
+  {
+   "id": "kazoo",
+   "title": "Tube Kazoo",
+   "category": "Sound",
+   "difficulty": "Easy",
+   "pitch": "Wax paper over a tube buzzes when you hum.",
+   "rawMaterials": [
+    {
+     "id": "paperroll",
+     "name": "Paper Towel Tube",
+     "qty": 1
+    },
+    {
+     "id": "waxpaper",
+     "name": "Wax Paper",
+     "qty": 1
+    },
+    {
+     "id": "rubber",
+     "name": "Rubber Band",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "paperroll",
+     "b": "waxpaper",
+     "result_id": "kazoo",
+     "result_name": "Kazoo",
+     "result_short": "KA"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "kazoo",
+     "qty": 1
+    },
+    {
+     "id": "rubber",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cover one end of the tube with wax paper.",
+    "Hold the paper with a rubber band.",
+    "Poke a small hole in the side and hum into the open end."
+   ],
+   "extend": "Make three kazoos of different lengths and compare pitch."
+  },
+  {
+   "id": "wind_chimes",
+   "title": "Key Wind Chimes",
+   "category": "Sound",
+   "difficulty": "Easy",
+   "pitch": "Old keys and spoons on strings ring against each other in the wind.",
+   "rawMaterials": [
+    {
+     "id": "keys",
+     "name": "Old Keys",
+     "qty": 3
+    },
+    {
+     "id": "string",
+     "name": "String",
+     "qty": 5
+    },
+    {
+     "id": "spoon",
+     "name": "Old Spoon",
+     "qty": 2
+    },
+    {
+     "id": "hanger",
+     "name": "Wire Hanger",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "keys",
+     "b": "string",
+     "result_id": "keystrand",
+     "result_name": "Key Strand",
+     "result_short": "KS"
+    },
+    {
+     "a": "spoon",
+     "b": "string",
+     "result_id": "spoonstrand",
+     "result_name": "Spoon Strand",
+     "result_short": "SS"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "keystrand",
+     "qty": 3
+    },
+    {
+     "id": "spoonstrand",
+     "qty": 2
+    },
+    {
+     "id": "hanger",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Tie keys and spoons to strings at different lengths.",
+    "Bend the hanger into a ring.",
+    "Tie the strands around the ring and hang in a breezy spot."
+   ],
+   "extend": "Add a center clapper on a long string."
+  },
+  {
+   "id": "keyboard_piano",
+   "title": "Keyboard Piano",
+   "category": "Sound",
+   "difficulty": "Medium",
+   "pitch": "Old keyboard keys wired to an Arduino and buzzer play notes.",
+   "rawMaterials": [
+    {
+     "id": "keyboard",
+     "name": "Old Keyboard",
+     "qty": 1
+    },
+    {
+     "id": "arduino",
+     "name": "Arduino Board",
+     "qty": 1
+    },
+    {
+     "id": "buzzer",
+     "name": "Piezo Buzzer",
+     "qty": 1
+    },
+    {
+     "id": "battholder",
+     "name": "AA Battery Holder",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "keyboard",
+     "b": "arduino",
+     "result_id": "keypad",
+     "result_name": "Key Pad",
+     "result_short": "KP"
+    },
+    {
+     "a": "keypad",
+     "b": "buzzer",
+     "result_id": "piano",
+     "result_name": "Piano",
+     "result_short": "PI"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "piano",
+     "qty": 1
+    },
+    {
+     "id": "battholder",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Pull the key matrix from the old keyboard and find rows and columns.",
+    "Wire the matrix to the Arduino inputs and the buzzer to a PWM pin.",
+    "Upload a sketch mapping 8 keys to a scale."
+   ],
+   "extend": "Add a record button to save and replay melodies."
+  },
+  {
+   "id": "marble_run",
+   "title": "Marble Run",
+   "category": "Play",
+   "difficulty": "Easy",
+   "pitch": "Paper tubes taped to a wall form a run for marbles.",
+   "rawMaterials": [
+    {
+     "id": "paperroll",
+     "name": "Paper Towel Tube",
+     "qty": 5
+    },
+    {
+     "id": "tape",
+     "name": "Duct Tape",
+     "qty": 5
+    },
+    {
+     "id": "marble",
+     "name": "Marble",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "paperroll",
+     "b": "tape",
+     "result_id": "chute",
+     "result_name": "Chute",
+     "result_short": "CH"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "chute",
+     "qty": 5
+    },
+    {
+     "id": "marble",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut each tube in half lengthwise to make open chutes.",
+    "Tape the chutes to a wall in a zigzag, each one tilted down and ending over the next.",
+    "Drop a marble at the top and adjust angles until it runs to the bottom."
+   ],
+   "extend": "Add a funnel cup and a bell at the end."
+  },
+  {
+   "id": "pinball",
+   "title": "Cardboard Pinball",
+   "category": "Play",
+   "difficulty": "Medium",
+   "pitch": "A box lid with popsicle stick flippers and rubber band launcher.",
+   "rawMaterials": [
+    {
+     "id": "popsicle",
+     "name": "Popsicle Stick",
+     "qty": 2
+    },
+    {
+     "id": "fastener",
+     "name": "Brass Fastener",
+     "qty": 2
+    },
+    {
+     "id": "rubber",
+     "name": "Rubber Band",
+     "qty": 1
+    },
+    {
+     "id": "cardboard",
+     "name": "Cardboard Sheet",
+     "qty": 1
+    },
+    {
+     "id": "shoebox",
+     "name": "Shoe Box",
+     "qty": 1
+    },
+    {
+     "id": "marble",
+     "name": "Marble",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "popsicle",
+     "b": "fastener",
+     "result_id": "flipper",
+     "result_name": "Flipper",
+     "result_short": "FL"
+    },
+    {
+     "a": "rubber",
+     "b": "cardboard",
+     "result_id": "launcher",
+     "result_name": "Launcher",
+     "result_short": "LA"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "flipper",
+     "qty": 2
+    },
+    {
+     "id": "launcher",
+     "qty": 1
+    },
+    {
+     "id": "shoebox",
+     "qty": 1
+    },
+    {
+     "id": "marble",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Prop the shoe box lid at a slight slant with the low end toward you.",
+    "Pin two popsicle stick flippers near the bottom with brass fasteners so they swing.",
+    "Build a rubber band launcher down one side, drop in the marble, and flip it back up."
+   ],
+   "extend": "Add a buzzer and contacts to score hits."
+  },
+  {
+   "id": "catapult",
+   "title": "Popsicle Catapult",
+   "category": "Play",
+   "difficulty": "Easy",
+   "pitch": "Rubber bands and popsicle sticks launch pompoms across the room.",
+   "rawMaterials": [
+    {
+     "id": "popsicle",
+     "name": "Popsicle Stick",
+     "qty": 1
+    },
+    {
+     "id": "rubber",
+     "name": "Rubber Band",
+     "qty": 1
+    },
+    {
+     "id": "bottlecap",
+     "name": "Bottle Cap",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "popsicle",
+     "b": "rubber",
+     "result_id": "arm",
+     "result_name": "Launch Arm",
+     "result_short": "LA"
+    },
+    {
+     "a": "arm",
+     "b": "bottlecap",
+     "result_id": "catapult",
+     "result_name": "Catapult",
+     "result_short": "CA"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "catapult",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Stack 7 popsicle sticks and wrap a rubber band tight around each end.",
+    "Wedge the stack between two more sticks that are banded together at one end only.",
+    "Glue a bottle cap on the end of the top stick, load a pompom, press down, and release."
+   ],
+   "extend": "Add a target board and measure range."
+  },
+  {
+   "id": "kaleidoscope",
+   "title": "Kaleidoscope",
+   "category": "Play",
+   "difficulty": "Easy",
+   "pitch": "Three mirror strips inside a tube make repeating patterns.",
+   "rawMaterials": [
+    {
+     "id": "mirror",
+     "name": "Small Mirror",
+     "qty": 1
+    },
+    {
+     "id": "paperroll",
+     "name": "Paper Towel Tube",
+     "qty": 1
+    },
+    {
+     "id": "wrap",
+     "name": "Plastic Wrap",
+     "qty": 1
+    },
+    {
+     "id": "bottlecap",
+     "name": "Bottle Cap",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "mirror",
+     "b": "paperroll",
+     "result_id": "mirrortube",
+     "result_name": "Mirror Tube",
+     "result_short": "MT"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "mirrortube",
+     "qty": 1
+    },
+    {
+     "id": "wrap",
+     "qty": 1
+    },
+    {
+     "id": "bottlecap",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut the mirror into three equal strips and tape them into a triangle, mirror side in.",
+    "Slide the triangle into the paper towel tube.",
+    "Cover one end with plastic wrap holding a few beads, cap the other end with a bottle cap with a peephole, and turn the tube."
+   ],
+   "extend": "Make the bead end rotate."
+  },
+  {
+   "id": "periscope",
+   "title": "Periscope",
+   "category": "Play",
+   "difficulty": "Easy",
+   "pitch": "Two mirrors at 45 degrees in a milk carton see over walls.",
+   "rawMaterials": [
+    {
+     "id": "milkcarton",
+     "name": "Milk Carton",
+     "qty": 1
+    },
+    {
+     "id": "mirror",
+     "name": "Small Mirror",
+     "qty": 2
+    }
+   ],
+   "recipes": [
+    {
+     "a": "milkcarton",
+     "b": "mirror",
+     "result_id": "halfscope",
+     "result_name": "Half Scope",
+     "result_short": "HS"
+    },
+    {
+     "a": "halfscope",
+     "b": "mirror",
+     "result_id": "periscope",
+     "result_name": "Periscope",
+     "result_short": "PE"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "periscope",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut a square window near the top on one side of the carton and near the bottom on the opposite side.",
+    "Glue one mirror at 45 degrees behind the top window, facing down.",
+    "Glue the second mirror at 45 degrees behind the bottom window, facing up, and look through it."
+   ],
+   "extend": "Join two cartons for a taller scope."
+  },
+  {
+   "id": "can_stilts",
+   "title": "Can Stilts",
+   "category": "Play",
+   "difficulty": "Easy",
+   "pitch": "Tin cans with string handles make kid stilts.",
+   "rawMaterials": [
+    {
+     "id": "can",
+     "name": "Tin Can",
+     "qty": 2
+    },
+    {
+     "id": "string",
+     "name": "String",
+     "qty": 2
+    }
+   ],
+   "recipes": [
+    {
+     "a": "can",
+     "b": "string",
+     "result_id": "stilt",
+     "result_name": "Stilt",
+     "result_short": "ST"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "stilt",
+     "qty": 2
+    }
+   ],
+   "assembly_steps": [
+    "Punch two holes on opposite sides near the closed top of each can.",
+    "Thread a string loop through each can, long enough to hold at waist height, and knot inside.",
+    "Stand on the cans, pull the strings tight, and step forward one can at a time."
+   ],
+   "extend": "Wrap with duct tape for grip."
+  },
+  {
+   "id": "cardboard_maze",
+   "title": "Tilt Maze",
+   "category": "Play",
+   "difficulty": "Easy",
+   "pitch": "Cardboard walls in a box lid guide a marble through a maze.",
+   "rawMaterials": [
+    {
+     "id": "cardboard",
+     "name": "Cardboard Sheet",
+     "qty": 1
+    },
+    {
+     "id": "tape",
+     "name": "Duct Tape",
+     "qty": 1
+    },
+    {
+     "id": "shoebox",
+     "name": "Shoe Box",
+     "qty": 1
+    },
+    {
+     "id": "marble",
+     "name": "Marble",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "cardboard",
+     "b": "tape",
+     "result_id": "walls",
+     "result_name": "Maze Walls",
+     "result_short": "MW"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "walls",
+     "qty": 1
+    },
+    {
+     "id": "shoebox",
+     "qty": 1
+    },
+    {
+     "id": "marble",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Draw a maze path inside the shoe box lid.",
+    "Glue cardboard strips on edge along every line to form walls.",
+    "Set the marble at the start and tilt the lid to roll it to the finish."
+   ],
+   "extend": "Cut holes as traps."
+  },
+  {
+   "id": "bottle_bowling",
+   "title": "Bottle Bowling",
+   "category": "Play",
+   "difficulty": "Easy",
+   "pitch": "Ten bottles weighted with sand and a tennis ball.",
+   "rawMaterials": [
+    {
+     "id": "bottle",
+     "name": "Plastic Bottle",
+     "qty": 10
+    },
+    {
+     "id": "sand",
+     "name": "Sand",
+     "qty": 10
+    },
+    {
+     "id": "tennisball",
+     "name": "Tennis Ball",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "bottle",
+     "b": "sand",
+     "result_id": "pin",
+     "result_name": "Pin",
+     "result_short": "PI"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "pin",
+     "qty": 10
+    },
+    {
+     "id": "tennisball",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Pour two cups of sand into each bottle so the pins stand steady.",
+    "Set the ten bottles in a triangle: four, three, two, one.",
+    "Roll the tennis ball from three meters back and count the pins knocked down."
+   ],
+   "extend": "Paint numbers for scoring."
+  },
+  {
+   "id": "ring_toss",
+   "title": "Ring Toss",
+   "category": "Play",
+   "difficulty": "Easy",
+   "pitch": "Hose rings toss onto bottle targets.",
+   "rawMaterials": [
+    {
+     "id": "hose",
+     "name": "Garden Hose",
+     "qty": 4
+    },
+    {
+     "id": "tape",
+     "name": "Duct Tape",
+     "qty": 4
+    },
+    {
+     "id": "bottle",
+     "name": "Plastic Bottle",
+     "qty": 3
+    },
+    {
+     "id": "sand",
+     "name": "Sand",
+     "qty": 3
+    }
+   ],
+   "recipes": [
+    {
+     "a": "hose",
+     "b": "tape",
+     "result_id": "ring",
+     "result_name": "Ring",
+     "result_short": "RI"
+    },
+    {
+     "a": "bottle",
+     "b": "sand",
+     "result_id": "target",
+     "result_name": "Target",
+     "result_short": "TA"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "ring",
+     "qty": 4
+    },
+    {
+     "id": "target",
+     "qty": 3
+    }
+   ],
+   "assembly_steps": [
+    "Cut the hose into 40 cm lengths and tape each into a ring.",
+    "Pour sand into the bottles and stand them a step apart.",
+    "Mark a throwing line two meters back and toss the rings onto the bottle necks."
+   ],
+   "extend": "Assign point values."
+  },
+  {
+   "id": "puppet_theater",
+   "title": "Puppet Theater",
+   "category": "Play",
+   "difficulty": "Easy",
+   "pitch": "A box with a cut stage window and sock puppets.",
+   "rawMaterials": [
+    {
+     "id": "shoebox",
+     "name": "Shoe Box",
+     "qty": 1
+    },
+    {
+     "id": "fabric",
+     "name": "Fabric Scrap",
+     "qty": 1
+    },
+    {
+     "id": "sock",
+     "name": "Old Sock",
+     "qty": 2
+    },
+    {
+     "id": "felt",
+     "name": "Felt Sheet",
+     "qty": 2
+    }
+   ],
+   "recipes": [
+    {
+     "a": "shoebox",
+     "b": "fabric",
+     "result_id": "stage",
+     "result_name": "Stage",
+     "result_short": "ST"
+    },
+    {
+     "a": "sock",
+     "b": "felt",
+     "result_id": "puppet",
+     "result_name": "Puppet",
+     "result_short": "PU"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "stage",
+     "qty": 1
+    },
+    {
+     "id": "puppet",
+     "qty": 2
+    }
+   ],
+   "assembly_steps": [
+    "Cut a large window in the bottom of the shoe box and stand the box on its side.",
+    "Glue fabric curtains along the top edge of the window.",
+    "Glue felt eyes and a mouth onto each sock and perform from behind the box."
+   ],
+   "extend": "Add an LED spotlight."
+  },
+  {
+   "id": "solar_charger",
+   "title": "Solar Phone Charger",
+   "category": "Outdoor",
+   "difficulty": "Medium",
+   "pitch": "A small solar panel and a USB charge module top up a power bank on a hike or at camp.",
+   "rawMaterials": [
+    {
+     "id": "solar",
+     "name": "Small Solar Panel",
+     "qty": 1
+    },
+    {
+     "id": "chargemodule",
+     "name": "USB Charge Module",
+     "qty": 1
+    },
+    {
+     "id": "powerbank",
+     "name": "Power Bank",
+     "qty": 1
+    },
+    {
+     "id": "usbcable",
+     "name": "Old USB Cable",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "solar",
+     "b": "chargemodule",
+     "result_id": "solarcharger",
+     "result_name": "Solar Charger",
+     "result_short": "SC"
+    },
+    {
+     "a": "solarcharger",
+     "b": "powerbank",
+     "result_id": "chargekit",
+     "result_name": "Charge Kit",
+     "result_short": "CK"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "chargekit",
+     "qty": 1
+    },
+    {
+     "id": "usbcable",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Wire the panel to the charge module input: + to IN+, - to IN-.",
+    "Plug the power bank into the module's USB output.",
+    "Set the panel in full sun and check the power bank's charge light comes on."
+   ],
+   "extend": "Add a folding cardboard stand that angles the panel toward the sun."
+  },
+  {
+   "id": "tarp_shelter",
+   "title": "Tarp Shelter",
+   "category": "Outdoor",
+   "difficulty": "Easy",
+   "pitch": "An old tarp over a rope ridgeline makes a quick rain shelter between two trees.",
+   "rawMaterials": [
+    {
+     "id": "tarp",
+     "name": "Old Tarp",
+     "qty": 1
+    },
+    {
+     "id": "rope",
+     "name": "Rope",
+     "qty": 3
+    }
+   ],
+   "recipes": [
+    {
+     "a": "tarp",
+     "b": "rope",
+     "result_id": "ridgeline",
+     "result_name": "Ridgeline Tarp",
+     "result_short": "RT"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "ridgeline",
+     "qty": 1
+    },
+    {
+     "id": "rope",
+     "qty": 2
+    }
+   ],
+   "assembly_steps": [
+    "Tie a rope tight between two trees at chest height.",
+    "Drape the tarp over the rope so both sides hang evenly.",
+    "Tie a rope to each lower corner and stake them out to pull the walls taut."
+   ],
+   "extend": "Add a third tarp panel as a floor to keep gear dry."
+  },
+  {
+   "id": "camp_lantern",
+   "title": "Camp Lantern",
+   "category": "Outdoor",
+   "difficulty": "Easy",
+   "pitch": "A USB LED strip coiled in a jar runs for hours off a power bank.",
+   "rawMaterials": [
+    {
+     "id": "ledstrip",
+     "name": "LED Strip",
+     "qty": 1
+    },
+    {
+     "id": "usbcable",
+     "name": "Old USB Cable",
+     "qty": 1
+    },
+    {
+     "id": "jar",
+     "name": "Glass Jar",
+     "qty": 1
+    },
+    {
+     "id": "powerbank",
+     "name": "Power Bank",
+     "qty": 1
+    },
+    {
+     "id": "hanger",
+     "name": "Wire Hanger",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "ledstrip",
+     "b": "usbcable",
+     "result_id": "usblight",
+     "result_name": "USB Light Strip",
+     "result_short": "ULS"
+    },
+    {
+     "a": "usblight",
+     "b": "jar",
+     "result_id": "campjar",
+     "result_name": "Camp Jar",
+     "result_short": "CJ"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "campjar",
+     "qty": 1
+    },
+    {
+     "id": "powerbank",
+     "qty": 1
+    },
+    {
+     "id": "hanger",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Wire the LED strip to the USB cable.",
+    "Coil the strip inside the jar and feed the cable out a notch in the lid.",
+    "Bend the hanger into a handle around the jar neck."
+   ],
+   "extend": "Add a red LED mode so you keep your night vision."
+  },
+  {
+   "id": "sundial",
+   "title": "Paper Plate Sundial",
+   "category": "Outdoor",
+   "difficulty": "Easy",
+   "pitch": "A dowel through a paper plate casts a shadow you mark hour by hour.",
+   "rawMaterials": [
+    {
+     "id": "plate",
+     "name": "Paper Plate",
+     "qty": 1
+    },
+    {
+     "id": "dowel",
+     "name": "Wooden Dowel",
+     "qty": 1
+    },
+    {
+     "id": "markers",
+     "name": "Marker",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "plate",
+     "b": "dowel",
+     "result_id": "sundial",
+     "result_name": "Sundial",
+     "result_short": "SU"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "sundial",
+     "qty": 1
+    },
+    {
+     "id": "markers",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Push the dowel through the plate center and stand the plate flat in a sunny spot.",
+    "At each hour, mark where the shadow falls and write the hour.",
+    "Leave the plate in place and read the time the next day."
+   ],
+   "extend": "Rebuild the sundial on a wood base with the dowel tilted to your latitude."
+  },
+  {
+   "id": "bike_mount",
+   "title": "Bike Phone Mount",
+   "category": "Outdoor",
+   "difficulty": "Easy",
+   "pitch": "Inner tube bands and zip ties hold a phone on the handlebars.",
+   "rawMaterials": [
+    {
+     "id": "bike",
+     "name": "Bike Inner Tube",
+     "qty": 1
+    },
+    {
+     "id": "zip",
+     "name": "Zip Tie",
+     "qty": 1
+    },
+    {
+     "id": "sponge",
+     "name": "Sponge",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "bike",
+     "b": "zip",
+     "result_id": "bandmount",
+     "result_name": "Band Mount",
+     "result_short": "BM"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "bandmount",
+     "qty": 1
+    },
+    {
+     "id": "sponge",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut four 2 cm bands from the inner tube.",
+    "Zip-tie a sponge pad to the handlebar as a cushion.",
+    "Set the phone on the pad and stretch the bands over each corner."
+   ],
+   "extend": "Add a USB cable run to a power bank in a frame bag."
+  },
+  {
+   "id": "water_clarifier",
+   "title": "Water Clarifier Demo",
+   "category": "Outdoor",
+   "difficulty": "Easy",
+   "pitch": "Layers of cloth, sand, and gravel in a bottle clear muddy water. For demonstration only, not for drinking.",
+   "rawMaterials": [
+    {
+     "id": "bottle",
+     "name": "Plastic Bottle",
+     "qty": 1
+    },
+    {
+     "id": "gravel",
+     "name": "Gravel",
+     "qty": 1
+    },
+    {
+     "id": "sand",
+     "name": "Sand",
+     "qty": 1
+    },
+    {
+     "id": "tshirt",
+     "name": "Old T-Shirt",
+     "qty": 1
+    },
+    {
+     "id": "cup",
+     "name": "Plastic Cup",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "bottle",
+     "b": "gravel",
+     "result_id": "gravelbottle",
+     "result_name": "Gravel Layer",
+     "result_short": "GL"
+    },
+    {
+     "a": "gravelbottle",
+     "b": "sand",
+     "result_id": "filter",
+     "result_name": "Sand Filter",
+     "result_short": "SF"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "filter",
+     "qty": 1
+    },
+    {
+     "id": "tshirt",
+     "qty": 1
+    },
+    {
+     "id": "cup",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut the bottom off the bottle and set the bottle neck-down over a cup.",
+    "Stuff a T-shirt scrap in the neck, then add sand, then gravel.",
+    "Pour muddy water in the top and compare the result to the start."
+   ],
+   "extend": "Add a charcoal layer and test the difference in clarity."
+  },
+  {
+   "id": "bag_kite",
+   "title": "Bag Kite",
+   "category": "Outdoor",
+   "difficulty": "Easy",
+   "pitch": "A plastic bag stretched over two crossed dowels flies in light wind.",
+   "rawMaterials": [
+    {
+     "id": "bag",
+     "name": "Plastic Bag",
+     "qty": 1
+    },
+    {
+     "id": "dowel",
+     "name": "Wooden Dowel",
+     "qty": 1
+    },
+    {
+     "id": "string",
+     "name": "String",
+     "qty": 1
+    },
+    {
+     "id": "tape",
+     "name": "Duct Tape",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "bag",
+     "b": "dowel",
+     "result_id": "sail",
+     "result_name": "Sail",
+     "result_short": "SA"
+    },
+    {
+     "a": "sail",
+     "b": "string",
+     "result_id": "kite",
+     "result_name": "Kite",
+     "result_short": "KI"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "kite",
+     "qty": 1
+    },
+    {
+     "id": "tape",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cross two dowels and tie the center.",
+    "Cut the bag open, stretch over the cross, and tape the edges around the dowel tips.",
+    "Tie a string bridle to the cross and fly in an open field."
+   ],
+   "extend": "Add a tail of bag strips for stability in gusty wind."
+  },
+  {
+   "id": "temp_logger",
+   "title": "Outdoor Thermometer",
+   "category": "Outdoor",
+   "difficulty": "Medium",
+   "pitch": "A temperature sensor on an Arduino reports outdoor readings from inside a vented bottle.",
+   "rawMaterials": [
+    {
+     "id": "tempsensor",
+     "name": "Temperature Sensor",
+     "qty": 1
+    },
+    {
+     "id": "arduino",
+     "name": "Arduino Board",
+     "qty": 1
+    },
+    {
+     "id": "bottle",
+     "name": "Plastic Bottle",
+     "qty": 1
+    },
+    {
+     "id": "battholder",
+     "name": "AA Battery Holder",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "tempsensor",
+     "b": "arduino",
+     "result_id": "thermo",
+     "result_name": "Thermo Core",
+     "result_short": "TC"
+    },
+    {
+     "a": "thermo",
+     "b": "bottle",
+     "result_id": "housing",
+     "result_name": "Weather Housing",
+     "result_short": "WH"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "housing",
+     "qty": 1
+    },
+    {
+     "id": "battholder",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Wire the sensor to the Arduino and run the sensor library example.",
+    "Cut vent slots in the bottle and mount the sensor inside, out of direct sun.",
+    "Power from the battery holder and print readings to the serial monitor."
+   ],
+   "extend": "Add a small screen so you read the temperature without a laptop."
+  },
+  {
+   "id": "bird_house",
+   "title": "Plank Birdhouse",
+   "category": "Outdoor",
+   "difficulty": "Medium",
+   "pitch": "Pallet planks nailed into a box with a hinged side you open for cleaning.",
+   "rawMaterials": [
+    {
+     "id": "plank",
+     "name": "Pallet Plank",
+     "qty": 1
+    },
+    {
+     "id": "nail",
+     "name": "Nails",
+     "qty": 1
+    },
+    {
+     "id": "hinge",
+     "name": "Hinge",
+     "qty": 1
+    },
+    {
+     "id": "hook",
+     "name": "Screw Hook",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "plank",
+     "b": "nail",
+     "result_id": "boxwalls",
+     "result_name": "Box Walls",
+     "result_short": "BW"
+    },
+    {
+     "a": "boxwalls",
+     "b": "hinge",
+     "result_id": "birdhouse",
+     "result_name": "Birdhouse",
+     "result_short": "BI"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "birdhouse",
+     "qty": 1
+    },
+    {
+     "id": "hook",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut planks for a floor, four walls, and a sloped roof, with a 3 cm hole in the front.",
+    "Nail the floor, back, front, and roof together.",
+    "Hinge the last side so it opens, then hang from the hook."
+   ],
+   "extend": "Add an old phone or camera inside to watch the nest."
+  },
+  {
+   "id": "headlamp",
+   "title": "Elastic Headlamp",
+   "category": "Outdoor",
+   "difficulty": "Easy",
+   "pitch": "An LED pod in a bottle cap reflector on an elastic band.",
+   "rawMaterials": [
+    {
+     "id": "led",
+     "name": "LED",
+     "qty": 1
+    },
+    {
+     "id": "coin",
+     "name": "Coin Cell Battery",
+     "qty": 1
+    },
+    {
+     "id": "elastic",
+     "name": "Elastic Band",
+     "qty": 1
+    },
+    {
+     "id": "bottlecap",
+     "name": "Bottle Cap",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "led",
+     "b": "coin",
+     "result_id": "ledpod",
+     "result_name": "LED Pod",
+     "result_short": "LP"
+    },
+    {
+     "a": "ledpod",
+     "b": "elastic",
+     "result_id": "headlamp",
+     "result_name": "Headlamp",
+     "result_short": "HE"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "headlamp",
+     "qty": 1
+    },
+    {
+     "id": "bottlecap",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Tape the LED to the coin cell so it lights.",
+    "Line a bottle cap with foil and glue the LED pod inside as a reflector.",
+    "Glue or sew the cap to the elastic band and fit to your head."
+   ],
+   "extend": "Add a switch so you turn it off without removing the battery."
+  },
+  {
+   "id": "magnet_tray",
+   "title": "Magnetic Parts Tray",
+   "category": "Workshop",
+   "difficulty": "Easy",
+   "pitch": "A magnet glued under a tray holds screws while you work.",
+   "rawMaterials": [
+    {
+     "id": "tray",
+     "name": "Clear Plastic Tray",
+     "qty": 1
+    },
+    {
+     "id": "magnet",
+     "name": "Magnet",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "tray",
+     "b": "magnet",
+     "result_id": "magtray",
+     "result_name": "Magnetic Tray",
+     "result_short": "MT"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "magtray",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Glue the magnet to the center of the tray bottom.",
+    "Let the glue cure overnight.",
+    "Drop screws in and flip the tray to check they hold."
+   ],
+   "extend": "Add a second magnet so the tray sticks to the side of a toolbox."
+  },
+  {
+   "id": "sanding_block",
+   "title": "Sanding Block",
+   "category": "Workshop",
+   "difficulty": "Easy",
+   "pitch": "Sandpaper wrapped around a wood block for flat, even sanding.",
+   "rawMaterials": [
+    {
+     "id": "wood",
+     "name": "Scrap Wood",
+     "qty": 1
+    },
+    {
+     "id": "sandpaper",
+     "name": "Sandpaper",
+     "qty": 1
+    },
+    {
+     "id": "binder",
+     "name": "Binder Clip",
+     "qty": 2
+    }
+   ],
+   "recipes": [
+    {
+     "a": "wood",
+     "b": "sandpaper",
+     "result_id": "sandblock",
+     "result_name": "Sanding Block",
+     "result_short": "SB"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "sandblock",
+     "qty": 1
+    },
+    {
+     "id": "binder",
+     "qty": 2
+    }
+   ],
+   "assembly_steps": [
+    "Cut a block that fits your hand.",
+    "Wrap sandpaper around the bottom and sides.",
+    "Clamp the ends with binder clips so you swap paper fast."
+   ],
+   "extend": "Glue a sponge layer under the paper for curved surfaces."
+  },
+  {
+   "id": "cord_reel",
+   "title": "Cord Reel",
+   "category": "Workshop",
+   "difficulty": "Easy",
+   "pitch": "A dowel through a wood frame winds extension cords without tangles.",
+   "rawMaterials": [
+    {
+     "id": "wood",
+     "name": "Scrap Wood",
+     "qty": 1
+    },
+    {
+     "id": "dowel",
+     "name": "Wooden Dowel",
+     "qty": 1
+    },
+    {
+     "id": "screws",
+     "name": "Screws",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "wood",
+     "b": "dowel",
+     "result_id": "reelframe",
+     "result_name": "Reel Frame",
+     "result_short": "RF"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "reelframe",
+     "qty": 1
+    },
+    {
+     "id": "screws",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut two wood ends and drill a hole in each.",
+    "Slide the dowel through both and screw on a crank handle.",
+    "Wind the cord around the dowel."
+   ],
+   "extend": "Mount the reel on the wall with a bracket."
+  },
+  {
+   "id": "lid_sorter",
+   "title": "Jar Lid Screw Sorter",
+   "category": "Workshop",
+   "difficulty": "Easy",
+   "pitch": "Jar lids screwed under a shelf hold jars of screws, nails, and bolts.",
+   "rawMaterials": [
+    {
+     "id": "lid",
+     "name": "Jar Lid",
+     "qty": 3
+    },
+    {
+     "id": "screws",
+     "name": "Screws",
+     "qty": 3
+    },
+    {
+     "id": "jar",
+     "name": "Glass Jar",
+     "qty": 3
+    },
+    {
+     "id": "plank",
+     "name": "Pallet Plank",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "lid",
+     "b": "screws",
+     "result_id": "hanglid",
+     "result_name": "Hanging Lid",
+     "result_short": "HL"
+    },
+    {
+     "a": "hanglid",
+     "b": "jar",
+     "result_id": "sortjar",
+     "result_name": "Sorting Jar",
+     "result_short": "SJ"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "sortjar",
+     "qty": 3
+    },
+    {
+     "id": "plank",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Screw each lid to the plank bottom.",
+    "Fill jars by size and twist them into the lids.",
+    "Mount the plank above the bench."
+   ],
+   "extend": "Add a label on each lid and a magnet strip for loose bits."
+  },
+  {
+   "id": "helping_hands",
+   "title": "Helping Hands",
+   "category": "Workshop",
+   "difficulty": "Easy",
+   "pitch": "Alligator clips on bent hanger arms hold small parts for soldering.",
+   "rawMaterials": [
+    {
+     "id": "hanger",
+     "name": "Wire Hanger",
+     "qty": 2
+    },
+    {
+     "id": "alligator",
+     "name": "Alligator Clip",
+     "qty": 2
+    },
+    {
+     "id": "can",
+     "name": "Tin Can",
+     "qty": 1
+    },
+    {
+     "id": "rice",
+     "name": "Dry Rice",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "hanger",
+     "b": "alligator",
+     "result_id": "clipArm",
+     "result_name": "Clip Arm",
+     "result_short": "CA"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "clipArm",
+     "qty": 2
+    },
+    {
+     "id": "can",
+     "qty": 1
+    },
+    {
+     "id": "rice",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Bend two hanger arms with a loop at one end.",
+    "Fix an alligator clip on each loop with tape.",
+    "Fill the can with rice for weight and push the arms in."
+   ],
+   "extend": "Add a magnifying lens arm."
+  },
+  {
+   "id": "bench_hook",
+   "title": "Bench Hook",
+   "category": "Workshop",
+   "difficulty": "Easy",
+   "pitch": "A board with two cleats holds wood steady for sawing.",
+   "rawMaterials": [
+    {
+     "id": "wood",
+     "name": "Scrap Wood",
+     "qty": 1
+    },
+    {
+     "id": "screws",
+     "name": "Screws",
+     "qty": 1
+    },
+    {
+     "id": "sandpaper",
+     "name": "Sandpaper",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "wood",
+     "b": "screws",
+     "result_id": "cleatboard",
+     "result_name": "Cleat Board",
+     "result_short": "CB"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "cleatboard",
+     "qty": 1
+    },
+    {
+     "id": "sandpaper",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Screw a strip under one end of the board.",
+    "Screw a strip on top at the opposite end.",
+    "Sand edges and hook over the bench edge."
+   ],
+   "extend": "Add a 45 degree guide for miter cuts."
+  },
+  {
+   "id": "tool_tote",
+   "title": "Tool Tote",
+   "category": "Workshop",
+   "difficulty": "Medium",
+   "pitch": "Wood sides and a dowel handle make an open carry box for tools.",
+   "rawMaterials": [
+    {
+     "id": "wood",
+     "name": "Scrap Wood",
+     "qty": 1
+    },
+    {
+     "id": "screws",
+     "name": "Screws",
+     "qty": 1
+    },
+    {
+     "id": "dowel",
+     "name": "Wooden Dowel",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "wood",
+     "b": "screws",
+     "result_id": "totebox",
+     "result_name": "Tote Box",
+     "result_short": "TB"
+    },
+    {
+     "a": "totebox",
+     "b": "dowel",
+     "result_id": "tote",
+     "result_name": "Tool Tote",
+     "result_short": "TT"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "tote",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Screw scrap wood into an open box.",
+    "Cut two tall end pieces with holes near the top.",
+    "Slide the dowel through as a handle and screw it in place."
+   ],
+   "extend": "Add a divider down the middle."
+  },
+  {
+   "id": "clamp_rack",
+   "title": "Clamp Rack",
+   "category": "Workshop",
+   "difficulty": "Easy",
+   "pitch": "A plank with spaced dowels holds clamps on the wall.",
+   "rawMaterials": [
+    {
+     "id": "plank",
+     "name": "Pallet Plank",
+     "qty": 1
+    },
+    {
+     "id": "dowel",
+     "name": "Wooden Dowel",
+     "qty": 1
+    },
+    {
+     "id": "screws",
+     "name": "Screws",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "plank",
+     "b": "dowel",
+     "result_id": "pegplank",
+     "result_name": "Peg Plank",
+     "result_short": "PP"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "pegplank",
+     "qty": 1
+    },
+    {
+     "id": "screws",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Drill angled holes along the plank.",
+    "Glue dowel pegs in each hole.",
+    "Screw the plank to the wall."
+   ],
+   "extend": "Add labels for each clamp size."
+  },
+  {
+   "id": "dust_bin",
+   "title": "Shop Dust Bin",
+   "category": "Workshop",
+   "difficulty": "Easy",
+   "pitch": "A bucket with a mesh screen catches sawdust from sanding.",
+   "rawMaterials": [
+    {
+     "id": "bucket",
+     "name": "Plastic Bucket",
+     "qty": 1
+    },
+    {
+     "id": "mesh",
+     "name": "Window Screen Mesh",
+     "qty": 1
+    },
+    {
+     "id": "tape",
+     "name": "Duct Tape",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "bucket",
+     "b": "mesh",
+     "result_id": "screenbucket",
+     "result_name": "Screened Bucket",
+     "result_short": "SB"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "screenbucket",
+     "qty": 1
+    },
+    {
+     "id": "tape",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut mesh to fit over the bucket.",
+    "Tape mesh across the top.",
+    "Sand over the bucket and empty weekly."
+   ],
+   "extend": "Add a PC fan below to pull dust down."
+  },
+  {
+   "id": "stud_finder",
+   "title": "Magnet Stud Finder",
+   "category": "Workshop",
+   "difficulty": "Easy",
+   "pitch": "A magnet on string finds the screws inside drywall that mark studs.",
+   "rawMaterials": [
+    {
+     "id": "magnet",
+     "name": "Magnet",
+     "qty": 1
+    },
+    {
+     "id": "string",
+     "name": "String",
+     "qty": 1
+    },
+    {
+     "id": "tape",
+     "name": "Duct Tape",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "magnet",
+     "b": "string",
+     "result_id": "finder",
+     "result_name": "Stud Finder",
+     "result_short": "SF"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "finder",
+     "qty": 1
+    },
+    {
+     "id": "tape",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Tie the magnet to string.",
+    "Drag slowly across the wall.",
+    "Mark where the magnet sticks with tape."
+   ],
+   "extend": "Mount the magnet in a cork so it slides smooth."
+  },
+  {
+   "id": "electromagnet",
+   "title": "Electromagnet",
+   "category": "Science",
+   "difficulty": "Easy",
+   "pitch": "Coil wire around a nail and connect a battery to pick up paper clips.",
+   "rawMaterials": [
+    {
+     "id": "nail",
+     "name": "Nails",
+     "qty": 1
+    },
+    {
+     "id": "wire",
+     "name": "Hookup Wire",
+     "qty": 1
+    },
+    {
+     "id": "battholder",
+     "name": "AA Battery Holder",
+     "qty": 1
+    },
+    {
+     "id": "clip",
+     "name": "Paper Clip",
+     "qty": 5
+    }
+   ],
+   "recipes": [
+    {
+     "a": "nail",
+     "b": "wire",
+     "result_id": "coil",
+     "result_name": "Coil",
+     "result_short": "CO"
+    },
+    {
+     "a": "coil",
+     "b": "battholder",
+     "result_id": "electromagnet",
+     "result_name": "Electromagnet",
+     "result_short": "EL"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "electromagnet",
+     "qty": 1
+    },
+    {
+     "id": "clip",
+     "qty": 5
+    }
+   ],
+   "assembly_steps": [
+    "Wrap the wire around the nail 50 times in one direction, leaving both ends free.",
+    "Connect each wire end to the battery holder for a few seconds at a time, since the coil gets warm.",
+    "Touch the nail tip to paper clips and count how many it lifts."
+   ],
+   "extend": "Add a switch and compare wraps."
+  },
+  {
+   "id": "potato_battery",
+   "title": "Potato Battery",
+   "category": "Science",
+   "difficulty": "Easy",
+   "pitch": "Copper and zinc in potatoes power an LED.",
+   "rawMaterials": [
+    {
+     "id": "potato",
+     "name": "Potato",
+     "qty": 3
+    },
+    {
+     "id": "coppercoin",
+     "name": "Copper Coin",
+     "qty": 3
+    },
+    {
+     "id": "galvnail",
+     "name": "Galvanized Nail",
+     "qty": 3
+    },
+    {
+     "id": "led",
+     "name": "LED",
+     "qty": 1
+    },
+    {
+     "id": "wire",
+     "name": "Hookup Wire",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "potato",
+     "b": "coppercoin",
+     "result_id": "halfcell",
+     "result_name": "Half Cell",
+     "result_short": "HC"
+    },
+    {
+     "a": "halfcell",
+     "b": "galvnail",
+     "result_id": "cell",
+     "result_name": "Potato Cell",
+     "result_short": "PC"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "cell",
+     "qty": 3
+    },
+    {
+     "id": "led",
+     "qty": 1
+    },
+    {
+     "id": "wire",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Push a copper coin and a galvanized nail into each potato, 3 cm apart.",
+    "Wire the coin of one potato to the nail of the next to chain all three.",
+    "Connect the LED long leg to the free coin and short leg to the free nail."
+   ],
+   "extend": "Measure voltage per cell."
+  },
+  {
+   "id": "anemometer",
+   "title": "Cup Anemometer",
+   "category": "Science",
+   "difficulty": "Easy",
+   "pitch": "Four cups on straws spin to measure wind speed.",
+   "rawMaterials": [
+    {
+     "id": "cup",
+     "name": "Plastic Cup",
+     "qty": 4
+    },
+    {
+     "id": "straw",
+     "name": "Drinking Straw",
+     "qty": 4
+    },
+    {
+     "id": "dowel",
+     "name": "Wooden Dowel",
+     "qty": 1
+    },
+    {
+     "id": "fastener",
+     "name": "Brass Fastener",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "cup",
+     "b": "straw",
+     "result_id": "cuparm",
+     "result_name": "Cup Arm",
+     "result_short": "CA"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "cuparm",
+     "qty": 4
+    },
+    {
+     "id": "dowel",
+     "qty": 1
+    },
+    {
+     "id": "fastener",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Tape a cup on the end of each straw, all cups facing the same way around.",
+    "Cross the straws in pairs and pin the center to the top of the dowel with a brass fastener.",
+    "Stand the dowel outside and count spins in one minute to compare wind speeds."
+   ],
+   "extend": "Add a magnet and sensor to count automatically."
+  },
+  {
+   "id": "cd_spectroscope",
+   "title": "CD Spectroscope",
+   "category": "Science",
+   "difficulty": "Easy",
+   "pitch": "A slice of old CD in a tube splits light into a rainbow.",
+   "rawMaterials": [
+    {
+     "id": "paperroll",
+     "name": "Paper Towel Tube",
+     "qty": 1
+    },
+    {
+     "id": "cd",
+     "name": "Old CD",
+     "qty": 1
+    },
+    {
+     "id": "tape",
+     "name": "Duct Tape",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "paperroll",
+     "b": "cd",
+     "result_id": "scope",
+     "result_name": "Spectroscope",
+     "result_short": "SP"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "scope",
+     "qty": 1
+    },
+    {
+     "id": "tape",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cover one end of the tube with tape, leaving a 1 mm slit.",
+    "Tape a piece of CD at a 45 degree angle over the other end, shiny side in.",
+    "Point the slit at a light and look at the CD to see the spectrum."
+   ],
+   "extend": "Compare LED and bulb spectra."
+  },
+  {
+   "id": "solar_oven",
+   "title": "Pizza Box Solar Oven",
+   "category": "Science",
+   "difficulty": "Easy",
+   "pitch": "Foil and plastic wrap trap sunlight to melt chocolate.",
+   "rawMaterials": [
+    {
+     "id": "pizzabox",
+     "name": "Pizza Box",
+     "qty": 1
+    },
+    {
+     "id": "foil",
+     "name": "Aluminum Foil",
+     "qty": 1
+    },
+    {
+     "id": "wrap",
+     "name": "Plastic Wrap",
+     "qty": 1
+    },
+    {
+     "id": "dowel",
+     "name": "Wooden Dowel",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "pizzabox",
+     "b": "foil",
+     "result_id": "reflector",
+     "result_name": "Reflector",
+     "result_short": "RE"
+    },
+    {
+     "a": "reflector",
+     "b": "wrap",
+     "result_id": "oven",
+     "result_name": "Solar Oven",
+     "result_short": "SO"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "oven",
+     "qty": 1
+    },
+    {
+     "id": "dowel",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut a three-sided flap in the pizza box lid and line the flap's underside with foil.",
+    "Tape plastic wrap over the opening to seal the window.",
+    "Prop the flap with a dowel so it reflects sun into the box, then set chocolate inside."
+   ],
+   "extend": "Add a thermometer and log temperature."
+  },
+  {
+   "id": "pinhole_camera",
+   "title": "Pinhole Viewer",
+   "category": "Science",
+   "difficulty": "Easy",
+   "pitch": "A shoe box with a foil pinhole projects an upside-down image.",
+   "rawMaterials": [
+    {
+     "id": "shoebox",
+     "name": "Shoe Box",
+     "qty": 1
+    },
+    {
+     "id": "foil",
+     "name": "Aluminum Foil",
+     "qty": 1
+    },
+    {
+     "id": "waxpaper",
+     "name": "Wax Paper",
+     "qty": 1
+    },
+    {
+     "id": "nail",
+     "name": "Nails",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "shoebox",
+     "b": "foil",
+     "result_id": "pinbox",
+     "result_name": "Pin Box",
+     "result_short": "PB"
+    },
+    {
+     "a": "pinbox",
+     "b": "waxpaper",
+     "result_id": "viewer",
+     "result_name": "Pinhole Viewer",
+     "result_short": "PV"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "viewer",
+     "qty": 1
+    },
+    {
+     "id": "nail",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Cut a 2 cm square hole in one end of the shoe box and tape foil over it.",
+    "Poke a clean pinhole in the foil with the tip of a nail.",
+    "Tape wax paper inside the far end as a screen, point the pinhole at a bright scene, and look at the screen."
+   ],
+   "extend": "Use it to view a solar eclipse safely."
+  },
+  {
+   "id": "homopolar_motor",
+   "title": "Homopolar Motor",
+   "category": "Science",
+   "difficulty": "Easy",
+   "pitch": "A battery, magnet, and bent wire spin with no other parts.",
+   "rawMaterials": [
+    {
+     "id": "aa",
+     "name": "AA Battery (alkaline)",
+     "qty": 1
+    },
+    {
+     "id": "magnet",
+     "name": "Magnet",
+     "qty": 1
+    },
+    {
+     "id": "wire",
+     "name": "Hookup Wire",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "aa",
+     "b": "magnet",
+     "result_id": "magbatt",
+     "result_name": "Magnet Battery",
+     "result_short": "MB"
+    },
+    {
+     "a": "magbatt",
+     "b": "wire",
+     "result_id": "motor",
+     "result_name": "Homopolar Motor",
+     "result_short": "HM"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "motor",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Stand the alkaline AA battery, minus end down, on top of the round magnet.",
+    "Bend the bare wire into a loop that touches the top of the battery and the side of the magnet.",
+    "Let the loop spin for a few seconds at a time, since the wire and battery get hot."
+   ],
+   "extend": "Try different wire shapes."
+  },
+  {
+   "id": "seismograph",
+   "title": "Shoe Box Seismograph",
+   "category": "Science",
+   "difficulty": "Easy",
+   "pitch": "A hanging marker draws vibrations on a moving paper strip.",
+   "rawMaterials": [
+    {
+     "id": "markers",
+     "name": "Marker",
+     "qty": 1
+    },
+    {
+     "id": "string",
+     "name": "String",
+     "qty": 1
+    },
+    {
+     "id": "shoebox",
+     "name": "Shoe Box",
+     "qty": 1
+    },
+    {
+     "id": "weight",
+     "name": "Steel Washer",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "markers",
+     "b": "string",
+     "result_id": "pendulum",
+     "result_name": "Pendulum Pen",
+     "result_short": "PP"
+    },
+    {
+     "a": "pendulum",
+     "b": "shoebox",
+     "result_id": "seismo",
+     "result_name": "Seismograph",
+     "result_short": "SE"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "seismo",
+     "qty": 1
+    },
+    {
+     "id": "weight",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Hang the marker from the top of the shoe box on a string so the tip just touches the bottom.",
+    "Tie a steel washer above the marker as a weight to keep it still.",
+    "Slide a paper strip slowly under the tip while someone shakes the table."
+   ],
+   "extend": "Add vibration sensor."
+  },
+  {
+   "id": "barometer",
+   "title": "Jar Barometer",
+   "category": "Science",
+   "difficulty": "Easy",
+   "pitch": "A balloon over a jar with a straw needle shows pressure changes.",
+   "rawMaterials": [
+    {
+     "id": "jar",
+     "name": "Glass Jar",
+     "qty": 1
+    },
+    {
+     "id": "balloon",
+     "name": "Balloon",
+     "qty": 1
+    },
+    {
+     "id": "straw",
+     "name": "Drinking Straw",
+     "qty": 1
+    },
+    {
+     "id": "cardboard",
+     "name": "Cardboard Sheet",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "jar",
+     "b": "balloon",
+     "result_id": "sealedjar",
+     "result_name": "Sealed Jar",
+     "result_short": "SJ"
+    },
+    {
+     "a": "sealedjar",
+     "b": "straw",
+     "result_id": "barometer",
+     "result_name": "Barometer",
+     "result_short": "BA"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "barometer",
+     "qty": 1
+    },
+    {
+     "id": "cardboard",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Stretch the cut balloon over the jar mouth and seal the edge with a rubber band or tape.",
+    "Tape a straw flat on the balloon center so it sticks out past the jar like a needle.",
+    "Stand cardboard behind the straw, mark where the needle points, and check the mark each day."
+   ],
+   "extend": "Log readings twice a day."
+  },
+  {
+   "id": "water_compass",
+   "title": "Water Compass",
+   "category": "Science",
+   "difficulty": "Easy",
+   "pitch": "A magnetized paper clip on cork floats and points north.",
+   "rawMaterials": [
+    {
+     "id": "clip",
+     "name": "Paper Clip",
+     "qty": 1
+    },
+    {
+     "id": "magnet",
+     "name": "Magnet",
+     "qty": 1
+    },
+    {
+     "id": "cork",
+     "name": "Wine Cork",
+     "qty": 1
+    },
+    {
+     "id": "cup",
+     "name": "Plastic Cup",
+     "qty": 1
+    }
+   ],
+   "recipes": [
+    {
+     "a": "clip",
+     "b": "magnet",
+     "result_id": "magclip",
+     "result_name": "Magnetized Clip",
+     "result_short": "MC"
+    },
+    {
+     "a": "magclip",
+     "b": "cork",
+     "result_id": "compass",
+     "result_name": "Water Compass",
+     "result_short": "WC"
+    }
+   ],
+   "final_requires": [
+    {
+     "id": "compass",
+     "qty": 1
+    },
+    {
+     "id": "cup",
+     "qty": 1
+    }
+   ],
+   "assembly_steps": [
+    "Stroke the paper clip with the magnet 30 times in the same direction.",
+    "Lay the magnetized clip flat on a thin cork slice.",
+    "Float the cork in a cup of water and watch the clip turn to point north."
+   ],
+   "extend": "Compare with a phone compass."
+  }
+ ]
+}
