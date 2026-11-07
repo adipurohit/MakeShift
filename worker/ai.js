@@ -283,6 +283,10 @@ async function chatJsonOnce(env, system, user, name, schema, maxTokens, model) {
     generationConfig: {
       maxOutputTokens: maxTokens,
       responseMimeType: "application/json",
+      // responseJsonSchema takes standard JSON Schema (our schemas use additionalProperties, minItems, ...).
+      // The older responseSchema is an OpenAPI subset and answers 400 "Unknown name additionalProperties", so it is
+      // only used as a fallback below, with the schema reduced by toOpenApiSchema().
+      // app/server.py uses the same mode (response_json_schema).
       responseJsonSchema: schema,
     },
   };
