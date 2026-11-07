@@ -13,7 +13,7 @@ camera capture or a real model output was observed.
 
 ## Task 1: camera scan
 
-Verified here: the scan state machine against a mocked camera/fetch in jsdom (`node tests/scan_logic.test.js`, 11 tests).
+Verified here: (a) the scan state machine against a mocked camera/fetch in jsdom (`node tests/scan_logic.test.js`, 11 tests); (b) the full flow in a real headless Chromium using its synthetic camera (`python3 tests/scan_browser.py`: real `getUserMedia`, real frames, JPEG capture, downscale, retake, Esc/release, fallback). Neither is a physical webcam.
 Run against the *old* `app.js` these tests fail 8 of 11; against the new code all pass.
 
 Bugs found by reading the code and fixed (`app.js` scan section, `server.py` identify endpoint):
