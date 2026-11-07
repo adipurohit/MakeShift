@@ -18,9 +18,12 @@
   "routes": [
     { "pattern": "adipurohit.com/makeshift*", "zone_name": "adipurohit.com" }
   ],
-  // About 20 AI calls per visitor per minute, so a public page can't drain the Gemini key.
+  // AI rate limits. namespace_id values must be unique within the Cloudflare account.
+  // AI_LIMIT: 20 calls/minute per browser session; AI_IP_LIMIT: 120 calls/minute per network.
+  // The network cap limits abuse while the session cap lets a room share one Wi-Fi connection.
   "ratelimits": [
-    { "name": "AI_LIMIT", "namespace_id": "4207", "simple": { "limit": 20, "period": 60 } }
+    { "name": "AI_LIMIT", "namespace_id": "4207", "simple": { "limit": 20, "period": 60 } },
+    { "name": "AI_IP_LIMIT", "namespace_id": "4208", "simple": { "limit": 120, "period": 60 } }
   ],
   "workers_dev": false,
   "observability": { "enabled": true }

@@ -32,10 +32,13 @@ MATS = [
     {"id": "m_zip_tie", "name": "Zip Tie", "qty": 6},
     {"id": "m_cardboard_tube", "name": "Cardboard Tube", "qty": 3},
     {"id": "m_jar", "name": "Glass Jar", "qty": 1},
+    {"id": "m_cap", "name": "Large Capacitor", "qty": 2},
 ]
 IDS = [m["id"] for m in MATS]
 TEXTS = ["Hand-Crank Winch", "  Desk   Lamp ", "<b>Bold</b> Planter", "Tray <script>x</script>", "", "Fan\x07 Stand",
-         "A" * 80, "Jar Light", "jar light", "Robot Hand!!", None, 7]
+         "A" * 80, "Jar Light", "jar light", "Robot Hand!!", None, 7,
+         "Rubber Band Catapult", "Motorized Spinner", "Night Light Jar", "Stepper Turntable", "Candle Holder",
+         "Coaster Set (4 coasters)"]
 SHORTS = ["cu", "WINCHX", "", "a", "AB", "x y", None, "Q1", 12]
 
 
@@ -167,6 +170,14 @@ def main():
         ok = False
     else:
         print("[PASS] worker/ai-config.json matches server.py prompts, schemas, and limits")
+
+    app_js = (ROOT / "cube-mvp" / "app.js").read_text()
+    want = "const HAZARDOUS_PART = new RegExp(" + json.dumps(server.PLAUSIBILITY["hazardous_part"]) + ', "i");'
+    if want in app_js:
+        print("[PASS] app.js hazardous-part warning matches server.py")
+    else:
+        ok = False
+        print("[FAIL] app.js HAZARDOUS_PART is out of sync with server.py PLAUSIBILITY['hazardous_part']")
 
     idea_cases, steps_cases, text_cases, material_cases, source_cases, source_material_cases = build_cases()
     py = python_side(idea_cases, steps_cases, text_cases, source_cases)

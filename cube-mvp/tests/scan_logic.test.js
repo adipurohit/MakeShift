@@ -33,6 +33,7 @@ async function test(name, fn) {
   Object.defineProperty(video, "videoHeight", { value: 1080, configurable: true });
   Object.defineProperty(video, "readyState", { value: 4, configurable: true });
   w.addMaterial = (n, q) => log.added.push([n, q]);
+  w.aiHeaders = () => ({ "Content-Type": "application/json", "X-MakeShift-Session": "test" }); // defined outside the scan section of app.js
   w.toast = (m) => log.toasts.push(m);
   w.eval(section + "\ninitScan();");
   const $ = (id) => w.document.getElementById(id);

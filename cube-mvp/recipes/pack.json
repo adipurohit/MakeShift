@@ -56,9 +56,11 @@
     }
    ],
    "assembly_steps": [
-    "Slide the coin cell between the LED legs, long leg on the + side, and tape it tight.",
-    "Set the LED pod inside the jar, facing up.",
-    "Tie string under the jar lip and loop it into a carry handle."
+    "Spread the LED's legs about 5 mm apart and slide the coin cell between them, + face against the long leg. It should light at once; if not, flip the cell.",
+    "Wrap one turn of tape around the legs and cell so they stay pressed together. Leave the cell's edge free so you can slide it out to switch off.",
+    "Crumple a sheet of paper loosely into the jar as a diffuser, then nest the LED pod in the middle, facing up.",
+    "Cut 60 cm of string, wrap it twice under the jar's rim and knot it, then tie the ends into a carry loop about 15 cm above the lid.",
+    "Test it in a dark room. A coin cell runs one LED for about a day; if the light fades within hours, the cell is old, so swap it."
    ],
    "extend": "Add a light sensor and transistor so the lantern turns on by itself at dusk."
   },
@@ -509,7 +511,7 @@
    "title": "Bike Tail Light",
    "category": "Lighting",
    "difficulty": "Easy",
-   "pitch": "A red LED, battery holder, and switch strap onto a seat post with inner tube rubber.",
+   "pitch": "A red LED, battery holder and switch strapped to the seat post with inner tube rubber. An extra visibility light: use it alongside a proper bike light, not instead of one.",
    "rawMaterials": [
     {
      "id": "led",
@@ -687,9 +689,11 @@
     }
    ],
    "assembly_steps": [
-    "Touch the motor wires to the coin cell and tape them in place.",
-    "Stick the motor and cell on top of the toothbrush head with tape.",
-    "Set the bot on a smooth table and watch it scoot."
+    "Cut the head off the toothbrush, keeping about 1 cm of handle. Angled bristles make it walk; perfectly straight ones make it buzz in place.",
+    "Press a strip of double-sided tape along the top of the head.",
+    "Touch the vibration motor's two wires to the coin cell's faces and tape one wire down. The free wire is your on switch.",
+    "Stick the motor near the front of the head and the cell behind it, keeping the weight low and centered.",
+    "Set it on a smooth table and connect the free wire. If it tips over, move the cell lower; if it spins in circles, shift the motor toward the middle."
    ],
    "extend": "Build two and race them inside a cardboard arena."
   },
@@ -1055,10 +1059,10 @@
   },
   {
    "id": "usb_fan",
-   "title": "USB Desk Fan",
+   "title": "Guarded USB Fan",
    "category": "Robotics",
    "difficulty": "Easy",
-   "pitch": "Cut blades from a plastic bottle, mount them on a small motor, and power from USB.",
+   "pitch": "Cut soft vanes from a plastic bottle, put them on a small motor behind a mesh guard, and run it from a USB charger.",
    "rawMaterials": [
     {
      "id": "bottle",
@@ -1081,6 +1085,11 @@
      "qty": 1
     },
     {
+     "id": "mesh",
+     "name": "Window Screen Mesh",
+     "qty": 1
+    },
+    {
      "id": "can",
      "name": "Tin Can",
      "qty": 1
@@ -1090,12 +1099,12 @@
     {
      "a": "bottle",
      "b": "bottlecap",
-     "result_id": "propeller",
-     "result_name": "Bottle Propeller",
-     "result_short": "BP"
+     "result_id": "rotor",
+     "result_name": "Bottle Rotor",
+     "result_short": "BR"
     },
     {
-     "a": "propeller",
+     "a": "rotor",
      "b": "dcmotor",
      "result_id": "fanhead",
      "result_name": "Fan Head",
@@ -1105,13 +1114,20 @@
      "a": "fanhead",
      "b": "usbcable",
      "result_id": "usbfan",
-     "result_name": "USB Fan",
-     "result_short": "UF"
+     "result_name": "USB Fan Head",
+     "result_short": "UFH"
+    },
+    {
+     "a": "usbfan",
+     "b": "mesh",
+     "result_id": "guardedfan",
+     "result_name": "Guarded Fan",
+     "result_short": "GF"
     }
    ],
    "final_requires": [
     {
-     "id": "usbfan",
+     "id": "guardedfan",
      "qty": 1
     },
     {
@@ -1120,9 +1136,11 @@
     }
    ],
    "assembly_steps": [
-    "Cut the bottle's top into four blades and twist each blade slightly.",
-    "Glue the bottle cap to the motor shaft and the blades onto the cap.",
-    "Wire the motor to the USB cable and stand the fan on a tin can."
+    "Cut the top 6 cm off a plastic bottle and slice it into 4 vanes from the rim to the neck. Twist each vane slightly the same way.",
+    "Glue the bottle cap onto the motor shaft, then glue the bottle top onto the cap so the vanes spin with it.",
+    "Wire the motor to the USB cable: red to red, black to black, and tape each joint separately.",
+    "Wrap the window mesh around the vanes as a cage and tape it to the motor body, leaving 1 cm of space so nothing rubs.",
+    "Stand it on the tin can and plug in. If it wobbles, trim the longest vane; if air blows backward, swap the two motor wires."
    ],
    "extend": "Add a switch and a second speed using a resistor."
   },
@@ -1312,7 +1330,7 @@
    "title": "Self-Watering Planter",
    "category": "Garden",
    "difficulty": "Easy",
-   "pitch": "A cut bottle with a cloth wick pulls water up to the soil so plants water themselves.",
+   "pitch": "A 2-liter bottle cut in two, with a T-shirt wick through the cap, pulls water up to the soil so the plant waters itself for days.",
    "rawMaterials": [
     {
      "id": "bottle",
@@ -1320,39 +1338,44 @@
      "qty": 1
     },
     {
-     "id": "tshirt",
-     "name": "Old T-Shirt",
+     "id": "nail",
+     "name": "Nails",
      "qty": 1
     },
     {
-     "id": "pot",
-     "name": "Plant Pot",
+     "id": "tshirt",
+     "name": "Old T-Shirt",
      "qty": 1
     }
    ],
    "recipes": [
     {
      "a": "bottle",
+     "b": "nail",
+     "result_id": "holedbottle",
+     "result_name": "Holed-Cap Bottle",
+     "result_short": "HCB"
+    },
+    {
+     "a": "holedbottle",
      "b": "tshirt",
-     "result_id": "wickbottle",
-     "result_name": "Wick Bottle",
-     "result_short": "WB"
+     "result_id": "wickplanter",
+     "result_name": "Wick Planter",
+     "result_short": "WP"
     }
    ],
    "final_requires": [
     {
-     "id": "wickbottle",
-     "qty": 1
-    },
-    {
-     "id": "pot",
+     "id": "wickplanter",
      "qty": 1
     }
    ],
    "assembly_steps": [
-    "Cut the bottle in half and flip the top into the bottom like a funnel.",
-    "Push a strip of T-shirt through the neck as a wick.",
-    "Fill the base with water and the top with soil and a plant."
+    "Cut a 2-liter bottle all the way around about 10 cm below the neck. Sand or tape the cut edge so it isn't sharp.",
+    "Twist a nail through the center of the cap to make a hole about 5 mm wide, then screw the cap back on the top half.",
+    "Cut a T-shirt strip about 3 cm wide and 25 cm long. Wet it and thread half of it up through the cap hole.",
+    "Flip the top half into the base like a funnel, so the wick hangs into the base. Fill the base with water to about 3 cm below the cap.",
+    "Fill the top half with soil around the wick and plant. Check after a day: if the soil is still dry, re-wet the wick and push it 5 cm deeper into the soil."
    ],
    "extend": "Add a clear window strip so you see the water level."
   },
@@ -1440,6 +1463,11 @@
      "qty": 1
     },
     {
+     "id": "transistor",
+     "name": "Transistor",
+     "qty": 1
+    },
+    {
      "id": "tubing",
      "name": "Silicone Tubing",
      "qty": 1
@@ -1465,6 +1493,13 @@
     },
     {
      "a": "usbpump",
+     "b": "transistor",
+     "result_id": "switchpump",
+     "result_name": "Switched Pump",
+     "result_short": "SP"
+    },
+    {
+     "a": "switchpump",
      "b": "tubing",
      "result_id": "waterline",
      "result_name": "Water Line",
@@ -1493,9 +1528,11 @@
     }
    ],
    "assembly_steps": [
-    "Wire the moisture sensor to an analog pin and the pump through a transistor to a digital pin.",
-    "Drop the pump in the bucket and run the tubing to the pot.",
-    "Upload a sketch that runs the pump for 3 seconds when the reading crosses your dry threshold."
+    "Wire the moisture sensor to the Arduino: VCC to 5V, GND to GND, signal to A0. Push the sensor into dry soil and note the reading, then water and note it again.",
+    "Wire the USB pump through the transistor: pump + to 5V, pump - to the transistor's collector, emitter to GND, base to pin 7 through a 1 kOhm resistor.",
+    "Push the silicone tubing onto the pump outlet, drop the pump in the bucket of water, and run the tubing into the plant pot.",
+    "Upload a sketch that runs the pump for 3 seconds when the reading crosses halfway between your dry and wet numbers, then waits 10 minutes before checking again.",
+    "Power everything from the power bank and watch the first cycle. If water siphons after the pump stops, lift the tube's end above the bucket's water line."
    ],
    "extend": "Log moisture readings to the serial monitor and graph a week of data."
   },
@@ -1909,22 +1946,27 @@
      "result_id": "standbase",
      "result_name": "Stand Base",
      "result_short": "SB"
+    },
+    {
+     "a": "standbase",
+     "b": "bottlecap",
+     "result_id": "phonestand",
+     "result_name": "Phone Stand",
+     "result_short": "PS"
     }
    ],
    "final_requires": [
     {
-     "id": "standbase",
-     "qty": 1
-    },
-    {
-     "id": "bottlecap",
+     "id": "phonestand",
      "qty": 1
     }
    ],
    "assembly_steps": [
-    "Cut two cardboard pieces with matching slots, one tilted back 20 degrees.",
-    "Slide the pieces together and tape the joint.",
-    "Glue a bottle cap at the front lip so the phone stays put."
+    "Cut two cardboard rectangles, 12 x 15 cm each. Cut a slot 7.5 cm deep and as wide as the cardboard's thickness into the middle of each, one from the top and one from the bottom.",
+    "Slide the two pieces together at the slots so they form a cross, then tip it so one face leans back about 20 degrees.",
+    "Tape every joint on both sides so the cross can't fold flat.",
+    "Glue the bottle cap across the front bottom edge as a lip that stops the phone sliding off.",
+    "Set your phone on it. If it tips backward, trim 1 cm off the back leg; if the phone slides, add a second cap beside the first."
    ],
    "extend": "Cut a hole at the back to feed a charging cable through."
   },
@@ -2121,9 +2163,11 @@
     }
    ],
    "assembly_steps": [
-    "Splice the fan wires to the USB cable. Most 12V fans spin slower but safe on 5V.",
-    "Cut a hole in a slanted cardboard stand and mount the fan under it.",
-    "Cover the hole with window screen mesh so fingers stay out."
+    "Splice the fan's red wire to the USB cable's red (5V) and black to black, and tape each joint separately. A 12V fan spins slower on 5V, which is quieter and fine here.",
+    "Cut a hole in the cardboard the size of the fan's blade circle, centered where the laptop's air vents sit.",
+    "Mount the fan under the hole so the arrow on its housing points up, toward the laptop.",
+    "Glue the window mesh over the hole so fingers and cables can't reach the fan.",
+    "Fold the cardboard into a wedge about 4 cm tall at the back. Run the laptop for 15 minutes: the underside should feel cooler; if not, check the fan's airflow arrow."
    ],
    "extend": "Add a second fan and a switch."
   },
@@ -2542,6 +2586,16 @@
    "pitch": "Short PVC sleeves screwed to a plank hold screwdrivers and pliers on a wall.",
    "rawMaterials": [
     {
+     "id": "plank",
+     "name": "Pallet Plank",
+     "qty": 1
+    },
+    {
+     "id": "bracket",
+     "name": "L-Bracket",
+     "qty": 1
+    },
+    {
      "id": "pvc",
      "name": "PVC Pipe",
      "qty": 5
@@ -2550,14 +2604,16 @@
      "id": "screws",
      "name": "Screws",
      "qty": 5
-    },
-    {
-     "id": "plank",
-     "name": "Pallet Plank",
-     "qty": 1
     }
    ],
    "recipes": [
+    {
+     "a": "plank",
+     "b": "bracket",
+     "result_id": "wallboard",
+     "result_name": "Wall Board",
+     "result_short": "WB"
+    },
     {
      "a": "pvc",
      "b": "screws",
@@ -2568,18 +2624,20 @@
    ],
    "final_requires": [
     {
-     "id": "toolsleeve",
-     "qty": 5
+     "id": "wallboard",
+     "qty": 1
     },
     {
-     "id": "plank",
-     "qty": 1
+     "id": "toolsleeve",
+     "qty": 5
     }
    ],
    "assembly_steps": [
-    "Cut pipe into 5 cm sleeves.",
-    "Screw the sleeves along the plank, openings up.",
-    "Mount the plank on the wall and drop tools in."
+    "Cut the PVC pipe into five 5 cm sleeves and sand the cut edges smooth.",
+    "Screw an L-bracket to each end of the plank's back, so it stands off the wall.",
+    "Lay the sleeves along the plank 6 cm apart, openings up, and screw each one on through its back with one screw.",
+    "Find a wall stud or use wall plugs, then screw the brackets to the wall with the plank level.",
+    "Drop a screwdriver into each sleeve. If tools tip forward, angle the sleeves back slightly or switch to a narrower pipe."
    ],
    "extend": "Add a magnet strip along the top for drill bits."
   },
@@ -2988,9 +3046,11 @@
     }
    ],
    "assembly_steps": [
-    "Wire the Bluetooth module output to the amp board input.",
-    "Connect the amp output to the speaker terminals.",
-    "Mount everything in a shoe box enclosure and power from the power bank."
+    "Check the speaker's label: the amp board needs a 4 or 8 ohm speaker. A speaker outside that range can overheat the board.",
+    "Wire the Bluetooth module's left output and ground to the amp board's input, keeping the wires short.",
+    "Wire the amp's output + and - to the speaker's + and - tabs. Reversed polarity still plays, but bass sounds thin.",
+    "Cut a hole in the shoe box the size of the speaker cone and glue the speaker in from inside. Pack crumpled paper around it to stop rattles.",
+    "Power it from the power bank, pair your phone, and start at low volume. If it crackles, the amp is clipping, so lower the phone's volume."
    ],
    "extend": "Add a second speaker for stereo."
   },
@@ -3196,9 +3256,11 @@
     }
    ],
    "assembly_steps": [
-    "Wire the button in series with the buzzer.",
-    "Connect to the battery holder.",
-    "Mount the button outside the door and run wire to the buzzer inside."
+    "Cut two lengths of hookup wire long enough to reach from the door to where you'll hear the bell.",
+    "Wire the push button in series with the buzzer: battery + to button, button to buzzer +, buzzer - to battery -.",
+    "Press the button to test before mounting. A piezo buzzer only sounds one way round, so swap its wires if it's silent.",
+    "Tape the button beside the door frame and run the wire along the frame to the buzzer and battery holder inside.",
+    "Ring it from outside with the door closed. If it's too quiet, mount the buzzer on a hard surface like a cupboard door to amplify it."
    ],
    "extend": "Use an Arduino to play a tune instead of a beep."
   },
@@ -3434,13 +3496,18 @@
    "pitch": "Paper tubes taped to a wall form a run for marbles.",
    "rawMaterials": [
     {
-     "id": "paperroll",
-     "name": "Paper Towel Tube",
-     "qty": 5
+     "id": "cardboard",
+     "name": "Cardboard Sheet",
+     "qty": 1
     },
     {
      "id": "tape",
      "name": "Duct Tape",
+     "qty": 6
+    },
+    {
+     "id": "paperroll",
+     "name": "Paper Towel Tube",
      "qty": 5
     },
     {
@@ -3451,6 +3518,13 @@
    ],
    "recipes": [
     {
+     "a": "cardboard",
+     "b": "tape",
+     "result_id": "backboard",
+     "result_name": "Backboard",
+     "result_short": "BA"
+    },
+    {
      "a": "paperroll",
      "b": "tape",
      "result_id": "chute",
@@ -3459,6 +3533,10 @@
     }
    ],
    "final_requires": [
+    {
+     "id": "backboard",
+     "qty": 1
+    },
     {
      "id": "chute",
      "qty": 5
@@ -3469,9 +3547,11 @@
     }
    ],
    "assembly_steps": [
-    "Cut each tube in half lengthwise to make open chutes.",
-    "Tape the chutes to a wall in a zigzag, each one tilted down and ending over the next.",
-    "Drop a marble at the top and adjust angles until it runs to the bottom."
+    "Tape a large cardboard sheet to a wall or the side of a bookshelf as the backboard.",
+    "Cut each paper towel tube in half lengthwise to make open chutes about 25 cm long.",
+    "Tape the first chute at the top tilted about 10 degrees, so a marble rolls but doesn't fly off.",
+    "Add each next chute in a zigzag, with its high end 3 cm below and overlapping the end of the one above.",
+    "Run a marble from the top. If it jumps out at a turn, lower that chute's angle or tape a cardboard wall on the outside of the turn."
    ],
    "extend": "Add a funnel cup and a bell at the end."
   },
@@ -3480,7 +3560,7 @@
    "title": "Cardboard Pinball",
    "category": "Play",
    "difficulty": "Medium",
-   "pitch": "A box lid with popsicle stick flippers and rubber band launcher.",
+   "pitch": "A shoe box lid with popsicle stick flippers and a rubber band plunger.",
    "rawMaterials": [
     {
      "id": "popsicle",
@@ -3524,9 +3604,9 @@
     {
      "a": "rubber",
      "b": "cardboard",
-     "result_id": "launcher",
-     "result_name": "Launcher",
-     "result_short": "LA"
+     "result_id": "plunger",
+     "result_name": "Plunger",
+     "result_short": "PL"
     }
    ],
    "final_requires": [
@@ -3535,7 +3615,7 @@
      "qty": 2
     },
     {
-     "id": "launcher",
+     "id": "plunger",
      "qty": 1
     },
     {
@@ -3550,61 +3630,63 @@
    "assembly_steps": [
     "Prop the shoe box lid at a slight slant with the low end toward you.",
     "Pin two popsicle stick flippers near the bottom with brass fasteners so they swing.",
-    "Build a rubber band launcher down one side, drop in the marble, and flip it back up."
+    "Build a rubber band plunger down the right side, drop in the marble, and pull the plunger to send it up the table."
    ],
    "extend": "Add a buzzer and contacts to score hits."
   },
   {
-   "id": "catapult",
-   "title": "Popsicle Catapult",
+   "id": "cd_top",
+   "title": "CD Spinning Top",
    "category": "Play",
    "difficulty": "Easy",
-   "pitch": "Rubber bands and popsicle sticks launch pompoms across the room.",
+   "pitch": "An old CD with a bottle cap handle and a marble tip spins for a long time on a table.",
    "rawMaterials": [
     {
-     "id": "popsicle",
-     "name": "Popsicle Stick",
-     "qty": 1
-    },
-    {
-     "id": "rubber",
-     "name": "Rubber Band",
+     "id": "cd",
+     "name": "Old CD",
      "qty": 1
     },
     {
      "id": "bottlecap",
      "name": "Bottle Cap",
      "qty": 1
+    },
+    {
+     "id": "marble",
+     "name": "Marble",
+     "qty": 1
     }
    ],
    "recipes": [
     {
-     "a": "popsicle",
-     "b": "rubber",
-     "result_id": "arm",
-     "result_name": "Launch Arm",
-     "result_short": "LA"
+     "a": "cd",
+     "b": "bottlecap",
+     "result_id": "topbody",
+     "result_name": "Top Body",
+     "result_short": "TB"
     },
     {
-     "a": "arm",
-     "b": "bottlecap",
-     "result_id": "catapult",
-     "result_name": "Catapult",
-     "result_short": "CA"
+     "a": "topbody",
+     "b": "marble",
+     "result_id": "cdtop",
+     "result_name": "CD Spinning Top",
+     "result_short": "CST"
     }
    ],
    "final_requires": [
     {
-     "id": "catapult",
+     "id": "cdtop",
      "qty": 1
     }
    ],
    "assembly_steps": [
-    "Stack 7 popsicle sticks and wrap a rubber band tight around each end.",
-    "Wedge the stack between two more sticks that are banded together at one end only.",
-    "Glue a bottle cap on the end of the top stick, load a pompom, press down, and release."
+    "Glue the bottle cap open side down onto the CD's center hole as a handle.",
+    "Glue the marble into the center hole on the other side, so about half of it sticks out as the tip.",
+    "Let the glue set for 10 minutes before spinning, or the marble pops out.",
+    "Twist the cap between thumb and finger and drop the top flat onto a smooth table.",
+    "If it wobbles and falls quickly, the marble is off-center, so re-glue it right in the middle of the hole."
    ],
-   "extend": "Add a target board and measure range."
+   "extend": "Draw spirals on the CD with markers and watch the patterns change as it slows."
   },
   {
    "id": "kaleidoscope",
@@ -3705,51 +3787,67 @@
     }
    ],
    "assembly_steps": [
-    "Cut a square window near the top on one side of the carton and near the bottom on the opposite side.",
-    "Glue one mirror at 45 degrees behind the top window, facing down.",
-    "Glue the second mirror at 45 degrees behind the bottom window, facing up, and look through it."
+    "Use a 1-liter milk carton, washed and dried. Cut a 6 x 6 cm window near the top on one side and another near the bottom on the opposite side.",
+    "Glue the first mirror inside behind the top window at 45 degrees, facing down. A folded paper triangle makes a good 45-degree guide.",
+    "Glue the second mirror behind the bottom window at 45 degrees, facing up, parallel to the first.",
+    "Tape the carton closed and cover any light leaks with tape.",
+    "Look through the bottom window at something above a wall. If you see the carton's inside, one mirror's angle is off, so reset it with the paper guide."
    ],
    "extend": "Join two cartons for a taller scope."
   },
   {
-   "id": "can_stilts",
-   "title": "Can Stilts",
+   "id": "bottle_shaker",
+   "title": "Bottle Shaker",
    "category": "Play",
    "difficulty": "Easy",
-   "pitch": "Tin cans with string handles make kid stilts.",
+   "pitch": "A plastic bottle part-filled with dry rice and taped shut makes a rhythm shaker.",
    "rawMaterials": [
     {
-     "id": "can",
-     "name": "Tin Can",
-     "qty": 2
+     "id": "bottle",
+     "name": "Plastic Bottle",
+     "qty": 1
     },
     {
-     "id": "string",
-     "name": "String",
-     "qty": 2
+     "id": "rice",
+     "name": "Dry Rice",
+     "qty": 1
+    },
+    {
+     "id": "tape",
+     "name": "Duct Tape",
+     "qty": 1
     }
    ],
    "recipes": [
     {
-     "a": "can",
-     "b": "string",
-     "result_id": "stilt",
-     "result_name": "Stilt",
-     "result_short": "ST"
+     "a": "bottle",
+     "b": "rice",
+     "result_id": "filledbottle",
+     "result_name": "Filled Bottle",
+     "result_short": "FB"
+    },
+    {
+     "a": "filledbottle",
+     "b": "tape",
+     "result_id": "shaker",
+     "result_name": "Sealed Shaker",
+     "result_short": "SS"
     }
    ],
    "final_requires": [
     {
-     "id": "stilt",
-     "qty": 2
+     "id": "shaker",
+     "qty": 1
     }
    ],
    "assembly_steps": [
-    "Punch two holes on opposite sides near the closed top of each can.",
-    "Thread a string loop through each can, long enough to hold at waist height, and knot inside.",
-    "Stand on the cans, pull the strings tight, and step forward one can at a time."
+    "Use a small, dry plastic bottle. Pour in dry rice until it's about a quarter full.",
+    "Shake it to test the sound: more rice gives a softer swish, less gives a sharper rattle.",
+    "Screw the cap on tightly, then wrap duct tape over the cap and down the neck to seal it.",
+    "For little kids, add a second layer of tape. Loose rice is a choking hazard.",
+    "Play along to a song. If the cap loosens, re-tape it before handing it back."
    ],
-   "extend": "Wrap with duct tape for grip."
+   "extend": "Make three with rice, sand and gravel and compare how each sounds."
   },
   {
    "id": "cardboard_maze",
@@ -4035,9 +4133,11 @@
     }
    ],
    "assembly_steps": [
-    "Wire the panel to the charge module input: + to IN+, - to IN-.",
+    "Check the panel's label for its voltage. The USB charge module needs about 5 to 6V in; a 6V panel is ideal.",
+    "Wire the panel's + and - to the module's IN+ and IN-. Reversed wires won't charge, so check polarity twice.",
     "Plug the power bank into the module's USB output.",
-    "Set the panel in full sun and check the power bank's charge light comes on."
+    "Prop the panel facing the sun at roughly your latitude's angle, for example 35 to 40 degrees in most of the US.",
+    "Check that the power bank shows charging. A small 1W panel charges slowly, so expect hours for a full charge; clouds cut output sharply."
    ],
    "extend": "Add a folding cardboard stand that angles the panel toward the sun."
   },
@@ -4378,9 +4478,11 @@
     }
    ],
    "assembly_steps": [
-    "Cross two dowels and tie the center.",
-    "Cut the bag open, stretch over the cross, and tape the edges around the dowel tips.",
-    "Tie a string bridle to the cross and fly in an open field."
+    "Cross a 60 cm dowel and a 50 cm dowel, with the shorter one a quarter of the way down the longer, and tie the cross tightly with string.",
+    "Cut a plastic bag open into a flat sheet. Lay the cross on it and cut a diamond 2 cm larger than the frame on every side.",
+    "Fold the extra 2 cm over the dowel ends and tape it down at all four tips.",
+    "Tie a 40 cm bridle string from the cross to the bottom tip, then tie the flying line to the bridle about a third of the way down.",
+    "Tape a 2 m tail of bag strips to the bottom tip. If the kite spins or dives, add tail length; if it won't climb, move the line's knot up."
    ],
    "extend": "Add a tail of bag strips for stability in gusty wind."
   },
@@ -5127,9 +5229,11 @@
     }
    ],
    "assembly_steps": [
-    "Wrap the wire around the nail 50 times in one direction, leaving both ends free.",
-    "Connect each wire end to the battery holder for a few seconds at a time, since the coil gets warm.",
-    "Touch the nail tip to paper clips and count how many it lifts."
+    "Use insulated or enamelled wire. Leave 15 cm free at one end, then wrap 50 tight turns along the nail in one direction only.",
+    "Strip or sand 1 cm of insulation off both wire ends.",
+    "Touch the ends to the battery holder's + and - for a few seconds at a time. The coil and battery get warm, so never leave it connected.",
+    "Hold the nail tip near a pile of paper clips and count how many it lifts.",
+    "Unwind to 25 turns and count again. Fewer turns lifts fewer clips; if it lifts none, check that the wire ends are bare."
    ],
    "extend": "Add a switch and compare wraps."
   },
@@ -5197,9 +5301,11 @@
     }
    ],
    "assembly_steps": [
-    "Push a copper coin and a galvanized nail into each potato, 3 cm apart.",
-    "Wire the coin of one potato to the nail of the next to chain all three.",
-    "Connect the LED long leg to the free coin and short leg to the free nail."
+    "Push a copper coin and a galvanized nail into each potato about 3 cm apart. Don't let them touch inside.",
+    "Wire the coin of potato one to the nail of potato two, and the coin of potato two to the nail of potato three.",
+    "You now have about 2.4V total: each cell gives roughly 0.8V. Two cells are rarely enough for an LED.",
+    "Connect the LED's long leg to the free coin and its short leg to the free nail. Look closely in a dim room: the glow is faint.",
+    "If it doesn't light, flip the LED. Still nothing: add a fourth potato in the chain or push the metals deeper."
    ],
    "extend": "Measure voltage per cell."
   },

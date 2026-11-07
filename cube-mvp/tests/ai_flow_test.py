@@ -85,7 +85,7 @@ def main():
                 page.fill("#materialQtyInput", str(qty))
                 page.press("#materialNameInput", "Enter")
                 page.wait_for_timeout(200)
-            page.wait_for_timeout(2600)
+            page.wait_for_timeout(3800)
 
             check(len(calls) == 1, "three quick edits trigger one automatic refresh", f"{len(calls)} call(s)")
             sent = {m["id"]: m["qty"] for m in calls[0]} if calls else {}
@@ -122,11 +122,11 @@ def main():
             drag("m_rubber_bands"); drag("frame_kit__panel")
             check(page.locator("#mergeGuide .merge-step.done").count() == 2, "both steps done after the second merge")
             check(page.locator("#buildBtn").is_enabled(), "Build is enabled after following the guide")
-            page.wait_for_timeout(2400)
+            page.wait_for_timeout(3600)
             check(len(calls) == 1, "merging parts does not trigger a refresh", f"{len(calls)} call(s)")
 
             page.locator(".qty-btn[data-op='inc'][data-id='m_wooden_dowel']").click()
-            page.wait_for_timeout(2600)
+            page.wait_for_timeout(3800)
             check(len(calls) == 2, "changing a quantity refreshes the ideas", f"{len(calls)} call(s)")
             check(page.locator("#buildableNowList .idea-row", has_text="Frame Kit").count() == 1,
                   "the idea being built stays after a refresh drops it")
