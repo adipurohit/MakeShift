@@ -1,0 +1,1230 @@
+From 701e8137ccba6c971f1d372196db388522489aa2 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 7 Nov 2026 18:48:43 +0000
+Subject: [PATCH] Tasks 1 & 4: harden camera scan, tighten recipe prompts +
+ validation, add tests and quality harness
+
+---
+ cube-mvp/NOTES-tasks-1-and-4.md   |  62 +++++
+ cube-mvp/app.js                   | 144 ++++++++++--
+ cube-mvp/server.py                | 374 +++++++++++++++++++++++++-----
+ cube-mvp/tests/recipe_quality.py  | 177 ++++++++++++++
+ cube-mvp/tests/scan_logic.test.js | 130 +++++++++++
+ cube-mvp/tests/test_recipes.py    | 127 ++++++++++
+ 6 files changed, 928 insertions(+), 86 deletions(-)
+ create mode 100644 cube-mvp/NOTES-tasks-1-and-4.md
+ create mode 100644 cube-mvp/tests/recipe_quality.py
+ create mode 100644 cube-mvp/tests/scan_logic.test.js
+ create mode 100644 cube-mvp/tests/test_recipes.py
+
+diff --git a/cube-mvp/NOTES-tasks-1-and-4.md b/cube-mvp/NOTES-tasks-1-and-4.md
+new file mode 100644
+index 0000000..7ab10ba
+--- /dev/null
++++ b/cube-mvp/NOTES-tasks-1-and-4.md
+@@ -0,0 +1,62 @@
++# Tasks 1 & 4: camera-scan test and recipe-quality pass
++
++**Status: code audit + fixes + test tooling are done. The two things that need real hardware / a real API key are NOT done.**
++This was worked in a sandbox with no camera, no browser and no `ANTHROPIC_API_KEY`, so nothing below claims a live
++camera capture or a real model output was observed.
++
++## Not done (needs you)
++
++| | What | How |
++|---|---|---|
++| Task 1 | Live camera + vision test on a real device | Checklist at the bottom. ~10 minutes. |
++| Task 4 | Run the generator on real material lists and read the output | `python3 tests/recipe_quality.py --steps`, then read `recipe_quality_report.md` and tick the verdict boxes. Before/after prompt comparison needs this run (git-stash the prompt change to get the "before"). |
++
++## Task 1: camera scan
++
++Verified here: the scan state machine against a mocked camera/fetch in jsdom (`node tests/scan_logic.test.js`, 11 tests).
++Run against the *old* `app.js` these tests fail 8 of 11; against the new code all pass.
++
++Bugs found by reading the code and fixed (`app.js` scan section, `server.py` identify endpoint):
++
++1. **Camera left on.** Closing the modal while the permission prompt was open let the late stream attach and never stop (camera light stays on).
++2. **Dead "back to camera".** After a denied permission, "back" showed a blank video; Capture then uploaded a black frame. Now it re-requests the camera, and falls back to the manual form with a reason if it still fails.
++3. **Double-click on Scan** opened two streams.
++4. **Black-frame upload** if Capture was pressed before the video had frames. Now refused with "still warming up".
++5. **Full-resolution upload.** Frames are now downscaled to 1024px longest side (a 4K webcam frame is multi-MB base64).
++6. **No timeout / no unreachable-server handling.** 45s abort, and a readable message for "server not running".
++7. **Late responses** from a closed or superseded scan could overwrite a newer one. Guarded with a session counter.
++8. **Insecure context.** Visiting `http://<LAN IP>:8743` from a phone has no `navigator.mediaDevices`; the error was a raw `TypeError`. Now says to use localhost or https. (Relevant for demoing on a phone.)
++9. Permission/not-found/in-use errors now have distinct messages; Enter confirms, Esc closes.
++10. **Server crash path:** `_friendly_error` re-imported `anthropic` inside the error handler, so with the package missing the request thread died and the browser saw a dropped connection. README claims it "auto-installs"; no such code exists. Now returns a clear "pip install anthropic" message. (Also: oversized/odd bodies, non-JSON bodies, non-image data URLs now get 4xx instead of a stack trace; empty/refused model responses give a readable error.)
++
++Not changed, worth knowing: `scanBtn`'s camera preview isn't mirrored (fine for a rear camera, slightly odd on a laptop webcam).
++
++## Task 4: recipe quality
++
++Method (static, since no key): read the prompts and schemas against how `app.js` consumes the output.
++Findings, each grounded in the code, not in observed model output:
++
++- **Prompt contradiction.** "More ambitious ones that would need a bit more material" conflicts with "never invent a material id". Ideas can only ask for *more units of the same materials*. Prompt now says so.
++- **Schema bounds not enforced.** `minItems: 6` / `maxItems` aren't enforced by constrained decoding (only minItems 0/1 is), and may be rejected outright depending on SDK handling. They are now moved into the field description (`api_schema()`) and enforced server-side.
++- **Validator trusted the model too much.** It didn't check: result ids colliding with material ids or each other (silently overwrites an item), dead-end recipes, quantities, duplicate ids/titles, recipe/line-item counts. `uses_material_ids` is used by `app.js` (`rawIdsForIdea`) to decide which ids are raw inventory, so one omission by the model would mis-namespace a raw material and break that idea. It is now recomputed from the recipe graph.
++- **Model text goes into `innerHTML`** in `app.js` (pitch, step text, item names). Server now strips markup from all model strings. (`app.js` itself still uses `innerHTML`; separate cleanup.)
++- **Steps prompt asked for "numbered" steps** but the UI numbers them → likely "1. 1. Glue…". Prompt now forbids numbering and the server strips it.
++- **Plausibility/safety gaps in the prompts:** no rule about broken parts ("Dead Nozzle" used as a working component), capabilities the parts can't provide (wifi, motors, light), salvaged lithium cells / PSUs / capacitors / microwave parts, load-bearing or safety items, or variety (six variants of one organizer). All added. Padding to 6 ideas when materials are scarce is now discouraged (server accepts fewer).
++- **Steps phase is blind to the recipe graph.** `app.js` sends sub-assembly *names* and final parts but not which part merges into which, so steps can't reliably follow build order. Fixing needs a small `app.js` change (include `recipes` in `brief`), which is outside task 4's file scope, so not done.
++
++Tests: `python3 tests/test_recipes.py` (15 offline tests for the validator, sanitizer, schema stripping, input checks).
++Harness: `tests/recipe_quality.py`: 12 scenarios built to stress different failure modes (hazardous parts, nearly-empty inventory, broken parts, etc.), heuristic flags, reviewer checkboxes.
++
++Risk to watch on first real run: tighter prompts + stricter validation could lower the number of ideas that survive. The report prints returned vs. kept and every rejection reason so you can see if validation is too strict.
++
++## Real-device camera checklist (Task 1)
++
++On the laptop/phone you'll present from, with a real key in `.env`:
++- [ ] Click Scan → permission prompt appears once; Allow → live video, no black/frozen frame.
++- [ ] Capture a mug, a zip tie, a motor, a blurry/dark shot → name is usable; dark shot says "Not sure".
++- [ ] Camera light turns off after Add, after Close, after Esc.
++- [ ] Deny permission → manual form with a clear message; "Back" re-prompts.
++- [ ] Block the camera in browser settings, other app holding camera → distinct messages.
++- [ ] Stop the server mid-scan → "Couldn't reach the CUBE server".
++- [ ] Phone on LAN IP over http → expected "secure page" message (use localhost/https/tunnel to demo on a phone).
++- [ ] Safari/iOS: video appears (needs `playsinline`, already set) and rear camera is chosen.
+diff --git a/cube-mvp/app.js b/cube-mvp/app.js
+index 21ac69f..f1e49fb 100644
+--- a/cube-mvp/app.js
++++ b/cube-mvp/app.js
+@@ -1114,48 +1114,125 @@ function stopConfetti() {
+ 
+ /* ================= CAMERA SCAN ================= */
+ let scanStream = null;
++let scanSession = 0;        // bumped on every open/close/capture so late async results can't touch a newer scan
++let scanAbort = null;
++
++const SCAN_MAX_SIDE = 1024; // longest edge sent to the server; plenty for naming an object, keeps uploads small
++const SCAN_TIMEOUT_MS = 45000;
++
++function scanStatus(text) { document.getElementById("scanStatus").textContent = text; }
++
++function cameraErrorMessage(e) {
++  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
++    return window.isSecureContext === false
++      ? "Camera needs a secure page — open this on http://localhost:8743 (not a network IP), or use https"
++      : "This browser can't access a camera";
++  }
++  switch (e && e.name) {
++    case "NotAllowedError": case "SecurityError": return "Camera permission was denied — allow it in the address bar, or type the item in";
++    case "NotFoundError": case "DevicesNotFoundError": return "No camera found";
++    case "NotReadableError": case "TrackStartError": return "The camera is in use by another app";
++    default: return "Camera unavailable" + (e && e.message ? " (" + e.message + ")" : "");
++  }
++}
++
++async function startCamera() {
++  if (scanStream) return true;                       // already live (Retake, or re-opening)
++  const session = scanSession;
++  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
++    scanStatus(cameraErrorMessage() + " — type the material in instead.");
++    return false;
++  }
++  let stream;
++  try {
++    try {
++      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
++    } catch (e) {
++      if (e && e.name === "OverconstrainedError") stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
++      else throw e;
++    }
++  } catch (e) {
++    if (session === scanSession) scanStatus(cameraErrorMessage(e) + " — type the material in instead.");
++    return false;
++  }
++  if (session !== scanSession) {                     // modal was closed while the permission prompt was open
++    stream.getTracks().forEach((t) => t.stop());
++    return false;
++  }
++  scanStream = stream;
++  const video = document.getElementById("scanVideo");
++  video.srcObject = stream;
++  video.play().catch(() => {});                      // some browsers ignore autoplay on a re-used element
++  scanStatus("Point your camera at the item and capture.");
++  return true;
++}
+ 
+ function initScan() {
+   document.getElementById("scanBtn").addEventListener("click", openScanModal);
+   document.getElementById("closeScanBtn").addEventListener("click", closeScanModal);
+   document.getElementById("captureBtn").addEventListener("click", captureScan);
+   document.getElementById("scanManualBtn").addEventListener("click", () => showScanStep("manual"));
+-  document.getElementById("manualBackBtn").addEventListener("click", () => showScanStep("camera"));
+-  document.getElementById("scanRetryBtn").addEventListener("click", () => showScanStep("camera"));
+-  document.getElementById("scanConfirmBtn").addEventListener("click", () => {
++  document.getElementById("manualBackBtn").addEventListener("click", () => retryCamera());
++  document.getElementById("scanRetryBtn").addEventListener("click", () => retryCamera());
++
++  const confirmScan = () => {
+     const name = document.getElementById("scanNameInput").value.trim();
+     const q = Math.max(1, parseInt(document.getElementById("scanQtyInput").value, 10) || 1);
+     if (!name) return;
+     addMaterial(name, q);
+     toast(`📸 Added "${name}" to inventory`);
+     closeScanModal();
+-  });
+-  document.getElementById("manualConfirmBtn").addEventListener("click", () => {
++  };
++  const confirmManual = () => {
+     const name = document.getElementById("manualNameInput").value.trim();
+     const q = Math.max(1, parseInt(document.getElementById("manualQtyInput").value, 10) || 1);
+     if (!name) return;
+     addMaterial(name, q);
+     toast(`Added "${name}" to inventory`);
+     closeScanModal();
++  };
++  document.getElementById("scanConfirmBtn").addEventListener("click", confirmScan);
++  document.getElementById("manualConfirmBtn").addEventListener("click", confirmManual);
++  ["scanNameInput", "scanQtyInput"].forEach((id) => document.getElementById(id).addEventListener("keydown", (e) => { if (e.key === "Enter") confirmScan(); }));
++  ["manualNameInput", "manualQtyInput"].forEach((id) => document.getElementById(id).addEventListener("keydown", (e) => { if (e.key === "Enter") confirmManual(); }));
++  document.getElementById("scanNameInput").maxLength = 60;
++  document.getElementById("manualNameInput").maxLength = 60;
++  document.addEventListener("keydown", (e) => {
++    if (e.key === "Escape" && document.getElementById("scanModal").classList.contains("visible")) closeScanModal();
+   });
+ }
+ 
+ async function openScanModal() {
+-  document.getElementById("scanModal").classList.add("visible");
++  const modal = document.getElementById("scanModal");
++  if (modal.classList.contains("visible")) return;   // double-click guard: never open two streams
++  scanSession++;
++  modal.classList.add("visible");
+   showScanStep("camera");
+-  try {
+-    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+-    document.getElementById("scanVideo").srcObject = scanStream;
+-    document.getElementById("scanStatus").textContent = "Point your camera at the item and capture.";
+-  } catch (e) {
+-    document.getElementById("scanStatus").textContent = "Camera unavailable (" + e.message + ") — type the material in instead.";
+-    showScanStep("manual");
++  scanStatus("Starting camera...");
++  if (!(await startCamera())) showScanStep("manual");
++}
++
++// "Back to camera" / "Retake": the stream may be gone (permission was denied, or the camera was unplugged).
++async function retryCamera() {
++  showScanStep("camera");
++  const track = scanStream && scanStream.getVideoTracks()[0];
++  if (scanStream && (!track || track.readyState === "ended")) {
++    scanStream.getTracks().forEach((t) => t.stop());
++    scanStream = null;
+   }
++  scanStatus("Starting camera...");
++  if (!(await startCamera())) showScanStep("manual");
+ }
+ 
+ function closeScanModal() {
++  scanSession++;                                     // invalidates any in-flight permission prompt or identify call
++  if (scanAbort) { scanAbort.abort(); scanAbort = null; }
+   document.getElementById("scanModal").classList.remove("visible");
+   if (scanStream) { scanStream.getTracks().forEach((t) => t.stop()); scanStream = null; }
++  document.getElementById("scanVideo").srcObject = null;
++  document.getElementById("scanPreview").removeAttribute("src");
++  document.getElementById("scanPreview").hidden = true;
++  document.getElementById("scanNameInput").value = "";
+ }
+ 
+ function showScanStep(step) {
+@@ -1173,9 +1250,17 @@ function showScanStep(step) {
+ 
+ async function captureScan() {
+   const video = document.getElementById("scanVideo");
++  if (!scanStream || !video.videoWidth || video.readyState < 2) {
++    scanStatus("Camera is still warming up — try again in a second.");
++    return;
++  }
++  const session = ++scanSession;
++
++  // Downscale: a 1080p/4K frame as base64 JPEG is slow to upload and gains nothing for naming an object.
++  const scale = Math.min(1, SCAN_MAX_SIDE / Math.max(video.videoWidth, video.videoHeight));
+   const canvas = document.getElementById("scanCanvas");
+-  canvas.width = video.videoWidth || 640;
+-  canvas.height = video.videoHeight || 480;
++  canvas.width = Math.round(video.videoWidth * scale);
++  canvas.height = Math.round(video.videoHeight * scale);
+   canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+   const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+ 
+@@ -1187,26 +1272,39 @@ async function captureScan() {
+   preview.hidden = false;
+   document.getElementById("scanCameraWrap").hidden = true;
+   document.getElementById("scanActionsCapture").hidden = true;
+-  document.getElementById("scanStatus").textContent = "Identifying...";
++  scanStatus("Identifying...");
+ 
++  scanAbort = new AbortController();
++  const abort = scanAbort;
++  const timer = setTimeout(() => abort.abort(), SCAN_TIMEOUT_MS);
+   try {
+     const res = await fetch("/api/identify-material", {
+       method: "POST",
+       headers: { "Content-Type": "application/json" },
+       body: JSON.stringify({ image: dataUrl }),
++      signal: abort.signal,
+     });
+-    const data = await res.json();
+-    if (!res.ok) throw new Error(data.message || "Couldn't identify the material");
+-    document.getElementById("scanNameInput").value = data.name;
++    let data = {};
++    try { data = await res.json(); } catch (_) { /* non-JSON error page */ }
++    if (session !== scanSession) return;             // modal closed / new capture started meanwhile
++    if (!res.ok) throw new Error(data.message || "Couldn't identify the material (server error " + res.status + ")");
++    document.getElementById("scanNameInput").value = data.name || "";
+     document.getElementById("scanQtyInput").value = "1";
+-    document.getElementById("scanStatus").textContent = data.confidence === "low"
+-      ? "Not totally sure — please check this before adding."
+-      : "Here's what CUBE thinks this is:";
++    const unsure = data.confidence === "low" || !data.name || data.name === "unclear item";
++    scanStatus(unsure ? "Not sure what this is — please check or retake." : "Here's what CUBE thinks this is:");
+     showScanStep("result");
+     preview.hidden = false;
++    document.getElementById("scanNameInput").select();
+   } catch (e) {
+-    document.getElementById("scanStatus").textContent = "⚠️ " + e.message + " — type it in instead.";
++    if (session !== scanSession) return;
++    const msg = e.name === "AbortError" ? "Timed out waiting for the AI"
++      : e instanceof TypeError ? "Couldn't reach the CUBE server"
++      : e.message;
++    scanStatus("⚠️ " + msg + " — type it in instead.");
+     showScanStep("manual");
++  } finally {
++    clearTimeout(timer);
++    if (scanAbort === abort) scanAbort = null;
+   }
+ }
+ 
+diff --git a/cube-mvp/server.py b/cube-mvp/server.py
+index 81616bd..16b93df 100644
+--- a/cube-mvp/server.py
++++ b/cube-mvp/server.py
+@@ -37,6 +37,50 @@ load_dotenv(DIR / ".env")
+ 
+ MODEL = "claude-opus-5-5"
+ 
++MAX_BODY_BYTES = 8 * 1024 * 1024        # reject absurd request bodies
++MAX_IMAGE_B64_CHARS = 6 * 1024 * 1024   # API image limit is 5 MB of raw bytes (~6.7M base64 chars)
++ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
++
++
++def api_schema(schema):
++    """Copy of a JSON schema that structured outputs will accept.
++
++    Decoding-level enforcement only supports minItems of 0 or 1 and no maxItems, so those bounds are
++    moved into the field description (the model still sees them) and are enforced server-side in
++    validate_and_clean() instead.
++    """
++    if isinstance(schema, list):
++        return [api_schema(x) for x in schema]
++    if not isinstance(schema, dict):
++        return schema
++    out = {k: api_schema(v) for k, v in schema.items()}
++    hints = []
++    if out.get("minItems", 0) > 1:
++        hints.append(f"at least {out.pop('minItems')} items")
++    if "maxItems" in out:
++        hints.append(f"at most {out.pop('maxItems')} items")
++    if hints:
++        out["description"] = (out.get("description", "") + " Provide " + " and ".join(hints) + ".").strip()
++    return out
++
++
++_TAG_RE = re.compile(r"[<>\x00-\x08\x0b\x0c\x0e-\x1f]")
++
++
++def clean_text(value, limit):
++    """The front end renders these strings with innerHTML, so strip markup characters here."""
++    if not isinstance(value, str):
++        return ""
++    value = re.sub(r"<[^>]*>", "", value)  # whole tags first, then any stray < or >
++    return re.sub(r"\s+", " ", _TAG_RE.sub("", value)).strip()[:limit]
++
++
++def make_short(name):
++    letters = re.findall(r"[A-Za-z0-9]+", name)
++    if len(letters) >= 2:
++        return (letters[0][0] + letters[1][0]).upper()
++    return (letters[0][:2] if letters else "??").upper()
++
+ # ---------------------------------------------------------------
+ # Phase 1: idea catalog (no assembly steps — those are generated
+ # on demand in phase 2, once the user actually picks a recipe).
+@@ -93,24 +137,53 @@ IDEA_SCHEMA = {
+ }
+ 
+ IDEA_SYSTEM_PROMPT = """You are the idea engine inside CUBE, a scrap-to-creation sandbox for makers.
+-Given a list of raw materials someone has on hand, propose a broad CATALOG of distinct, physically
+-buildable projects that make creative use of what they have — a mix of projects they can fully build
+-right now, and more ambitious ones that would need a bit more material, so there's something to work
+-toward.
+-
+-Hard rules:
+-- Every "a" / "b" in a recipe, and every "id" in final_requires, must be either one of the
+-  given material ids, or a result_id you defined in an earlier recipe in the SAME idea
+-  (recipes combine two inputs into one named result; a result can feed into a later recipe).
+-  Never invent a material id that wasn't provided.
+-- Each idea should use between 2 and 8 of the provided materials.
+-- Keep each idea to 2-6 recipes and 2-6 final_requires line items, with small quantities (1-3).
+-- Do NOT write assembly steps — those come later. Only the recipe graph and final requirements.
+-- result_short is a 2-3 letter uppercase abbreviation (for a UI icon).
+-- Projects must be safe for a general audience to physically build: no weapons, no mains/high-voltage
+-  wiring, no hazardous chemicals, nothing that requires professional tools or certification.
+-- Order ideas with the best material match / most immediately buildable first.
+-- Titles should be punchy and specific (not "Cool Gadget").
++Given the raw materials someone has on hand, propose a CATALOG of distinct projects a person could
++really build from them using ordinary hand tools (scissors, craft knife, screwdriver, pliers) and common
++consumables (tape, glue, string, screws). Those tools and consumables are ALWAYS assumed to be available;
++never list them as materials. Mix projects they can build right now with some that need a larger quantity
++of the same materials, so there is something to work toward.
++
++How the data works:
++- A recipe merges exactly TWO inputs into ONE result, consuming one unit of each input. If final_requires
++  asks for qty 2 of a crafted item, that item must be crafted twice (so its inputs are consumed twice).
++- An input ("a" / "b") or a final_requires "id" must be a given material id, or a result_id defined by an
++  EARLIER recipe in the SAME idea. Never invent a raw material id. Because you cannot invent materials,
++  an "ambitious" idea can only be one that needs more units of the same materials than the person has.
++- result_id: short snake_case, unique within the idea, and never equal to any given material id.
++  result_name is the user-facing name. result_short is 2-3 uppercase letters.
++- Every result_id must be used: it must feed a later recipe or appear in final_requires. No dead-end recipes.
++- Each idea uses 2-8 of the given materials, has 2-6 recipes and 2-6 final_requires lines, with quantities 1-3.
++- Do NOT write assembly steps; only the recipe graph and final requirements. No HTML or markdown in any string.
++
++Physical plausibility (this is where most bad ideas come from):
++- Every merge must be something a person can physically do (glue, tie, tape, screw, slot, wrap, stack) and
++  the result must honestly be the thing you name. Do not name a merge after a capability the parts do not give
++  you ("battery + cardboard = power source" is not a recipe).
++- Respect condition words. Parts described as broken, dead, cracked, jammed, stripped, etc. may be used for
++  structure, weight, shape or decoration, never as working electrical, optical or mechanical components.
++- Do not promise functions the materials cannot deliver: no Wi-Fi, sensors, motors-that-run, solar power or
++  lighting unless the given materials include a working version of that part and the idea only wires/mounts it
++  at hobby-kit level. Prefer honest, achievable functions: holders, stands, organizers, hand-powered
++  mechanisms, linkages, toys, tools, planters, display pieces.
++- Scale must make sense: the size, strength and number of the parts must be able to produce the result.
++- The a/b pair in a recipe should be a natural pairing, not an arbitrary one.
++
++Safety (general audience, possibly children nearby):
++- No weapons or launchers, nothing that fires, pressurizes, burns or heats; no mains or high-voltage wiring;
++  no opening or reusing power supplies, microwave/CRT/flash-camera parts or large capacitors.
++- No damaged, swollen or salvaged lithium batteries; no hazardous chemicals, fuels or solvents.
++- Nothing a person's safety depends on: no ladders, climbing or weight-bearing seats, helmets or protective
++  gear, child-restraint or medical items, locks or alarms. No sharp blades or exposed spinning parts on
++  anything meant for kids.
++- If the only way to make an idea interesting is to break one of these rules, drop the idea.
++
++Quality:
++- Give genuine variety: different functions and different material mixes, not six versions of one organizer.
++- Titles are punchy and specific. The pitch is one or two sentences that say what it does and why it is
++  satisfying, and it must match the recipes.
++- Order ideas with the best material match / most immediately buildable first. Before ordering, count the
++  raw units each idea needs against the quantities given.
++- If the materials are too limited for a good idea, return fewer, honest ideas instead of padding.
+ """
+ 
+ 
+@@ -131,36 +204,158 @@ def generate_ideas(materials):
+         system=IDEA_SYSTEM_PROMPT,
+         messages=[{"role": "user", "content": user_prompt}],
+         output_config={
+-            "format": {"type": "json_schema", "schema": IDEA_SCHEMA},
++            "format": {"type": "json_schema", "schema": api_schema(IDEA_SCHEMA)},
+         },
+     )
+-    text = next(b.text for b in response.content if b.type == "text")
+-    data = json.loads(text)
++    data = json.loads(first_text(response))
+     return validate_and_clean(data, materials)
+ 
+ 
+-def validate_and_clean(data, materials):
+-    material_ids = {m["id"] for m in materials}
+-    clean_ideas = []
+-    for idea in data.get("ideas", []):
+-        known_ids = set(material_ids)
+-        valid = True
+-        for r in idea.get("recipes", []):
+-            if r["a"] not in known_ids or r["b"] not in known_ids:
+-                valid = False
+-                break
+-            known_ids.add(r["result_id"])
+-        if not valid:
++def first_text(response):
++    """Text of the first text block, with a readable error for refusals / empty responses."""
++    if getattr(response, "stop_reason", None) == "refusal":
++        raise RuntimeError("The model declined this request.")
++    for b in response.content:
++        if b.type == "text" and b.text.strip():
++            return b.text
++    raise RuntimeError("The model returned an empty response. Try again.")
++
++
++MAX_IDEAS = 10
++MAX_RECIPES = 6
++MAX_FINAL = 6
++MAX_QTY = 5   # prompt asks for 1-3; allow some slack before rejecting
++
++
++def validate_idea(idea, material_ids):
++    """Returns (cleaned_idea, problems). cleaned_idea is None when problems is non-empty."""
++    problems = []
++    if not isinstance(idea, dict):
++        return None, ["not an object"]
++
++    title = clean_text(idea.get("title"), 60)
++    pitch = clean_text(idea.get("pitch"), 280)
++    if not title:
++        problems.append("missing title")
++    if not pitch:
++        problems.append("missing pitch")
++
++    recipes_in = idea.get("recipes") or []
++    final_in = idea.get("final_requires") or []
++    if not recipes_in:
++        problems.append("no recipes")
++    if not final_in:
++        problems.append("no final_requires")
++    if len(recipes_in) > MAX_RECIPES:
++        problems.append(f"{len(recipes_in)} recipes (max {MAX_RECIPES})")
++    if len(final_in) > MAX_FINAL:
++        problems.append(f"{len(final_in)} final_requires lines (max {MAX_FINAL})")
++    if problems:
++        return None, problems
++
++    known = set(material_ids)
++    results = {}          # result_id -> result_name (in definition order)
++    used_results = set()
++    used_raw = set()
++    recipes = []
++    for n, r in enumerate(recipes_in, 1):
++        if not isinstance(r, dict):
++            problems.append(f"recipe {n} is not an object")
++            continue
++        a, b, rid = r.get("a"), r.get("b"), r.get("result_id")
++        rname = clean_text(r.get("result_name"), 40)
++        for side in (a, b):
++            if side not in known:
++                problems.append(f"recipe {n} uses unknown id {side!r}")
++            elif side in results:
++                used_results.add(side)
++            else:
++                used_raw.add(side)
++        if not isinstance(rid, str) or not re.fullmatch(r"[A-Za-z0-9_]{1,40}", rid or ""):
++            problems.append(f"recipe {n} has an invalid result_id {rid!r}")
++            continue
++        if rid in known:
++            problems.append(f"recipe {n} result_id {rid!r} collides with an existing id")
++            continue
++        if not rname:
++            problems.append(f"recipe {n} has no result_name")
+             continue
+-        for req in idea.get("final_requires", []):
+-            if req["id"] not in known_ids:
+-                valid = False
+-                break
+-        if not valid:
++        short = re.sub(r"[^A-Z0-9]", "", str(r.get("result_short", "")).upper())
++        if not 2 <= len(short) <= 3:
++            short = make_short(rname)
++        known.add(rid)
++        results[rid] = rname
++        recipes.append({"a": a, "b": b, "result_id": rid, "result_name": rname, "result_short": short})
++
++    finals = []
++    seen_final = set()
++    for n, f in enumerate(final_in, 1):
++        fid = f.get("id") if isinstance(f, dict) else None
++        qty = f.get("qty") if isinstance(f, dict) else None
++        if fid not in known:
++            problems.append(f"final_requires {n} uses unknown id {fid!r}")
+             continue
+-        if not idea.get("recipes") or not idea.get("final_requires"):
++        if fid in seen_final:
++            problems.append(f"final_requires lists {fid!r} twice")
+             continue
++        if not isinstance(qty, int) or isinstance(qty, bool) or not 1 <= qty <= MAX_QTY:
++            problems.append(f"final_requires {n} has qty {qty!r} (must be 1-{MAX_QTY})")
++            continue
++        seen_final.add(fid)
++        if fid in results:
++            used_results.add(fid)
++        else:
++            used_raw.add(fid)
++        finals.append({"id": fid, "qty": qty})
++
++    orphans = [rid for rid in results if rid not in used_results]
++    if orphans:
++        problems.append("dead-end recipe result(s): " + ", ".join(orphans))
++    if not used_raw:
++        problems.append("uses no raw materials")
++    if len(used_raw) > 8:
++        problems.append(f"uses {len(used_raw)} raw materials (max 8)")
++    if problems:
++        return None, problems
++
++    idea_id = re.sub(r"[^a-z0-9_]+", "_", str(idea.get("id", "")).lower()).strip("_")[:40] or re.sub(r"[^a-z0-9]+", "_", title.lower()).strip("_")[:40]
++    # uses_material_ids is recomputed from the recipe graph: the front end uses it to decide which
++    # ids are raw inventory, so trusting the model's own list can silently break an idea.
++    return {
++        "id": idea_id,
++        "title": title,
++        "pitch": pitch,
++        "uses_material_ids": sorted(used_raw),
++        "recipes": recipes,
++        "final_requires": finals,
++    }, []
++
++
++def validate_and_clean(data, materials, rejected=None):
++    """Keep only ideas that are structurally sound. `rejected` (a list) collects (title, problems)."""
++    material_ids = {m["id"] for m in materials}
++    clean_ideas = []
++    seen_ids, seen_titles = set(), set()
++    raw_ideas = data.get("ideas") if isinstance(data, dict) else None
++    for raw in raw_ideas if isinstance(raw_ideas, list) else []:
++        idea, problems = validate_idea(raw, material_ids)
++        if idea is not None:
++            if idea["title"].casefold() in seen_titles:
++                problems = ["duplicate title"]
++            else:
++                base, k = idea["id"], 2
++                while idea["id"] in seen_ids:
++                    idea["id"] = f"{base}_{k}"
++                    k += 1
++        if problems:
++            if rejected is not None:
++                rejected.append((clean_text(raw.get("title"), 60) if isinstance(raw, dict) else "?", problems))
++            continue
++        seen_ids.add(idea["id"])
++        seen_titles.add(idea["title"].casefold())
+         clean_ideas.append(idea)
++        if len(clean_ideas) >= MAX_IDEAS:
++            break
+     return clean_ideas
+ 
+ 
+@@ -182,10 +377,23 @@ STEPS_SCHEMA = {
+ }
+ 
+ STEPS_SYSTEM_PROMPT = """You write physical assembly instructions for CUBE, a scrap-to-creation sandbox.
+-Given one specific project (its name, pitch, the sub-assemblies it's built from, and the final parts
+-list), write 4-9 short, concrete, numbered assembly steps in plain imperative language, in the order
+-a maker would actually do them. Reference the named parts naturally. Safe for a general audience: no
+-mains/high-voltage wiring, no hazardous chemicals, no professional-only tools or certification steps.
++Given one project (name, pitch, the sub-assemblies it is built from, and the final parts list), write 4-9
++short, concrete steps in plain imperative language, in the order a maker would really do them.
++
++- Build the sub-assemblies first (each sub-assembly gets its own step), then combine them into the final
++  project. Do not start with the finished object.
++- Use only the parts named in the brief, plus ordinary hand tools and consumables (tape, glue, string,
++  screws). Do not introduce new parts, electronics or materials. If a step cannot be done with those, leave
++  it out rather than inventing something.
++- Say how two parts are joined (glue, tie, tape, screw, slot) and what to check (alignment, square, firm
++  grip). Where a part is broken or sharp, say to handle it carefully or blunt/cover the edge.
++- Be honest about what the result does. End with a gentle test or fit check, never a claim that it
++  definitely works.
++- Safe for a general audience: no mains or high-voltage wiring, no heat, flame, pressure, hazardous
++  chemicals or salvaged lithium batteries, no professional-only tools. If the brief seems to require one of
++  those, replace it with a safe alternative or skip that step and say so in one step.
++- Each step is one plain sentence or two. Do NOT number the steps or add "Step 1:" (the app numbers them),
++  and do not use markdown or HTML.
+ """
+ 
+ 
+@@ -203,12 +411,25 @@ def generate_steps(idea_brief):
+         system=STEPS_SYSTEM_PROMPT,
+         messages=[{"role": "user", "content": user_prompt}],
+         output_config={
+-            "format": {"type": "json_schema", "schema": STEPS_SCHEMA},
++            "format": {"type": "json_schema", "schema": api_schema(STEPS_SCHEMA)},
+         },
+     )
+-    text = next(b.text for b in response.content if b.type == "text")
+-    data = json.loads(text)
+-    return data.get("assembly_steps", [])
++    data = json.loads(first_text(response))
++    return clean_steps(data.get("assembly_steps", []))
++
++
++_NUMBERING_RE = re.compile(r"^\s*(?:step\s*)?\d+\s*[.):\-]\s*", re.I)
++
++
++def clean_steps(steps):
++    """Strip model-added numbering (the UI numbers steps) and markup; cap at 9 steps."""
++    out = []
++    for step in steps if isinstance(steps, list) else []:
++        text = clean_text(step, 400)
++        text = _NUMBERING_RE.sub("", text).lstrip("*-• ").strip()
++        if text:
++            out.append(text)
++    return out[:9]
+ 
+ 
+ # ---------------------------------------------------------------
+@@ -226,23 +447,30 @@ IDENTIFY_SCHEMA = {
+ 
+ IDENTIFY_SYSTEM_PROMPT = """You help identify scrap materials and parts for a maker inventory app.
+ Look at the photo and name the single most prominent physical object or material in it, as a short
+-3-6 word phrase suitable for an inventory list (e.g. "broken stepper motor", "cardboard tube",
+-"bundle of zip ties", "cracked phone screen"). Prefer naming what it's made of or its function if
+-the exact object is unclear. Always give your best guess rather than refusing, and set confidence
+-to "low" if you're genuinely unsure what it is.
++2-5 word phrase suitable for an inventory list (e.g. "broken stepper motor", "cardboard tube",
++"bundle of zip ties", "cracked phone screen"). Name the object itself, not the surface it sits on, and not a
++person's hand or face. If several objects are in frame, pick the one nearest the center. Prefer naming what
++it is made of or its function if the exact object is unclear. Describe visible condition only when obvious
++(broken, rusty, cracked). Always give your best guess rather than refusing. If the image is dark, blurry,
++blank or you cannot tell what the object is, use the name "unclear item" and confidence "low". Set
++confidence to "low" whenever you are genuinely unsure.
+ """
+ 
+ DATA_URL_RE = re.compile(r"^data:(?P<mime>[\w/.+-]+);base64,(?P<data>.+)$", re.DOTALL)
+ 
+ 
+ def identify_material(data_url):
+-    import anthropic
+-
+-    m = DATA_URL_RE.match(data_url or "")
++    m = DATA_URL_RE.match(data_url if isinstance(data_url, str) else "")
+     if not m:
+         raise ValueError("Image must be a base64 data URL.")
+-    media_type = m.group("mime")
++    media_type = m.group("mime").lower()
+     image_data = m.group("data")
++    if media_type not in ALLOWED_IMAGE_TYPES:
++        raise ValueError("Unsupported image type. Use JPEG, PNG, GIF or WebP.")
++    if len(image_data) > MAX_IMAGE_B64_CHARS:
++        raise ValueError("That photo is too large. Try again with a smaller capture.")
++
++    import anthropic
+ 
+     client = anthropic.Anthropic()
+     response = client.messages.create(
+@@ -257,11 +485,13 @@ def identify_material(data_url):
+             ],
+         }],
+         output_config={
+-            "format": {"type": "json_schema", "schema": IDENTIFY_SCHEMA},
++            "format": {"type": "json_schema", "schema": api_schema(IDENTIFY_SCHEMA)},
+         },
+     )
+-    text = next(b.text for b in response.content if b.type == "text")
+-    return json.loads(text)
++    data = json.loads(first_text(response))
++    name = clean_text(data.get("name"), 60) or "unclear item"
++    confidence = data.get("confidence") if data.get("confidence") in ("low", "medium", "high") else "low"
++    return {"name": name, "confidence": confidence}
+ 
+ 
+ class Handler(SimpleHTTPRequestHandler):
+@@ -282,12 +512,24 @@ class Handler(SimpleHTTPRequestHandler):
+             self.send_error(404)
+             return
+ 
+-        length = int(self.headers.get("Content-Length", 0))
++        try:
++            length = int(self.headers.get("Content-Length", 0))
++        except ValueError:
++            length = -1
++        if length < 0:
++            self._send_json(400, {"error": "bad_request", "message": "Bad Content-Length."})
++            return
++        if length > MAX_BODY_BYTES:
++            self._send_json(413, {"error": "too_large", "message": "Request is too large."})
++            return
+         try:
+             body = json.loads(self.rfile.read(length) or b"{}")
+-        except json.JSONDecodeError:
++        except (json.JSONDecodeError, UnicodeDecodeError):
+             self._send_json(400, {"error": "bad_request", "message": "Invalid JSON body."})
+             return
++        if not isinstance(body, dict):
++            self._send_json(400, {"error": "bad_request", "message": "Expected a JSON object."})
++            return
+ 
+         if not os.environ.get("ANTHROPIC_API_KEY"):
+             self._send_json(503, {
+@@ -300,11 +542,14 @@ class Handler(SimpleHTTPRequestHandler):
+ 
+     def _handle_generate_ideas(self, body):
+         materials = body.get("materials", [])
++        if not isinstance(materials, list):
++            materials = []
+         materials = [
+-            {"id": m.get("id", ""), "name": m.get("name", ""), "qty": int(m.get("qty", 0))}
++            {"id": clean_text(m.get("id"), 60), "name": clean_text(m.get("name"), 60), "qty": max(0, int(m.get("qty") or 0)) if str(m.get("qty", "")).lstrip("-").isdigit() else 1}
+             for m in materials
+-            if m.get("id") and m.get("name")
++            if isinstance(m, dict) and m.get("id") and m.get("name")
+         ]
++        materials = [m for m in materials if m["id"] and m["name"]]
+         if not materials:
+             self._send_json(400, {"error": "no_materials", "message": "Add at least one material first."})
+             return
+@@ -352,7 +597,10 @@ class Handler(SimpleHTTPRequestHandler):
+         self._send_json(200, result)
+ 
+     def _friendly_error(self, e):
+-        import anthropic
++        try:
++            import anthropic
++        except ImportError:
++            return "The 'anthropic' Python package isn't installed. Run: pip install anthropic  (then restart the server)."
+         if isinstance(e, anthropic.AuthenticationError):
+             return "The API key was rejected. Check ANTHROPIC_API_KEY in cube-mvp/.env."
+         if isinstance(e, anthropic.RateLimitError):
+diff --git a/cube-mvp/tests/recipe_quality.py b/cube-mvp/tests/recipe_quality.py
+new file mode 100644
+index 0000000..15b29fa
+--- /dev/null
++++ b/cube-mvp/tests/recipe_quality.py
+@@ -0,0 +1,177 @@
++#!/usr/bin/env python3
++"""
++Recipe quality harness (TASKS.md #4).
++
++Runs the real idea generator over a set of varied material lists, validates every idea with the same
++checks the server uses, adds heuristic red flags, and writes a markdown report for a HUMAN to read and
++judge ("would this actually work / is it safe / is it boring"). The flags only point at what to read first;
++they do not replace reading.
++
++    export ANTHROPIC_API_KEY=...            # or put it in cube-mvp/.env
++    python3 cube-mvp/tests/recipe_quality.py                       # all 12 lists -> recipe_quality_report.md
++    python3 cube-mvp/tests/recipe_quality.py --only 3 7 --steps    # subset, also generate assembly steps
++    python3 cube-mvp/tests/recipe_quality.py --stub                # no API: checks the harness itself
++
++Needs: pip install anthropic   (not needed for --stub)
++"""
++import argparse
++import json
++import re
++import sys
++from pathlib import Path
++
++sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
++import server  # noqa: E402
++
++# (label, [(name, qty), ...]) -- chosen to stress different failure modes.
++SCENARIOS = [
++    ("3D-printer scrap", [("Stepper Motor", 2), ("Pulley", 2), ("Timing Belt", 1), ("Smooth Rod", 2), ("Linear Bearing", 2), ("Dead Nozzle", 2), ("Zip Tie", 10)]),
++    ("Kitchen drawer", [("Wooden Spoon", 3), ("Rubber Band", 12), ("Binder Clip", 6), ("Cork", 4), ("Tin Can", 3), ("Twine", 1)]),
++    ("Cardboard & paper", [("Cardboard Tube", 4), ("Cereal Box", 3), ("Paper Clip", 20), ("Masking Tape", 1), ("Bottle Cap", 8)]),
++    ("Plastic bottles", [("Plastic Bottle", 6), ("Bottle Cap", 6), ("Drinking Straw", 10), ("Balloon", 4)]),
++    ("Old bike parts", [("Bike Chain", 1), ("Bike Wheel", 1), ("Brake Cable", 2), ("Inner Tube", 2), ("Handlebar Grip", 2), ("Spoke", 12)]),
++    ("Dead electronics", [("Broken Phone Screen", 1), ("Dead Laptop Fan", 2), ("USB Cable", 4), ("Circuit Board", 3), ("Headphone Jack", 2)]),
++    ("Tempting & hazardous", [("Swollen Lithium Battery", 2), ("Microwave Transformer", 1), ("Large Capacitor", 2), ("Power Supply Unit", 1), ("Copper Wire", 1)]),
++    ("Wood offcuts", [("Pine Offcut", 6), ("Dowel", 4), ("Wood Screw", 20), ("Sandpaper", 2), ("Wood Glue", 1)]),
++    ("Fabric & sewing", [("Old T-Shirt", 3), ("Zipper", 2), ("Button", 15), ("Safety Pin", 8), ("Thread Spool", 2)]),
++    ("Almost nothing", [("Rubber Band", 2), ("Pencil", 1)]),
++    ("Single odd item", [("Broken Umbrella", 1)]),
++    ("Metal junk", [("Rusty Bolt", 10), ("Hinge", 4), ("Spring", 3), ("Metal Bracket", 5), ("Bicycle Bell", 1)]),
++]
++
++SAFETY_WORDS = r"weapon|gun|cannon|launcher|crossbow|sling ?shot|trap|explos|fire|flame|burn|heat|heater|boil|solder|mains|volt|shock|taser|battery|charger|lithium|capacitor|transformer|pressur|compress|blade|knife|lock ?pick|climb|ladder|helmet|seat|chair|swing|harness"
++CLAIM_WORDS = {  # claim word -> a material name must contain one of these for the claim to be credible
++    "wifi|wi-fi|bluetooth|wireless|smart|app\\b": ("phone", "board", "circuit", "usb"),
++    "solar": ("solar",),
++    "motori[sz]ed|robot|automatic|self-": ("motor", "fan", "servo", "stepper"),
++    "led\\b|light|lamp|glow|illuminat|flash": ("led", "lamp", "light", "bulb", "phone", "screen", "board"),
++    "sensor|alarm|detect|sound|speaker|music|radio": ("sensor", "speaker", "buzzer", "headphone", "board", "phone"),
++}
++BROKEN = re.compile(r"broken|dead|cracked|swollen|rusty|jammed|stripped|old|worn", re.I)
++FUNCTIONAL_RESULT = re.compile(r"motor|drive|pump|light|lamp|sensor|power|generator|engine|circuit|charger", re.I)
++
++
++def raw_needs(idea):
++    """Raw units needed to craft the final_requires from scratch: each recipe consumes one of each input."""
++    by_result = {r["result_id"]: r for r in idea["recipes"]}
++    need = {}
++
++    def expand(item, qty):
++        if item in by_result:
++            r = by_result[item]
++            expand(r["a"], qty)
++            expand(r["b"], qty)
++        else:
++            need[item] = need.get(item, 0) + qty
++
++    for f in idea["final_requires"]:
++        expand(f["id"], f["qty"])
++    return need
++
++
++def flags_for(idea, materials):
++    names = {m["id"]: m["name"] for m in materials}
++    have = {m["id"]: m["qty"] for m in materials}
++    text = " ".join([idea["title"], idea["pitch"]] + [r["result_name"] for r in idea["recipes"]])
++    mat_text = " ".join(names[i] for i in idea["uses_material_ids"]).lower()
++    flags = []
++    if re.search(SAFETY_WORDS, text, re.I):
++        flags.append("SAFETY? mentions: " + ", ".join(sorted({m.lower() for m in re.findall(SAFETY_WORDS, text, re.I)})))
++    for pattern, needs in CLAIM_WORDS.items():
++        if re.search(pattern, text, re.I) and not any(n in mat_text for n in needs):
++            flags.append(f"UNSUPPORTED CLAIM? '{re.search(pattern, text, re.I).group(0)}' but no matching material")
++    for r in idea["recipes"]:
++        if FUNCTIONAL_RESULT.search(r["result_name"]):
++            used = [names[x] for x in (r["a"], r["b"]) if x in names and BROKEN.search(names[x])]
++            if used:
++                flags.append(f"BROKEN PART AS FUNCTION? '{r['result_name']}' built from {', '.join(used)}")
++    short = {i: q - have.get(i, 0) for i, q in raw_needs(idea).items() if q > have.get(i, 0)}
++    if short:
++        flags.append("needs more than owned: " + ", ".join(f"{names.get(i, i)} (+{q})" for i, q in short.items()))
++    return flags
++
++
++def stub_generate(materials):
++    ids = [m["id"] for m in materials]
++    if len(ids) < 2:
++        return []
++    return server.validate_and_clean({"ideas": [{
++        "id": "stub", "title": "Stub Winch", "pitch": "A motorized winch with wifi.",
++        "recipes": [{"a": ids[0], "b": ids[1], "result_id": "unit", "result_name": "Motor Unit", "result_short": "MU"}],
++        "final_requires": [{"id": "unit", "qty": 2}, {"id": ids[0], "qty": 1}],
++    }]}, materials)
++
++
++def real_generate(materials, rejected):
++    import anthropic  # noqa: F401  (clear ImportError if missing)
++    client = anthropic.Anthropic()
++    response = client.messages.create(
++        model=server.MODEL, max_tokens=4096, system=server.IDEA_SYSTEM_PROMPT,
++        messages=[{"role": "user", "content": "Materials on hand (id, name, quantity):\n" + json.dumps(materials, indent=2)
++                   + "\n\nPropose a catalog of buildable project ideas using these materials, following the schema."}],
++        output_config={"format": {"type": "json_schema", "schema": server.api_schema(server.IDEA_SCHEMA)}},
++    )
++    data = json.loads(server.first_text(response))
++    return server.validate_and_clean(data, materials, rejected), len(data.get("ideas", []))
++
++
++def main():
++    ap = argparse.ArgumentParser()
++    ap.add_argument("--only", nargs="*", type=int, help="1-based scenario numbers")
++    ap.add_argument("--steps", action="store_true", help="also generate assembly steps for each idea")
++    ap.add_argument("--stub", action="store_true", help="no API calls; canned output to test the harness")
++    ap.add_argument("--out", default="recipe_quality_report.md")
++    args = ap.parse_args()
++    if not args.stub and not __import__("os").environ.get("ANTHROPIC_API_KEY"):
++        sys.exit("ANTHROPIC_API_KEY is not set (use --stub to test the harness without it).")
++
++    chosen = [(i, s) for i, s in enumerate(SCENARIOS, 1) if not args.only or i in args.only]
++    out = ["# Recipe quality report", "", f"Model: `{server.MODEL}`" + ("  (STUB: canned output, not real model results)" if args.stub else ""), ""]
++    totals = {"returned": 0, "kept": 0, "flagged": 0}
++    for n, (label, mats) in chosen:
++        materials = [{"id": server.slugify(name) if hasattr(server, "slugify") else "m_" + re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_"), "name": name, "qty": q} for name, q in mats]
++        rejected = []
++        try:
++            if args.stub:
++                ideas, returned = stub_generate(materials), 1
++            else:
++                ideas, returned = real_generate(materials, rejected)
++        except Exception as e:  # noqa: BLE001
++            out += [f"## {n}. {label}", "", f"**Generation failed:** {e}", ""]
++            continue
++        totals["returned"] += returned
++        totals["kept"] += len(ideas)
++        out += [f"## {n}. {label}", "", "Materials: " + ", ".join(f"{name} x{q}" for name, q in mats), "",
++                f"Model returned {returned} ideas; {len(ideas)} passed validation.", ""]
++        for title, problems in rejected:
++            out.append(f"- REJECTED **{title}**: {'; '.join(problems)}")
++        if rejected:
++            out.append("")
++        titles = [i["title"] for i in ideas]
++        for idea in ideas:
++            fl = flags_for(idea, materials)
++            totals["flagged"] += bool([f for f in fl if not f.startswith("needs more")])
++            names = {m["id"]: m["name"] for m in materials}
++            names.update({r["result_id"]: r["result_name"] for r in idea["recipes"]})
++            out += [f"### {idea['title']}", f"_{idea['pitch']}_", ""]
++            out += [f"- {names[r['a']]} + {names[r['b']]} -> **{r['result_name']}**" for r in idea["recipes"]]
++            out += ["- Final: " + ", ".join(f"{names[f['id']]} x{f['qty']}" for f in idea["final_requires"])]
++            out += [f"- ⚑ {f}" for f in fl]
++            if args.steps and not args.stub:
++                brief = {"title": idea["title"], "pitch": idea["pitch"],
++                         "sub_assemblies": [r["result_name"] for r in idea["recipes"]],
++                         "final_parts": [f"{names[f['id']]} x{f['qty']}" for f in idea["final_requires"]]}
++                try:
++                    out += ["", "Steps:"] + [f"{k}. {s}" for k, s in enumerate(server.generate_steps(brief), 1)]
++                except Exception as e:  # noqa: BLE001
++                    out.append(f"(steps failed: {e})")
++            out += ["", "**Reviewer verdict:** [ ] plausible  [ ] unsafe  [ ] boring  [ ] other: ", ""]
++        if len(set(t.lower() for t in titles)) < len(titles):
++            out.append("⚑ duplicate titles in this batch\n")
++    out += ["---", f"Totals: {totals['returned']} ideas returned, {totals['kept']} kept, {totals['flagged']} with safety/claim/broken-part flags to read first."]
++    Path(args.out).write_text("\n".join(out) + "\n")
++    print(f"Wrote {args.out}  ({totals})")
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/cube-mvp/tests/scan_logic.test.js b/cube-mvp/tests/scan_logic.test.js
+new file mode 100644
+index 0000000..449e9fb
+--- /dev/null
++++ b/cube-mvp/tests/scan_logic.test.js
+@@ -0,0 +1,130 @@
++// Exercises the camera-scan state machine in app.js against a mocked camera + fetch (jsdom).
++// Not a substitute for a real-device test, but it covers the permission/race/timeout paths.
++//   cd cube-mvp && npm i --no-save jsdom && node tests/scan_logic.test.js
++const fs = require("fs"), path = require("path"), assert = require("assert");
++const { JSDOM } = require("jsdom");
++
++const root = path.resolve(__dirname, "..");
++const html = fs.readFileSync(path.join(root, "index.html"), "utf8").replace(/<script[\s\S]*?<\/script>/g, "");
++const src = fs.readFileSync(path.join(root, "app.js"), "utf8");
++const section = src.slice(src.indexOf("/* ================= CAMERA SCAN"), src.indexOf("/* ================= RESET"));
++
++const tick = (ms = 0) => new Promise((r) => setTimeout(r, ms));
++let passed = 0;
++async function test(name, fn) {
++  const dom = new JSDOM(html, { pretendToBeVisual: true, runScripts: "outside-only", url: "http://localhost:8743/" });
++  const w = dom.window;
++  const log = { added: [], toasts: [], stopped: 0, getUserMediaCalls: 0 };
++  const makeStream = () => ({ getTracks: () => [{ stop: () => log.stopped++ }], getVideoTracks: () => [{ readyState: "live" }] });
++  const ctx = { cam: { mode: "ok", delay: 0 }, fetchImpl: null };
++  Object.defineProperty(w.navigator, "mediaDevices", { configurable: true, value: {
++    getUserMedia: async () => {
++      log.getUserMediaCalls++;
++      await tick(ctx.cam.delay);
++      if (ctx.cam.mode === "denied") { const e = new Error("denied"); e.name = "NotAllowedError"; throw e; }
++      return makeStream();
++    } } });
++  w.HTMLMediaElement.prototype.play = () => Promise.resolve();
++  w.HTMLCanvasElement.prototype.getContext = () => ({ drawImage() {} });
++  w.HTMLCanvasElement.prototype.toDataURL = () => "data:image/jpeg;base64,AAAA";
++  w.fetch = (...a) => ctx.fetchImpl(...a);
++  const video = w.document.getElementById("scanVideo");
++  Object.defineProperty(video, "videoWidth", { value: 1920, configurable: true });
++  Object.defineProperty(video, "videoHeight", { value: 1080, configurable: true });
++  Object.defineProperty(video, "readyState", { value: 4, configurable: true });
++  w.addMaterial = (n, q) => log.added.push([n, q]);
++  w.toast = (m) => log.toasts.push(m);
++  w.eval(section + "\ninitScan();");
++  const $ = (id) => w.document.getElementById(id);
++  const click = (id) => $(id).dispatchEvent(new w.Event("click"));
++  const vis = (id) => !$(id).hidden;
++  try { await fn({ w, $, click, vis, log, ctx }); console.log("  ok  " + name); passed++; }
++  catch (e) { console.log("FAIL  " + name + "\n      " + e.message); process.exitCode = 1; }
++  finally { w.close(); }
++}
++const okJson = (body, status = 200) => Promise.resolve({ ok: status < 400, status, json: async () => body });
++
++(async () => {
++  await test("happy path: open, capture, AI name, add to inventory", async ({ $, click, vis, log, ctx }) => {
++    let sent; ctx.fetchImpl = (u, o) => { sent = JSON.parse(o.body); return okJson({ name: "broken stepper motor", confidence: "high" }); };
++    click("scanBtn"); await tick(5);
++    assert(vis("scanCameraWrap") && $("scanModal").classList.contains("visible"));
++    click("captureBtn"); await tick(5);
++    assert(sent.image.startsWith("data:image/jpeg"));
++    assert(vis("scanResult") && $("scanNameInput").value === "broken stepper motor");
++    click("scanConfirmBtn");
++    assert.deepStrictEqual(log.added, [["broken stepper motor", 1]]);
++    assert(!$("scanModal").classList.contains("visible") && log.stopped === 1, "camera must be released");
++  });
++
++  await test("permission denied -> manual form; 'back' retries instead of showing a dead video", async ({ $, click, vis, log, ctx }) => {
++    ctx.cam.mode = "denied";
++    click("scanBtn"); await tick(5);
++    assert(vis("manualAddPanel") && !vis("scanCameraWrap"));
++    assert(/denied/i.test($("scanStatus").textContent), $("scanStatus").textContent);
++    ctx.cam.mode = "ok";
++    click("manualBackBtn"); await tick(5);
++    assert(log.getUserMediaCalls === 2 && vis("scanCameraWrap"), "second attempt should re-request the camera");
++  });
++
++  await test("closing while the permission prompt is open does not leak the camera", async ({ $, click, log, ctx }) => {
++    ctx.cam.delay = 30;
++    click("scanBtn"); await tick(5);
++    click("closeScanBtn"); await tick(60);
++    assert(log.stopped === 1, "late stream must be stopped (stopped=" + log.stopped + ")");
++  });
++
++  await test("double-clicking Scan opens only one stream", async ({ click, log }) => {
++    click("scanBtn"); click("scanBtn"); await tick(10);
++    assert(log.getUserMediaCalls === 1);
++  });
++
++  await test("server error -> manual fallback with the server's message", async ({ $, click, vis, ctx }) => {
++    ctx.fetchImpl = () => okJson({ message: "The API key was rejected." }, 502);
++    click("scanBtn"); await tick(5); click("captureBtn"); await tick(5);
++    assert(vis("manualAddPanel") && /API key was rejected/.test($("scanStatus").textContent));
++  });
++
++  await test("server unreachable -> friendly message", async ({ $, click, vis, w, ctx }) => {
++    ctx.fetchImpl = () => Promise.reject(new w.TypeError("Failed to fetch"));
++    click("scanBtn"); await tick(5); click("captureBtn"); await tick(5);
++    assert(vis("manualAddPanel") && /reach the CUBE server/.test($("scanStatus").textContent), $("scanStatus").textContent);
++  });
++
++  await test("closing mid-identify ignores the late response", async ({ $, click, vis, ctx, log }) => {
++    ctx.fetchImpl = () => new Promise((r) => setTimeout(() => r({ ok: true, status: 200, json: async () => ({ name: "late", confidence: "high" }) }), 30));
++    click("scanBtn"); await tick(5); click("captureBtn"); await tick(5);
++    click("closeScanBtn"); await tick(60);
++    assert(!vis("scanResult") && $("scanNameInput").value === "", "stale result must not populate the form");
++  });
++
++  await test("low-confidence / unclear result warns the user", async ({ $, click, ctx }) => {
++    ctx.fetchImpl = () => okJson({ name: "unclear item", confidence: "low" });
++    click("scanBtn"); await tick(5); click("captureBtn"); await tick(5);
++    assert(/Not sure/.test($("scanStatus").textContent));
++  });
++
++  await test("capture before the video has frames is refused (no black-frame upload)", async ({ $, click, ctx, w }) => {
++    let called = false; ctx.fetchImpl = () => { called = true; return okJson({}); };
++    click("scanBtn"); await tick(5);
++    Object.defineProperty($("scanVideo"), "readyState", { value: 0, configurable: true });
++    Object.defineProperty($("scanVideo"), "videoWidth", { value: 0, configurable: true });
++    click("captureBtn"); await tick(5);
++    assert(!called && /warming up/.test($("scanStatus").textContent));
++  });
++
++  await test("Retake returns to the live camera without re-prompting", async ({ $, click, vis, ctx, log }) => {
++    ctx.fetchImpl = () => okJson({ name: "zip ties", confidence: "medium" });
++    click("scanBtn"); await tick(5); click("captureBtn"); await tick(5);
++    click("scanRetryBtn"); await tick(5);
++    assert(vis("scanCameraWrap") && log.getUserMediaCalls === 1);
++  });
++
++  await test("insecure context / no mediaDevices -> readable message + manual form", async ({ $, click, vis, w }) => {
++    Object.defineProperty(w.navigator, "mediaDevices", { configurable: true, value: undefined });
++    click("scanBtn"); await tick(5);
++    assert(vis("manualAddPanel") && /secure page|can't access a camera/.test($("scanStatus").textContent), $("scanStatus").textContent);
++  });
++
++  console.log(`\n${passed} passed`);
++})();
+diff --git a/cube-mvp/tests/test_recipes.py b/cube-mvp/tests/test_recipes.py
+new file mode 100644
+index 0000000..04b9fec
+--- /dev/null
++++ b/cube-mvp/tests/test_recipes.py
+@@ -0,0 +1,127 @@
++#!/usr/bin/env python3
++"""Offline unit tests for the AI-output guards in server.py (no API key, no network, no anthropic package).
++
++    python3 cube-mvp/tests/test_recipes.py
++"""
++import copy
++import sys
++import unittest
++from pathlib import Path
++
++sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
++import server  # noqa: E402
++
++MATS = [
++    {"id": "m_stepper_motor", "name": "Stepper Motor", "qty": 2},
++    {"id": "m_pulley", "name": "Pulley", "qty": 2},
++    {"id": "m_zip_tie", "name": "Zip Tie", "qty": 6},
++    {"id": "m_cardboard_tube", "name": "Cardboard Tube", "qty": 3},
++]
++IDS = {m["id"] for m in MATS}
++
++GOOD = {
++    "id": "Hand Crank!", "title": "Hand-Crank Winch", "pitch": "A tabletop winch.",
++    "uses_material_ids": [],  # deliberately wrong: server must recompute
++    "recipes": [
++        {"a": "m_stepper_motor", "b": "m_pulley", "result_id": "crank_unit", "result_name": "Crank Unit", "result_short": "cu"},
++        {"a": "crank_unit", "b": "m_cardboard_tube", "result_id": "winch", "result_name": "Winch", "result_short": "WINCHX"},
++    ],
++    "final_requires": [{"id": "winch", "qty": 1}, {"id": "m_zip_tie", "qty": 2}],
++}
++
++
++def check(idea):
++    return server.validate_idea(idea, IDS)
++
++
++class ValidatorTests(unittest.TestCase):
++    def test_good_idea_is_normalised(self):
++        idea, problems = check(copy.deepcopy(GOOD))
++        self.assertEqual(problems, [])
++        self.assertEqual(idea["id"], "hand_crank")
++        self.assertEqual(idea["uses_material_ids"], ["m_cardboard_tube", "m_pulley", "m_stepper_motor", "m_zip_tie"])
++        self.assertEqual(idea["recipes"][0]["result_short"], "CU")
++        self.assertEqual(idea["recipes"][1]["result_short"], "WI")  # invalid 'WINCHX' -> derived from name
++
++    def test_unknown_id(self):
++        bad = copy.deepcopy(GOOD); bad["recipes"][0]["a"] = "m_made_up"
++        self.assertTrue(any("unknown id" in p for p in check(bad)[1]))
++
++    def test_result_id_collides_with_material(self):
++        bad = copy.deepcopy(GOOD); bad["recipes"][0]["result_id"] = "m_zip_tie"
++        self.assertTrue(any("collides" in p for p in check(bad)[1]))
++
++    def test_duplicate_result_id(self):
++        bad = copy.deepcopy(GOOD); bad["recipes"][1]["result_id"] = "crank_unit"
++        self.assertTrue(any("collides" in p for p in check(bad)[1]))
++
++    def test_forward_reference(self):
++        bad = copy.deepcopy(GOOD); bad["recipes"].reverse()
++        self.assertTrue(any("unknown id" in p for p in check(bad)[1]))
++
++    def test_dead_end_recipe(self):
++        bad = copy.deepcopy(GOOD); bad["final_requires"] = [{"id": "m_zip_tie", "qty": 2}]
++        self.assertTrue(any("dead-end" in p for p in check(bad)[1]))
++
++    def test_quantity_limits(self):
++        for qty in (0, -1, 99, "2", 1.5, True):
++            bad = copy.deepcopy(GOOD); bad["final_requires"][0]["qty"] = qty
++            self.assertTrue(check(bad)[1], f"qty {qty!r} should be rejected")
++
++    def test_too_many_recipes(self):
++        bad = copy.deepcopy(GOOD)
++        bad["recipes"] = [dict(GOOD["recipes"][0], result_id=f"r{i}", result_name=f"R{i}") for i in range(7)]
++        self.assertTrue(any("recipes (max" in p for p in check(bad)[1]))
++
++    def test_markup_is_stripped(self):
++        bad = copy.deepcopy(GOOD); bad["title"] = "<img src=x onerror=alert(1)>Winch"; bad["pitch"] = "ok <b>bold</b>"
++        idea, problems = check(bad)
++        self.assertEqual(problems, [])
++        self.assertNotIn("<", idea["title"] + idea["pitch"])
++
++    def test_duplicate_titles_and_ids_are_handled(self):
++        a, b, c = copy.deepcopy(GOOD), copy.deepcopy(GOOD), copy.deepcopy(GOOD)
++        b["title"] = "hand-crank winch"          # same title, different case -> rejected
++        c["title"] = "Another Winch"              # same id as a -> id is suffixed
++        rejected = []
++        out = server.validate_and_clean({"ideas": [a, b, c]}, MATS, rejected)
++        self.assertEqual([i["title"] for i in out], ["Hand-Crank Winch", "Another Winch"])
++        self.assertEqual(len({i["id"] for i in out}), 2)
++        self.assertEqual(len(rejected), 1)
++
++    def test_idea_cap(self):
++        ideas = []
++        for i in range(15):
++            g = copy.deepcopy(GOOD); g["title"] = f"Winch {i}"; ideas.append(g)
++        self.assertEqual(len(server.validate_and_clean({"ideas": ideas}, MATS)), server.MAX_IDEAS)
++
++    def test_garbage_input_does_not_crash(self):
++        for data in (None, [], {"ideas": None}, {"ideas": [None, 5, "x", {}]}, {"ideas": [{"recipes": [None], "final_requires": [None], "title": "t", "pitch": "p"}]}):
++            self.assertEqual(server.validate_and_clean(data, MATS), [])
++
++
++class HelperTests(unittest.TestCase):
++    def test_api_schema_strips_unsupported_bounds(self):
++        out = server.api_schema(server.IDEA_SCHEMA)
++        arr = out["properties"]["ideas"]
++        self.assertNotIn("minItems", arr)
++        self.assertNotIn("maxItems", arr)
++        self.assertIn("at least 6", arr["description"])
++        self.assertIn("minItems", server.IDEA_SCHEMA["properties"]["ideas"])  # original untouched
++
++    def test_steps_numbering_and_markup_removed(self):
++        steps = ["1. Glue the tube.", "Step 2: Tie it", "3) <b>Test</b> gently", "- Done", "", None, 7]
++        self.assertEqual(server.clean_steps(steps), ["Glue the tube.", "Tie it", "Test gently", "Done"])
++        self.assertEqual(len(server.clean_steps(["x"] * 20)), 9)
++
++    def test_identify_input_checks(self):
++        for bad in (None, "", "not a data url", "data:text/html;base64,AAAA", "data:image/svg+xml;base64,AAAA"):
++            with self.assertRaises(ValueError):
++                server.identify_material(bad)
++        huge = "data:image/jpeg;base64," + "A" * (server.MAX_IMAGE_B64_CHARS + 1)
++        with self.assertRaises(ValueError):
++            server.identify_material(huge)
++
++
++if __name__ == "__main__":
++    unittest.main(verbosity=2)
+-- 
+2.43.0
+
