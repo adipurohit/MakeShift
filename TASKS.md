@@ -51,6 +51,8 @@ Work breakdown for the CUBE demo (`cube-mvp/`) so teammates and agents can pick 
 **Done when:** A working public URL, documented here, with the key rotated/capped appropriately.
 
 ### 7. Pitch narrative / deck pass
+**Status:** Claimed on `task/pitch-narrative` (Codex). Draft: [`PITCH.md`](PITCH.md).
+
 **Why:** The app is built; the story that gets told about it on stage isn't locked yet.
 **Do:** Not code — draft the pitch flow (what gets demoed live vs. described, which materials to bring as physical props if any, timing). Use the "Judge-ready pitch" line and north star from the original product doc as a starting point.
 **Touches:** Nothing in `cube-mvp/` — this is a separate doc/slides, link it here once started.
