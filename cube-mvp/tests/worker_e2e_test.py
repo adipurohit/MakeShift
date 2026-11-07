@@ -32,7 +32,7 @@ WRANGLER = os.environ.get("WRANGLER") or shutil.which("wrangler") or "npx wrangl
 results = []
 gemini_calls = []
 # reject_json_schema: act like a Gemini that doesn't know responseJsonSchema, to exercise the fallback
-gemini_mode = {"reject_json_schema": False}
+gemini_mode = {"reject_json_schema": False, "reject_thinking": False}
 
 
 def schema_of(body):
@@ -80,8 +80,15 @@ class FakeGemini(BaseHTTPRequestHandler):
         # Gemini's responseSchema is an OpenAPI subset; reject unsupported JSON Schema keywords.
         gc = body.get("generationConfig", {})
         schema = gc.get("responseJsonSchema") or gc.get("responseSchema") or {}
+        bad = None
         if "responseSchema" in gc and has_key(gc["responseSchema"], "additionalProperties"):
-            out = json.dumps({"error": {"code": 400, "message": "Invalid JSON payload received. Unknown name \"additionalProperties\" at generation_config.response_schema: Cannot find field.", "status": "INVALID_ARGUMENT"}}).encode()
+            bad = 'Invalid JSON payload received. Unknown name "additionalProperties" at \'generation_config.response_schema\': Cannot find field.'
+        elif gemini_mode["reject_thinking"] and "thinkingConfig" in gc:
+            bad = 'Invalid JSON payload received. Unknown name "thinkingConfig" at \'generation_config\': Cannot find field.'
+        elif gemini_mode["reject_json_schema"] and "responseJsonSchema" in gc:
+            bad = 'Invalid JSON payload received. Unknown name "responseJsonSchema" at \'generation_config\': Cannot find field.'
+        if bad:
+            out = json.dumps({"error": {"code": 400, "message": bad, "status": "INVALID_ARGUMENT"}}).encode()
             self.send_response(400)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(out)))
@@ -271,6 +278,16 @@ def main():
               "if Gemini rejects responseJsonSchema, the Worker retries with a stripped responseSchema",
               f"{status}, {len(gemini_calls) - before} calls")
         gemini_mode["reject_json_schema"] = False
+
+        check(all(c["body"]["generationConfig"].get("thinkingConfig") == {"thinkingLevel": "low"} for c in gemini_calls[:before]),
+              "Worker asks Gemini for low thinking (medium took 100+ s live)")
+        gemini_mode["reject_thinking"] = True
+        before = len(gemini_calls)
+        status, data = post(port, "/makeshift/api/generate-steps", {"idea": {"title": "No thinking"}})
+        retry = gemini_calls[-1]["body"]["generationConfig"] if len(gemini_calls) > before else {}
+        check(status == 200 and len(gemini_calls) - before == 2 and "thinkingConfig" not in retry,
+              "if a model rejects the thinking setting, the Worker retries without it", f"{status}, {len(gemini_calls) - before} calls")
+        gemini_mode["reject_thinking"] = False
         gemini_429["left"] = 0
 
         status, data = post(port, "/makeshift/api/identify-material", {"image": "data:image/png;base64,AAAA"}, origin=None)

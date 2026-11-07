@@ -41,6 +41,9 @@ load_dotenv(DIR / ".env")
 # https://ai.google.dev/gemini-api/docs/models
 TEXT_MODEL = os.environ.get("GEMINI_TEXT_MODEL", "gemini-3.8-flash")
 VISION_MODEL = os.environ.get("GEMINI_VISION_MODEL", TEXT_MODEL)
+# Gemini 3 Flash thinks at "medium" by default, which took 100+ s per request on the live site.
+# "low" is the floor for gemini-3.8-flash. Set GEMINI_THINKING_LEVEL=off to send no thinking setting.
+THINKING_LEVEL = os.environ.get("GEMINI_THINKING_LEVEL", "low")
 
 
 def gemini_client():
@@ -74,9 +77,20 @@ def chat_json(system, user, name, schema, max_tokens, model=None):
             max_output_tokens=max_tokens,
             response_mime_type="application/json",
             response_json_schema=api_schema(schema),
+            **thinking_config(types),
         ),
     )
     return response
+
+
+def thinking_config(types):
+    """thinking_config for the SDK, or nothing when it's off or the installed SDK predates thinking_level."""
+    if not THINKING_LEVEL or THINKING_LEVEL == "off":
+        return {}
+    try:
+        return {"thinking_config": types.ThinkingConfig(thinking_level=THINKING_LEVEL)}
+    except Exception:
+        return {}
 
 MAX_BODY_BYTES = 8 * 1024 * 1024        # reject absurd request bodies
 MAX_IMAGE_B64_CHARS = 6 * 1024 * 1024   # keep camera captures comfortably below request limits
