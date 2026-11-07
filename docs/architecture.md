@@ -30,4 +30,4 @@ The 3D view shows each part as a simple shape picked from its category (a cylind
 
 ## AI safety checks
 
-The model's ideas pass through `validate_idea` before the app sees them. Beyond structure (every merge uses real parts, no dead ends), it rejects ideas that use hazardous parts (capacitors, transformers, power supplies, broken glass, swollen batteries), fire or launch anything, claim motion or light without a power or light source, or treat broken parts as working ones. See `docs/recipe-quality.md` for how often each check fires on real model output.
+The model's ideas pass through `validate_idea` before the app sees them. Beyond structure (every merge uses real parts, no dead ends), it rejects ideas that use hazardous parts (capacitors, transformers, power supplies, broken glass, swollen batteries), fire or launch anything, put hot items on rubber or plastic, bear a person's weight, hang weight overhead, put solder near food, stand in for a lock or alarm, control shop machinery, claim motion or light without a power or light source, or treat broken parts as working ones. See `docs/recipe-quality.md` for how often each check fires on real model output.

@@ -33,12 +33,15 @@ MATS = [
     {"id": "m_cardboard_tube", "name": "Cardboard Tube", "qty": 3},
     {"id": "m_jar", "name": "Glass Jar", "qty": 1},
     {"id": "m_cap", "name": "Large Capacitor", "qty": 2},
+    {"id": "m_rubber_band", "name": "Rubber Band", "qty": 10},
+    {"id": "m_circuit_board", "name": "Circuit Board", "qty": 2},
 ]
 IDS = [m["id"] for m in MATS]
 TEXTS = ["Hand-Crank Winch", "  Desk   Lamp ", "<b>Bold</b> Planter", "Tray <script>x</script>", "", "Fan\x07 Stand",
          "A" * 80, "Jar Light", "jar light", "Robot Hand!!", None, 7,
          "Rubber Band Catapult", "Motorized Spinner", "Night Light Jar", "Stepper Turntable", "Candle Holder",
-         "Coaster Set (4 coasters)"]
+         "Coaster Set (4 coasters)", "Cork Trivet", "Overhead Pot Rack", "Door Alarm", "Mug Coaster",
+         "Resistance Band", "Foot Pedal", "Spring Gate Latch"]
 SHORTS = ["cu", "WINCHX", "", "a", "AB", "x y", None, "Q1", 12]
 
 
@@ -62,7 +65,7 @@ def gen_idea(rng):
         finals.append({"id": rng.choice(IDS + results + ["ghost_part"]), "qty": rng.choice([1, 1, 2, 3, 0, 6, -1, "2", True])})
     if results and rng.random() < 0.6:
         finals.append({"id": results[-1], "qty": 1})
-    idea = {"title": rng.choice(TEXTS), "pitch": rng.choice(TEXTS[:4] + ["A tabletop winch."]),
+    idea = {"title": rng.choice(TEXTS), "pitch": rng.choice(TEXTS[:4] + ["A tabletop winch.", "Holds hot pans.", "For your shop machinery."]),
             "uses_material_ids": [], "recipes": recipes, "final_requires": finals}
     if rng.random() < 0.8:
         idea["id"] = rng.choice(["Hand Crank!", "lamp", "", None, "___x___", "jar-light"])

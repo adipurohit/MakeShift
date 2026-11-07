@@ -137,7 +137,7 @@ IDEA_SCHEMA = {
     "properties": {
         "ideas": {
             "type": "array",
-            "minItems": 10,
+            "minItems": 1,
             "maxItems": 14,
             "items": {
                 "type": "object",
@@ -242,7 +242,8 @@ Quality:
   satisfying, and it must match the recipes.
 - Order ideas with the best material match / most immediately buildable first. Before ordering, count the
   raw units each idea needs against the quantities given.
-- If the materials are too limited for a good idea, return fewer, honest ideas instead of padding.
+- The user message says how many ideas to aim for. If the materials are too limited, return fewer, honest
+  ideas instead of padding with trivial ones (a pencil stuck in a rubber band is not a project).
 """
 
 
@@ -253,23 +254,24 @@ def raw_ideas(data):
 
 def generate_ideas(materials):
     materials_json = json.dumps(materials, indent=2)
+    target = idea_target(materials)
     user_prompt = (
         "Materials on hand (id, name, quantity):\n"
         f"{materials_json}\n\n"
-        "Propose a catalog of buildable project ideas using these materials, following the schema."
+        f"Propose a catalog of about {target} buildable project ideas using these materials, following the schema."
     )
 
     response = chat_json(IDEA_SYSTEM_PROMPT, user_prompt, "ideas", IDEA_SCHEMA, 6144)
     first = raw_ideas(json.loads(first_text(response)))
     ideas = validate_and_clean({"ideas": first}, materials)
-    if len(ideas) >= MIN_IDEAS:
+    if len(ideas) >= target:
         return ideas
 
-    # Validation drops weak ideas, so ask once more for different ones to reach MIN_IDEAS.
+    # Validation drops weak ideas, so ask once more for different ones to reach the target.
     taken = "; ".join(i["title"] for i in ideas) or "none yet"
     topup_prompt = (
         user_prompt + "\n\nThese ideas are already in the catalog: " + taken + ". Propose "
-        f"{MIN_IDEAS - len(ideas) + 2} or more DIFFERENT ideas, with different titles and functions."
+        f"{target - len(ideas) + 2} or more DIFFERENT ideas, with different titles and functions."
     )
     try:
         response = chat_json(IDEA_SYSTEM_PROMPT, topup_prompt, "ideas", IDEA_SCHEMA, 6144)
@@ -290,7 +292,14 @@ def first_text(response):
     return text
 
 
-MIN_IDEAS = 10  # below this, generate_ideas() makes one top-up call
+MIN_IDEAS = 10  # target for a full inventory: below the target, generate_ideas() makes one top-up call
+IDEAS_PER_PART = 2  # a short list gets a smaller target, so the model doesn't pad it with trivial ideas
+
+
+def idea_target(materials):
+    """How many ideas to ask for: 10 for a full inventory, 2 per distinct part + 1 for a short one."""
+    return max(1, min(MIN_IDEAS, IDEAS_PER_PART * len(materials) + 1))
+
 MAX_IDEAS = 14
 MAX_RECIPES = 6
 MAX_FINAL = 6
@@ -434,6 +443,17 @@ PLAUSIBILITY = {
     # broken parts can be structure, never the working part
     "broken": r"\b(broken|dead|cracked|swollen|rusty|jammed|stripped|burnt|blown)\b",
     "functional": r"\b(motor|drive|pump|light|lamp|sensor|power|generator|engine|circuit|charger|speaker|screen|display)\b",
+    # Added after the live Gemini run (docs/recipe-quality.md): ideas that passed every check above but
+    # would hurt someone. Hot items on parts that melt, scrap that bears a person's weight or swings
+    # overhead, solder near food, scrap pretending to be a lock or alarm, and controls for shop machines.
+    "hot_use": r"\b(trivet|hot ?pads?|pot ?holders?|hot (pan|pot|dish|plate)s?|oven|stove|kettle|iron rest|heat[- ]?(proof|resistant))",
+    "melts": r"rubber|elastic|inner ?tube|plastic|foam|vinyl|nylon|\bbands?\b|bottle|straw|tape",
+    "body_load": r"\b(fitness|exercise|workout|resistance band|gym|pull[- ]?ups?|swings?\b|climbing|harness|ladder|step ?stool)",
+    "overhead": r"\b(overhead|ceiling|pot ?rack|pan ?rack|(pot|pan|cookware) (hanger|rack)|hanging (pot|pan|cookware))",
+    "food_use": r"\b(mugs?|cups?|coasters?|plates?|bowls?|cutting board|utensils?|food|snacks?|drinks?|lunch)\b",
+    "leaded_part": r"circuit ?board|\bpcb\b|motherboard|solder|\blead\b",
+    "security": r"\b(locks?|locking|security|alarms?|intruder|burglar|baby ?gate|child[- ]?(proof|safe)|gate latch|door alert)",
+    "machinery": r"\b(machinery|power tools?|table saw|drill press|lathe|grinder|foot pedal|treadle)",
 }
 _P = {k: re.compile(v, re.I) for k, v in PLAUSIBILITY.items()}
 
@@ -456,6 +476,14 @@ def plausibility_problems(idea, names):
         problems.append("stepper motion with no driver and power")
     if _P["light_claim"].search(text) and not _P["light_source"].search(parts):
         problems.append("claims light with no light source")
+    if _P["hot_use"].search(text) and _P["melts"].search(parts):
+        problems.append("hot items on parts that melt")
+    for key, why in (("body_load", "bears a person's weight or force"), ("overhead", "hangs weight overhead"),
+                     ("security", "stands in for a lock or alarm"), ("machinery", "controls shop machinery")):
+        if _P[key].search(text):
+            problems.append(f"{why}: {_P[key].search(text).group(0)}")
+    if _P["food_use"].search(text) and _P["leaded_part"].search(parts):
+        problems.append("circuit board or solder near food or drink")
     for r in idea["recipes"]:
         inputs = [names.get(r["a"], ""), names.get(r["b"], "")]
         if any(_P["broken"].search(n) for n in inputs) and _P["functional"].search(r["result_name"]):
