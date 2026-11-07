@@ -224,7 +224,10 @@ def main():
             check(not outside, "every request from the page stays under /makeshift/", ", ".join(outside))
             browser.close()
 
-        scan_call = next((c for c in gemini_calls if "confidence" in schema_of(c["body"])["properties"]), None)
+        scan_call = next((c for c in gemini_calls if "confidence" in schema_of(c["body"]).get("properties", {})), None)
+        gens = [c["body"]["generationConfig"] for c in gemini_calls]
+        check(gens and all(("responseJsonSchema" in g) ^ ("responseSchema" in g) for g in gens),
+              "every Gemini call sends exactly one supported schema field", f"{len(gens)} call(s)")
         check(scan_call and scan_call["auth"] == "test-key", "Worker sends the GEMINI_API_KEY secret in x-goog-api-key")
         check(scan_call and "/models/gemini-3.8-flash:generateContent" in scan_call["path"],
               "scan uses the configured Gemini vision model", scan_call and scan_call["path"])
