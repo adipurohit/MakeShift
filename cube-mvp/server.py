@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
 MakeShift backend: serves the static demo files and exposes the AI endpoints, so the
-Anthropic API key never reaches the browser.
+Groq API key never reaches the browser.
 
   POST /api/generate-ideas    materials -> a catalog of buildable project ideas (no steps yet)
   POST /api/generate-steps    one chosen idea -> assembly steps, generated on demand
   POST /api/identify-material photo -> a guessed material name (camera scan)
 
-Run: python3 server.py   (reads ANTHROPIC_API_KEY from the environment or a local .env)
+Run: python3 server.py   (reads GROQ_API_KEY from the environment or a local .env)
 """
 import base64
 import json
@@ -35,10 +35,42 @@ def load_dotenv(path):
 
 load_dotenv(DIR / ".env")
 
-MODEL = "claude-opus-5-5"
+# ---- Groq (OpenAI-compatible chat API) ----
+# Override either model from .env without touching code; see https://console.groq.com/docs/models
+TEXT_MODEL = os.environ.get("GROQ_TEXT_MODEL", "openai/gpt-oss-120b")           # ideas + steps (needs JSON-schema support)
+VISION_MODEL = os.environ.get("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")  # camera scan (needs image input)
+
+
+def groq_client():
+    from groq import Groq  # imported lazily so the offline demo works without the package
+
+    return Groq()  # reads GROQ_API_KEY from the environment
+
+
+def json_format(name, schema):
+    # strict stays at Groq's default (best effort): validate_and_clean() enforces the real rules server-side.
+    return {"type": "json_schema", "json_schema": {"name": name, "schema": api_schema(schema)}}
+
+
+def chat_json(system, user, name, schema, max_tokens, model=None):
+    """One Groq chat call that must return JSON matching `schema`. `user` is a string or a list of content parts."""
+    model = model or TEXT_MODEL
+    extra = {}
+    if model.startswith("openai/gpt-oss"):
+        extra["reasoning_effort"] = "low"  # reasoning tokens count against max_completion_tokens
+    return groq_client().chat.completions.create(
+        model=model,
+        max_completion_tokens=max_tokens,
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        response_format=json_format(name, schema),
+        **extra,
+    )
 
 MAX_BODY_BYTES = 8 * 1024 * 1024        # reject absurd request bodies
-MAX_IMAGE_B64_CHARS = 6 * 1024 * 1024   # API image limit is 5 MB of raw bytes (~6.7M base64 chars)
+MAX_IMAGE_B64_CHARS = 4 * 1024 * 1024   # Groq caps base64-encoded image requests at about 4 MB
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
 
 
@@ -189,9 +221,6 @@ Quality:
 
 
 def generate_ideas(materials):
-    import anthropic
-
-    client = anthropic.Anthropic()
     materials_json = json.dumps(materials, indent=2)
     user_prompt = (
         "Materials on hand (id, name, quantity):\n"
@@ -199,27 +228,20 @@ def generate_ideas(materials):
         "Propose a catalog of buildable project ideas using these materials, following the schema."
     )
 
-    response = client.messages.create(
-        model=MODEL,
-        max_tokens=4096,
-        system=IDEA_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_prompt}],
-        output_config={
-            "format": {"type": "json_schema", "schema": api_schema(IDEA_SCHEMA)},
-        },
-    )
+    response = chat_json(IDEA_SYSTEM_PROMPT, user_prompt, "ideas", IDEA_SCHEMA, 6144)
     data = json.loads(first_text(response))
     return validate_and_clean(data, materials)
 
 
 def first_text(response):
-    """Text of the first text block, with a readable error for refusals / empty responses."""
-    if getattr(response, "stop_reason", None) == "refusal":
-        raise RuntimeError("The model declined this request.")
-    for b in response.content:
-        if b.type == "text" and b.text.strip():
-            return b.text
-    raise RuntimeError("The model returned an empty response. Try again.")
+    """Text of the first choice, with a readable error for truncated / empty responses."""
+    choice = response.choices[0]
+    if choice.finish_reason == "length":
+        raise RuntimeError("The model ran out of room before finishing. Try again.")
+    text = (choice.message.content or "").strip()
+    if not text:
+        raise RuntimeError("The model returned an empty response. Try again.")
+    return text
 
 
 MAX_IDEAS = 10
@@ -407,22 +429,11 @@ short, concrete steps in plain imperative language, in the order a maker would r
 
 
 def generate_steps(idea_brief):
-    import anthropic
-
-    client = anthropic.Anthropic()
     user_prompt = (
         "Project:\n" + json.dumps(idea_brief, indent=2) + "\n\n"
         "Write the assembly steps, following the schema."
     )
-    response = client.messages.create(
-        model=MODEL,
-        max_tokens=2048,
-        system=STEPS_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_prompt}],
-        output_config={
-            "format": {"type": "json_schema", "schema": api_schema(STEPS_SCHEMA)},
-        },
-    )
+    response = chat_json(STEPS_SYSTEM_PROMPT, user_prompt, "steps", STEPS_SCHEMA, 3072)
     data = json.loads(first_text(response))
     return clean_steps(data.get("assembly_steps", []))
 
@@ -479,23 +490,13 @@ def identify_material(data_url):
     if len(image_data) > MAX_IMAGE_B64_CHARS:
         raise ValueError("That photo is too large. Try again with a smaller capture.")
 
-    import anthropic
-
-    client = anthropic.Anthropic()
-    response = client.messages.create(
-        model=MODEL,
-        max_tokens=512,
-        system=IDENTIFY_SYSTEM_PROMPT,
-        messages=[{
-            "role": "user",
-            "content": [
-                {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": image_data}},
-                {"type": "text", "text": "What is this?"},
-            ],
-        }],
-        output_config={
-            "format": {"type": "json_schema", "schema": api_schema(IDENTIFY_SCHEMA)},
-        },
+    response = chat_json(
+        IDENTIFY_SYSTEM_PROMPT,
+        [
+            {"type": "image_url", "image_url": {"url": f"data:{media_type};base64,{image_data}"}},
+            {"type": "text", "text": "What is this?"},
+        ],
+        "material", IDENTIFY_SCHEMA, 512, model=VISION_MODEL,
     )
     data = json.loads(first_text(response))
     name = clean_text(data.get("name"), 60) or "unclear item"
@@ -540,10 +541,10 @@ class Handler(SimpleHTTPRequestHandler):
             self._send_json(400, {"error": "bad_request", "message": "Expected a JSON object."})
             return
 
-        if not os.environ.get("ANTHROPIC_API_KEY"):
+        if not os.environ.get("GROQ_API_KEY"):
             self._send_json(503, {
                 "error": "no_api_key",
-                "message": "No ANTHROPIC_API_KEY configured on the server. Set it in cube-mvp/.env and restart the server, or use the offline example idea instead.",
+                "message": "No GROQ_API_KEY configured on the server. Set it in cube-mvp/.env and restart the server, or use the offline example idea instead.",
             })
             return
 
@@ -607,16 +608,16 @@ class Handler(SimpleHTTPRequestHandler):
 
     def _friendly_error(self, e):
         try:
-            import anthropic
+            import groq
         except ImportError:
-            return "The 'anthropic' Python package isn't installed. Run: pip install anthropic  (then restart the server)."
-        if isinstance(e, anthropic.AuthenticationError):
-            return "The API key was rejected. Check ANTHROPIC_API_KEY in cube-mvp/.env."
-        if isinstance(e, anthropic.RateLimitError):
+            return "The 'groq' Python package isn't installed. Run: pip install groq  (then restart the server)."
+        if isinstance(e, groq.AuthenticationError):
+            return "The API key was rejected. Check GROQ_API_KEY in cube-mvp/.env."
+        if isinstance(e, groq.RateLimitError):
             return "Rate limited by the API. Wait a moment and try again."
-        if isinstance(e, anthropic.APIConnectionError):
-            return "Couldn't reach the Claude API. Check your internet connection."
-        if isinstance(e, anthropic.APIStatusError):
+        if isinstance(e, groq.APIConnectionError):
+            return "Couldn't reach the Groq API. Check your internet connection."
+        if isinstance(e, groq.APIStatusError):
             return f"API error ({e.status_code}): {e.message}"
         return f"Unexpected error: {e}"
 
@@ -630,6 +631,6 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    has_key = bool(os.environ.get("ANTHROPIC_API_KEY"))
-    print(f"MakeShift server on http://localhost:{PORT}  (ANTHROPIC_API_KEY {'found' if has_key else 'NOT found — AI features will be unavailable, offline example still works'})")
+    has_key = bool(os.environ.get("GROQ_API_KEY"))
+    print(f"MakeShift server on http://localhost:{PORT}  (GROQ_API_KEY {'found' if has_key else 'NOT found — AI features will be unavailable, offline example still works'})")
     ThreadingHTTPServer(("", PORT), Handler).serve_forever()

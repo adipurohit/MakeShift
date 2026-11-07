@@ -62,7 +62,7 @@ def main():
         pack = [r for r in pack if r["id"] in only]
 
     server = subprocess.Popen([sys.executable, "server.py"], cwd=APP_DIR,
-                              env={"PATH": "/usr/bin:/bin", "ANTHROPIC_API_KEY": ""},
+                              env={"PATH": "/usr/bin:/bin", "GROQ_API_KEY": ""},
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     failures = []
     try:
