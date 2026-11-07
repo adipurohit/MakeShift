@@ -25,6 +25,7 @@ Work breakdown for the CUBE demo (`cube-mvp/`) so teammates and agents can pick 
 | 7 | Pitch narrative | Draft done (`PITCH.md`). Rehearsal pending. |
 | 8 | Mobile + accessibility | Done. No horizontal overflow at 390px. |
 | - | Offline demo bug fixes | Done (PR #4). |
+| - | Offline recipe pack | Done. 100 recipes in `cube-mvp/recipes/pack.json`, all verified by `cube-mvp/tests/pack_test.py`. |
 
 ---
 
