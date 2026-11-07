@@ -33,18 +33,18 @@ The live demo should prove one idea, not tour every feature: a pile of parts fro
 - Select the pinned offline Robot Arm recipe.
 - Show the available-parts palette, red/green requirements, and hologram target state.
 - Demonstrate at least one understandable merge in 2D.
-- Complete the deterministic recipe, open its seven-step guide, attach the prepared photo, and reach the completion badge.
+- Complete the deterministic recipe, open its eight-step guide, attach the prepared photo, and reach the completion badge.
 - Switch to 3D only for one short orbit after the parts are ready. The story matters more than a long camera-controls demonstration.
 
 ### Describe—the expansion
 
-- Camera capture and Claude vision identification.
+- Camera capture and Groq vision identification.
 - Manual entry when camera access or vision fails.
 - AI-generated catalog of 6–10 build ideas based on the user's inventory.
 - On-demand AI assembly steps for a selected generated idea.
 - Future real geometry, parametric constraints, shared team inventories, and safety/feasibility validation.
 
-Do not make the judged demo depend on Wi-Fi, an Anthropic API key, a live camera permission prompt, or a newly generated recipe.
+Do not make the judged demo depend on Wi-Fi, a Groq API key, a live camera permission prompt, or a newly generated recipe.
 
 ## Physical props and files
 
@@ -94,7 +94,7 @@ Run the full offline path at least twice on the actual presentation laptop:
 - [ ] Two Rails and two Arm Segments can be crafted.
 - [ ] One Gripper Claw can be crafted.
 - [ ] All six final requirement lines turn green.
-- [ ] **Build It** enables and opens seven assembly steps.
+- [ ] **Build It** enables and opens eight assembly steps.
 - [ ] The prepared photo previews successfully.
 - [ ] Checking all steps enables **Mark Build Complete**.
 - [ ] Completion badge and confetti appear.
@@ -105,6 +105,7 @@ Run the full offline path at least twice on the actual presentation laptop:
 
 - **2026-11-07, automated local + hosted rehearsal (`main` hosted at `b945f83`):** The complete Robot Arm interaction passed from recipe selection through all nine crafting merges, all-green requirements, seven assembly steps, photo preview, completion badge, 3D canvas, and mobile-width check with no console errors. The interaction path took 6.3 seconds locally and 6.3 seconds on the public Render deployment before narration. This verifies the technical stage path; presenters still need to rehearse the spoken 3:30 script with physical props on the presentation laptop.
 - **2026-11-07, `add-cube-mvp-demo` at `f42bc8d`:** The app loaded locally, the offline Robot Arm recipe selected correctly, and its palette, holograms, and six requirement lines rendered as documented. The base branch supplied only one Timing Belt, confirming that the build cannot reach completion there. Complete the full timed rehearsal after `task/fix-offline-demo` is merged; that branch changes the starting quantity to two and fixes persisted bench-token IDs.
+- **2026-11-07, content fix (not a full rehearsal re-run):** Step 1 referenced mounting the joints "to the frame," but no frame part exists in the recipe — reworded to anchor the first joint to a work surface instead. The Power Supply raw material also directly contradicted the AI safety prompt's "no opening or reusing power supplies" rule — renamed to a sealed USB Power Bank, explicitly never opened. This changed the step count from seven to eight (reflected above) and the smoke test (`python3 cube-mvp/tests/smoke.py`) still passes. A full timed rehearsal with physical props hasn't been re-run against this wording yet.
 
 ## Differentiation and audience
 

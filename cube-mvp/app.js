@@ -46,7 +46,7 @@ const OFFLINE_IDEA = {
     { id: "nozzle", name: "Dead Nozzle", qty: 2 },
     { id: "zip", name: "Zip Tie", qty: 2 },
     { id: "board", name: "Control Board", qty: 1 },
-    { id: "psu", name: "Power Supply", qty: 1 },
+    { id: "psu", name: "USB Power Bank", qty: 1 },
     { id: "limit", name: "Limit Switch", qty: 1 },
   ],
   recipes: [
@@ -65,12 +65,13 @@ const OFFLINE_IDEA = {
     { id: "limit", qty: 1 },
   ],
   assembly_steps: [
-    "Mount the two Motorized Joints to the frame to form the shoulder and elbow pivots.",
-    "Attach an Arm Segment to each Motorized Joint using the Linear Bearings as sliding supports.",
-    "Thread the Timing Belt around each joint's pulley and tension by hand.",
-    "Secure the Gripper Claw (built from salvaged nozzle tips) to the end of the final Arm Segment.",
-    "Wire the Stepper Motors to the salvaged Control Board.",
-    "Connect the Power Supply and the Limit Switch to the Control Board for homing.",
+    "Bolt the first Motorized Joint to a stable work surface to anchor the shoulder pivot.",
+    "Attach the first Arm Segment to that joint, using its Linear Bearings as the sliding support.",
+    "Mount the second Motorized Joint to the free end of the first Arm Segment to form the elbow pivot.",
+    "Attach the second Arm Segment to the elbow joint the same way.",
+    "Thread a Timing Belt around each joint's pulley and tension it by hand so the joint turns smoothly.",
+    "Secure the Gripper Claw (built from the salvaged nozzle tips) to the end of the second Arm Segment.",
+    "Wire the Stepper Motors to the salvaged Control Board, then connect the sealed USB Power Bank and the Limit Switch to it for homing — never open the power bank itself.",
     "Power on, run the homing sequence, and test open/close on the Gripper Claw.",
   ],
 };
@@ -469,6 +470,33 @@ async function generateIdeas({ manual } = { manual: true }) {
   renderRequirements();
 }
 
+/* ================= Offline-pack inventory matching =================
+   The 100 built-in pack recipes each play in their own pre-seeded,
+   always-buildable sandbox (see resolveIdea/offlineBox above) — that's what
+   makes them a guaranteed no-AI, no-network demo path, and this never
+   touches that. But pack ids (e.g. "led") don't share a namespace with the
+   user's real material ids (e.g. "m_led"), so until now the catalog never
+   compared a recipe's parts against what you'd actually scanned or typed
+   in. These helpers do that match by NAME, for ranking/badges only, so the
+   "turn what you have into what you need" tagline works with zero API
+   calls: add a few real materials and the catalog/Buildable Now surface
+   whichever of the 100 recipes actually fit, without needing Groq at all. */
+function realMaterialNames() {
+  return Object.keys(state.items)
+    .filter((id) => state.items[id].raw && (state.inventory[id] || 0) > 0)
+    .map((id) => state.items[id].name.trim().toLowerCase());
+}
+function packCoverage(idea) {
+  const mats = idea.rawMaterials || [];
+  if (mats.length === 0) return { have: 0, total: 0, percent: 0 };
+  const names = realMaterialNames();
+  const have = mats.filter((m) => {
+    const want = m.name.trim().toLowerCase();
+    return names.some((n) => n === want || n.includes(want) || want.includes(n));
+  }).length;
+  return { have, total: mats.length, percent: Math.round((have / mats.length) * 100) };
+}
+
 /* ================= LEFT PANEL: buildable now ================= */
 function matchPercent(idea) {
   const ids = rawIdsForIdea(idea);
@@ -488,12 +516,21 @@ function readyPercent(idea) {
 function renderBuildableNow() {
   const list = document.getElementById("buildableNowList");
   list.innerHTML = "";
-  const ideas = state.ideaLibrary
-    .map((idea, i) => ({ idea, i, short: buildPlan(idea).missingTotal }))
-    .sort((x, y) => (x.short === 0 ? 0 : 1) - (y.short === 0 ? 0 : 1) || x.i - y.i)
-    .map((x) => x.idea);
+  const aiCandidates = state.ideaLibrary.map((idea, i) => ({ idea, i, short: buildPlan(idea).missingTotal }));
+  // Only surface pack recipes that use at least one real material you have —
+  // otherwise all 100 would flood this panel before you've typed anything in.
+  const packCandidates = RECIPE_PACK
+    .map((idea, i) => {
+      const cov = packCoverage(idea);
+      return { idea, i: 100000 + i, short: cov.total - cov.have, have: cov.have };
+    })
+    .filter((c) => c.have > 0);
+  const candidates = [...aiCandidates, ...packCandidates]
+    .sort((x, y) => (x.short === 0 ? 0 : 1) - (y.short === 0 ? 0 : 1) || x.short - y.short || x.i - y.i)
+    .slice(0, 30); // keep the panel scannable even with a big real inventory
+  const ideas = candidates.map((c) => c.idea);
   document.getElementById("buildableNowEmptyNote").classList.toggle("visible", ideas.length === 0);
-  const ready = ideas.filter((i) => buildPlan(i).missingTotal === 0).length;
+  const ready = candidates.filter((c) => c.short === 0).length;
   document.getElementById("ideasCount").textContent = ideas.length ? `${ready} of ${ideas.length} ready` : "";
   ideas.forEach((idea) => list.appendChild(buildIdeaRow(idea, true)));
 }
@@ -502,7 +539,14 @@ function buildIdeaRow(idea, compact) {
   const row = document.createElement("div");
   row.className = "idea-row" + (idea.id === state.activeIdeaId ? " active" : "");
   let badge = "";
-  if (!idea.offline) {
+  if (idea.pack) {
+    const cov = packCoverage(idea);
+    if (cov.have > 0) {
+      badge = cov.percent === 100
+        ? `<span class="idea-badge ready-badge">Have all ${cov.total} parts</span>`
+        : `<span class="idea-badge match-badge">${cov.have}/${cov.total} parts on hand</span>`;
+    }
+  } else if (!idea.offline) {
     const short = buildPlan(idea).missingTotal;
     badge = short === 0
       ? `<span class="idea-badge ready-badge">Ready</span>`
@@ -527,9 +571,27 @@ function renderCatalog() {
   list.innerHTML = "";
   const all = allIdeas();
   const q = catalogFilter.text.trim().toLowerCase();
-  const ideas = all.filter((i) =>
-    (!catalogFilter.category || i.category === catalogFilter.category) &&
-    (!q || (i.title + " " + i.pitch + " " + (i.category || "")).toLowerCase().includes(q)));
+  // Rank by real-inventory fit so "turn what you have into what you need" is
+  // true of the catalog itself, with zero API calls: the pinned offline
+  // Robot Arm stays first, then whatever you can build right now (AI ideas
+  // or pack recipes), then everything else ordered by how close it is.
+  function readinessRank(idea) {
+    if (idea.id === OFFLINE_IDEA.id) return [0, 0];
+    if (idea.pack) {
+      const cov = packCoverage(idea);
+      return [cov.percent === 100 ? 1 : 2, -cov.percent];
+    }
+    const missing = buildPlan(idea).missingTotal;
+    return [missing === 0 ? 1 : 2, missing];
+  }
+  const ideas = all
+    .filter((i) =>
+      (!catalogFilter.category || i.category === catalogFilter.category) &&
+      (!q || (i.title + " " + i.pitch + " " + (i.category || "")).toLowerCase().includes(q)))
+    .sort((a, b) => {
+      const ra = readinessRank(a), rb = readinessRank(b);
+      return ra[0] - rb[0] || ra[1] - rb[1];
+    });
   const n = all.length;
   document.getElementById("catalogCount").textContent = !n ? "" :
     ideas.length === n ? `${n} recipe${n === 1 ? "" : "s"}` : `${ideas.length} of ${n}`;

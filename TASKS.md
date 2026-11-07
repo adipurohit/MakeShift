@@ -8,7 +8,7 @@ Work breakdown for the MakeShift demo (`cube-mvp/`) so teammates and agents can 
 2. Branch off `main` (once [PR #1](https://github.com/adipurohit/MakeShift/pull/1) is merged) as `task/<short-name>`, e.g. `task/real-part-photos`.
 3. Each task below lists which files it touches — if your task isn't listed as touching `app.js`, don't edit it; flag here instead if you think you need to, so we don't get silent merge conflicts on the biggest file.
 4. Open a PR back to `main` when done. Small, reviewable PRs over one giant one.
-5. You'll need your own Anthropic API key in `cube-mvp/.env` (copy from `.env.example`) for anything that touches AI features — never commit that file.
+5. You'll need your own Groq API key in `cube-mvp/.env` (copy from `.env.example`) for anything that touches AI features — never commit that file.
 
 ---
 
@@ -21,7 +21,7 @@ Work breakdown for the MakeShift demo (`cube-mvp/`) so teammates and agents can 
 | 3 | 3D shapes per category | Done (PR #6). |
 | 4 | Recipe quality pass | Prompts + validator tightened, ordered recipe graph now reaches step generation, 16 validator tests pass, and the 12-scenario harness works on Windows. **Still open:** run it with a real API key and review the report; before/after examples need that run. |
 | 5 | Smoke test | Done. `python3 cube-mvp/tests/smoke.py` passes 23/23 locally and against the hosted deployment. |
-| 6 | Hosted deploy | Public deployment live at [makeshift-cube-demo.onrender.com](https://makeshift-cube-demo.onrender.com), tracking `main`; hosted no-key smoke passes 23/23. **Still open for connected AI:** add a dedicated capped `ANTHROPIC_API_KEY` in Render. |
+| 6 | Hosted deploy | Live in two places: [adipurohit.com/makeshift](https://adipurohit.com/makeshift) (Cloudflare Worker, AI runs on Groq via a `GROQ_API_KEY` Worker secret — see `DEPLOYMENT.md`) and [makeshift-cube-demo.onrender.com](https://makeshift-cube-demo.onrender.com) (Render, tracking `main`; its `23/23 hosted` smoke result is from an older commit, `b945f83`, and it has no `GROQ_API_KEY` set so its AI features are dark). **Still open:** pick one canonical URL for demo day — having two with different capabilities risks a judge landing on the dead one — then either set `GROQ_API_KEY` on Render too or retire/redirect it, and re-run the hosted smoke suite against whichever stays. |
 | 7 | Pitch narrative | Draft done (`PITCH.md`); the complete deterministic UI path passes its automated rehearsal under 3:30. **Still open:** presenters rehearse the spoken delivery on the presentation laptop. |
 | 8 | Mobile + accessibility | Done. No horizontal overflow at 390px. |
 | - | Offline demo bug fixes | Done (PR #4). |
