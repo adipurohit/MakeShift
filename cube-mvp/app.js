@@ -1034,6 +1034,11 @@ async function openAssemblyModal(idea) {
       const brief = {
         title: idea.title,
         pitch: idea.pitch,
+        recipe_graph: resolved.recipes.map((r) => ({
+          a: state.items[r.a].name,
+          b: state.items[r.b].name,
+          result: state.items[r.result].name,
+        })),
         sub_assemblies: Object.values(resolved.recipes.reduce((acc, r) => {
           acc[r.result] = state.items[r.result].name;
           return acc;

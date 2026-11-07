@@ -2,6 +2,14 @@
 
 The repository includes a Render Blueprint for a single Python web service. It serves the frontend and the three optional Anthropic-backed API endpoints from one origin.
 
+## Current deployment
+
+- URL: [https://makeshift-cube-demo.onrender.com](https://makeshift-cube-demo.onrender.com)
+- Render service: `makeshift-cube-demo`
+- Deploy branch: `main`
+- Verified 2026-11-07 at commit `b945f83`: `python cube-mvp/tests/smoke.py --base-url https://makeshift-cube-demo.onrender.com` passed all 23 checks, including the 100-recipe pack plus Robot Arm, the complete build flow, 3D, mobile width, and console-error checks. The automated Robot Arm stage path completed in 6.3 seconds before narration.
+- `ANTHROPIC_API_KEY` is not configured in Render. The offline catalog and Robot Arm work publicly; camera identification and generated ideas/steps correctly return the no-key fallback until a dedicated capped key is added.
+
 ## Create the service
 
 1. Merge this branch into the branch Render will deploy.
