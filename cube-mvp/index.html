@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CUBE — Scrap to Creation</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js" } }
+</script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">CUBE</div>
+    <div class="brand-tag">Turn what you have into what you need.</div>
+  </div>
+  <button class="scan-btn" id="scanBtn" title="Scan a material with your camera">📷 Scan Material</button>
+  <div class="badges" id="badgeRow" aria-label="Badges earned"></div>
+  <button class="reset-btn" id="resetBtn" title="Reset demo to a clean slate">↺ Reset Demo</button>
+</header>
+
+<div class="workspace-shell">
+
+  <!-- LEFT PANEL -->
+  <aside class="panel panel-left">
+    <div class="panel-section">
+      <div class="panel-section-head">
+        <h3>Inventory</h3>
+      </div>
+      <form class="add-material-form compact" id="addMaterialForm">
+        <input type="text" id="materialNameInput" placeholder="add material..." autocomplete="off" required>
+        <input type="number" id="materialQtyInput" placeholder="qty" min="1" value="1" required>
+        <button type="submit" class="icon-btn" title="Add">+</button>
+      </form>
+      <div class="card-grid compact" id="inventoryGrid"></div>
+      <div class="empty-note" id="inventoryEmptyNote">Scan or add a material to begin.</div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-head">
+        <h3>✨ Buildable Now</h3>
+        <button class="icon-btn small" id="refreshIdeasBtn" title="Generate / refresh ideas">🔁</button>
+      </div>
+      <p class="panel-hint">What the AI thinks you can start building with exactly what's in your inventory.</p>
+      <div id="buildableNowList"></div>
+      <div class="empty-note" id="buildableNowEmptyNote">Add materials, then generate ideas.</div>
+      <div class="error-banner" id="generateError"></div>
+    </div>
+  </aside>
+
+  <!-- CENTER VIEWER -->
+  <main class="panel panel-center">
+    <div class="viewer-toolbar">
+      <div class="view-toggle" id="viewToggle">
+        <button class="view-toggle-btn active" data-view="2d">2D</button>
+        <button class="view-toggle-btn" data-view="3d">3D</button>
+      </div>
+      <div class="active-recipe-label" id="activeRecipeLabel">No recipe selected — pick one from the catalog →</div>
+    </div>
+
+    <div class="viewer-stage-wrap">
+      <div class="palette" id="palette">
+        <div class="palette-title">Available parts</div>
+        <div class="palette-list" id="paletteList"></div>
+      </div>
+
+      <div class="viewer-stage">
+        <!-- 2D merge canvas -->
+        <div class="viewer-pane active" id="viewer2d">
+          <div class="bench" id="bench">
+            <div class="bench-empty" id="benchEmpty">Drag parts here to merge them →</div>
+            <div class="hologram-row" id="hologramRow"></div>
+          </div>
+        </div>
+
+        <!-- 3D viewer -->
+        <div class="viewer-pane" id="viewer3d">
+          <canvas id="threeCanvas"></canvas>
+          <div class="viewer3d-hint">Drag to orbit · scroll to zoom · drag a part to move it</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="viewer-actions">
+      <button class="ghost-btn" id="clearBenchBtn">Clear bench (returns parts)</button>
+    </div>
+
+    <!-- requirements for the active recipe -->
+    <div class="requirements-bar" id="requirementsBar">
+      <div class="requirements-empty" id="requirementsEmpty">Select a recipe from the catalog to see what it needs.</div>
+      <div class="requirements-active" id="requirementsActive" hidden>
+        <div class="progress-row">
+          <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill"></div></div>
+          <span id="progressLabel">0 / 0 ready</span>
+        </div>
+        <ul class="req-list" id="reqList"></ul>
+        <button class="primary-btn big" id="buildBtn" disabled>🔧 Build It</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside class="panel panel-right">
+    <div class="panel-section-head">
+      <h3>Recipe Catalog</h3>
+      <span class="hint" id="catalogCount"></span>
+    </div>
+    <p class="panel-hint">Everything CUBE knows how to build from your materials, ready or not.</p>
+    <div id="catalogList"></div>
+    <div class="empty-note" id="catalogEmptyNote">No recipes yet — add materials and generate ideas.</div>
+  </aside>
+
+</div>
+
+<!-- SCAN MODAL -->
+<div class="modal-overlay" id="scanModal">
+  <div class="modal scan-modal">
+    <h2>Scan Material</h2>
+    <p class="sub" id="scanStatus">Point your camera at the item and capture.</p>
+
+    <div class="scan-camera-wrap" id="scanCameraWrap">
+      <video id="scanVideo" autoplay playsinline muted></video>
+      <div class="scan-flash" id="scanFlash"></div>
+    </div>
+    <canvas id="scanCanvas" hidden></canvas>
+    <img id="scanPreview" class="scan-preview" hidden alt="Captured material">
+
+    <div class="scan-actions" id="scanActionsCapture">
+      <button class="primary-btn big" id="captureBtn">📸 Capture</button>
+      <button class="ghost-btn" id="scanManualBtn">Skip — type it in instead</button>
+    </div>
+
+    <div class="scan-result" id="scanResult" hidden>
+      <label class="photo-label" for="scanNameInput">What CUBE thinks this is (edit if wrong)</label>
+      <input type="text" id="scanNameInput">
+      <input type="number" id="scanQtyInput" min="1" value="1">
+      <div class="scan-actions">
+        <button class="primary-btn" id="scanConfirmBtn">+ Add to inventory</button>
+        <button class="ghost-btn" id="scanRetryBtn">Retake</button>
+      </div>
+    </div>
+
+    <div class="manual-add" id="manualAddPanel" hidden>
+      <label class="photo-label" for="manualNameInput">Material name</label>
+      <input type="text" id="manualNameInput" placeholder="e.g. broken stepper motor" autocomplete="off">
+      <input type="number" id="manualQtyInput" min="1" value="1">
+      <div class="scan-actions">
+        <button class="primary-btn" id="manualConfirmBtn">+ Add to inventory</button>
+        <button class="ghost-btn" id="manualBackBtn">Back to camera</button>
+      </div>
+    </div>
+
+    <button class="ghost-btn close-scan" id="closeScanBtn">Close</button>
+  </div>
+</div>
+
+<!-- ASSEMBLY MODAL -->
+<div class="modal-overlay" id="assemblyModal">
+  <div class="modal">
+    <h2>Assembly Guide</h2>
+    <p class="sub" id="assemblyStatus">Follow the steps in order. Check each one off.</p>
+    <div class="steps-loading" id="stepsLoading" hidden>✨ Asking the AI to write assembly steps for this build...</div>
+    <ol class="steps-list" id="stepsList"></ol>
+
+    <div class="photo-step" id="photoStep">
+      <label class="photo-label" for="photoInput">Upload a progress photo</label>
+      <input type="file" id="photoInput" accept="image/*">
+      <img id="photoPreview" class="photo-preview" alt="Progress photo preview" hidden>
+    </div>
+
+    <button class="primary-btn big" id="completeBtn" disabled>✅ Mark Build Complete</button>
+    <button class="ghost-btn" id="closeModalBtn">Close</button>
+  </div>
+</div>
+
+<!-- COMPLETION OVERLAY -->
+<div class="modal-overlay" id="completeModal">
+  <div class="modal complete-modal">
+    <div class="trophy">🏆</div>
+    <h2 id="completeTitle">Build Complete</h2>
+    <p class="pitch-line">"CUBE turns discarded materials into a playable engineering inventory. Scan what you have, combine parts to discover ideas, and follow an interactive assembly guide to build something real."</p>
+    <button class="primary-btn big" id="closeCompleteBtn">Nice</button>
+  </div>
+</div>
+
+<canvas id="confettiCanvas"></canvas>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
