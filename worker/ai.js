@@ -246,6 +246,8 @@ export function toOpenApiSchema(schema) {
 }
 const isSchemaRejection = (status, message) =>
   status === 400 && /response_?json_?schema|response_?schema|Unknown name|Invalid JSON payload/i.test(message || "");
+const isThinkingRejection = (status, message) => status === 400 && /thinking/i.test(message || "");
+const GEMINI_TIMEOUT_MS = 55000;
 
 export class ApiError extends Error {}
 export class BusyError extends ApiError {}
@@ -272,22 +274,31 @@ async function chatJson(env, system, user, name, schema, maxTokens, model) {
       responseJsonSchema: schema,
     },
   };
+  // Gemini 3 Flash thinks at "medium" by default: 100+ s per request on the live site. "low" is its floor.
+  const thinking = env.GEMINI_THINKING_LEVEL || CFG.thinking_level;
+  if (thinking && thinking !== "off") body.generationConfig.thinkingConfig = { thinkingLevel: thinking };
 
   const send = () => fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
   });
   let res;
   try {
     res = await send();
-    if (res.status === 400) {
-      const peek = await res.clone().json().catch(() => ({}));
-      if (isSchemaRejection(400, peek.error?.message)) {
+    // A model or API version that doesn't know a setting answers 400. Drop that setting and retry, at most twice.
+    for (let fixes = 0; res.status === 400 && fixes < 2; fixes++) {
+      const message = (await res.clone().json().catch(() => ({}))).error?.message;
+      if (isThinkingRejection(400, message) && body.generationConfig.thinkingConfig) {
+        delete body.generationConfig.thinkingConfig;
+      } else if (isSchemaRejection(400, message) && body.generationConfig.responseJsonSchema) {
         delete body.generationConfig.responseJsonSchema;
         body.generationConfig.responseSchema = toOpenApiSchema(schema);
-        res = await send();
+      } else {
+        break;
       }
+      res = await send();
     }
     // Retry one transient Gemini rate limit, respecting Retry-After but never sleeping indefinitely.
     if (res.status === 429) {
@@ -297,6 +308,9 @@ async function chatJson(env, system, user, name, schema, maxTokens, model) {
       res = await send();
     }
   } catch (e) {
+    if (e && (e.name === "TimeoutError" || e.name === "AbortError")) {
+      throw new BusyError("The AI took too long to answer. Try again; catalog matches still work.");
+    }
     throw new ApiError("Couldn't reach the Gemini API. Try again in a moment.");
   }
   const data = await res.json().catch(() => ({}));
