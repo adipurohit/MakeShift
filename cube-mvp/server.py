@@ -16,7 +16,7 @@ import re
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 
-PORT = 8743
+PORT = int(os.environ.get("PORT", "8743"))
 DIR = Path(__file__).parent
 
 # ---- tiny .env loader (no python-dotenv dependency) ----
