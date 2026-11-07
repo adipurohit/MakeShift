@@ -1,4 +1,4 @@
-# Deploy CUBE on Render
+# Deploy MakeShift on Render
 
 The repository includes a Render Blueprint for a single Python web service. It serves the frontend and the three optional Anthropic-backed API endpoints from one origin.
 
@@ -17,7 +17,7 @@ Render builds from `cube-mvp/`, installs the pinned Python SDK, starts `server.p
 
 Open the public URL in a private browser window and verify:
 
-- The CUBE workspace, local Three.js assets, and offline Robot Arm recipe load without console errors.
+- The MakeShift workspace, local Three.js assets, and offline Robot Arm recipe load without console errors.
 - The 2D and 3D controls work.
 - Reset restores the deterministic offline state.
 - With the hosted key enabled, **Buildable Now** generates ideas and assembly steps.

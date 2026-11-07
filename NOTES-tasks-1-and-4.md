@@ -59,6 +59,6 @@ On the laptop/phone you'll present from, with a real key in `.env`:
 - [ ] Camera light turns off after Add, after Close, after Esc.
 - [ ] Deny permission → manual form with a clear message; "Back" re-prompts.
 - [ ] Block the camera in browser settings, other app holding camera → distinct messages.
-- [ ] Stop the server mid-scan → "Couldn't reach the CUBE server".
+- [ ] Stop the server mid-scan → "Couldn't reach the MakeShift server".
 - [ ] Phone on LAN IP over http → expected "secure page" message (use localhost/https/tunnel to demo on a phone).
 - [ ] Safari/iOS: video appears (needs `playsinline`, already set) and rear camera is chosen.

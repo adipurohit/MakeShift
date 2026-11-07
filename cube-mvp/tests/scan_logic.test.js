@@ -88,7 +88,7 @@ const okJson = (body, status = 200) => Promise.resolve({ ok: status < 400, statu
   await test("server unreachable -> friendly message", async ({ $, click, vis, w, ctx }) => {
     ctx.fetchImpl = () => Promise.reject(new w.TypeError("Failed to fetch"));
     click("scanBtn"); await tick(5); click("captureBtn"); await tick(5);
-    assert(vis("manualAddPanel") && /reach the CUBE server/.test($("scanStatus").textContent), $("scanStatus").textContent);
+    assert(vis("manualAddPanel") && /reach the MakeShift server/.test($("scanStatus").textContent), $("scanStatus").textContent);
   });
 
   await test("closing mid-identify ignores the late response", async ({ $, click, vis, ctx, log }) => {

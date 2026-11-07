@@ -1,49 +1,65 @@
-# CUBE — Robot Arm demo (MVP)
+# MakeShift
 
-"Turn what you have into what you need." Scrap-to-creation sandbox: turn broken 3D printers into a robot arm.
+Turn what you have into what you need.
 
-No build step, no install, no internet required. Three files: `index.html`, `style.css`, `app.js`.
+MakeShift treats broken gear and scrap as a parts inventory. Pick a build, drag parts together to merge them into sub-assemblies, fill the build checklist, then follow a step-by-step assembly guide to make something real.
+
+## What's inside
+
+- **101 offline recipes** across 10 categories: Lighting, Robotics, Garden, Home & Desk, Storage, Sound, Play, Outdoor, Workshop, and Science. Each recipe brings its own parts and works with no API key or wifi.
+- **2D and 3D build views.** Merge parts on a 2D bench, or switch to 3D to see each part as a shape.
+- **Assembly guide** with checkable steps, a progress photo, a completion badge, and a suggested next upgrade.
+- **How-it-works screen** on first visit, reopened any time from the top bar.
+- **AI features** (need an Anthropic API key): scan a material with your camera, and generate new build ideas from your own inventory.
 
 ## Run it
 
+You need Python 3.
+
 ```bash
-cd cube-mvp
-python3 -m http.server 8743
+git clone https://github.com/adipurohit/MakeShift.git
+cd MakeShift/cube-mvp
+python3 server.py
 ```
 
-Then open **http://localhost:8743** in a browser. (Plain `file://` double-click does *not* work — the browser blocks the page from loading `style.css`/`app.js` as local files, which is why this needs a tiny local server. Any static server works; Python's is just preinstalled on macOS.)
+Open http://localhost:8743 in Chrome. Press Ctrl+C to stop the server.
 
-State (inventory, discovered recipes, badges, in-progress bench) is saved to the browser's `localStorage`, so progress survives a reload — but it's per-browser-profile, not shared across machines. If the demo laptop switches browsers or goes incognito, it starts fresh.
+For the AI features, copy `cube-mvp/.env.example` to `cube-mvp/.env` and add your API key. Never commit that file.
 
-## The demo loop (~3 min)
+To host a public version, follow [DEPLOYMENT.md](DEPLOYMENT.md).
 
-1. **Inventory tab** — scavenged parts from broken 3D printers, manually confirmed counts. Note **Timing Belt only shows 1**, not 2 — that's intentional, see below.
-2. **Merge Lab tab** — drag a part onto the bench, then drag a second part onto the first to try a merge. Five discoverable recipes:
-   - Stepper Motor + Pulley → Drive Unit
-   - Drive Unit + Timing Belt → **Motorized Joint**
-   - Al. Extrusion + Smooth Rod → Rail
-   - Rail + Linear Bearing → **Arm Segment**
-   - Dead Nozzle + Zip Tie → **Gripper Claw** (the broken nozzle tips become the gripper's pincers — the "turn what you have into what you need" beat)
-3. Craft 2 Motorized Joints — on the second one you'll come up **1 Timing Belt short**. Go back to the **Inventory tab** and hit **"Scan more parts"** — it finds one more belt (simulates confirming a second stripped printer). This is the deliberate RED→GREEN moment.
-4. **Build Robot Arm tab** — shows the final recipe: 2 Motorized Joints, 2 Arm Segments, 1 Gripper Claw, Control Board, Power Supply, Limit Switch, each red/green against current inventory. Mouse-move over the exploded diagram tilts it (cheap stand-in for the "rotate exploded 3D view" feature). When everything's green, **Build Robot Arm** is enabled.
-5. Click it → assembly guide modal: 7 numbered steps, check each off, upload a photo (any image), **Mark Build Complete** → confetti, badge, pitch line.
-6. **Reset Demo** (top right) — click twice within ~4s to confirm — resets everything to starting inventory for the next run-through.
+## How a build works
 
-## Judgment calls made without asking (flag if you want these changed)
+1. **Pick a recipe** from the Recipe Catalog. Search by name or filter by category.
+2. **Merge parts.** Drag two parts onto the bench. Parts that fit together merge into a new piece, for example Stepper Motor + Pulley makes a Drive Unit.
+3. **Fill the checklist.** The bar under the bench turns each requirement green once you have enough.
+4. **Build it.** Press Build It, check off each step, add a photo, and earn a badge.
 
-- **Timing Belt starts at 1, not 2** — deliberately short, so the demo has one real RED→GREEN beat instead of starting fully green. Change `belt: { ... start: 1 }` to `2` in `app.js` if you'd rather it start ready.
-- **No CDN, no external fonts/libraries** — everything (including confetti) is hand-rolled vanilla JS so the demo can't break on bad venue WiFi.
-- **Exploded view is a static labeled SVG with a mouse-tilt effect**, not a real 3D model — matches the doc's BUILD NOW scope (real 3D rotation/scan is listed as NEXT/LATER tier).
-- **Drag-and-drop uses pointer events, not native HTML5 drag-and-drop** — more reliable across trackpads/touchscreens and avoids native-DnD quirks during a live demo.
-- **AI substitution tip** is a single hardcoded suggestion (rubber bands for the missing belt), not a real AI call — demos the *feature* described in the doc without needing a real model integration in 12 hours.
+## Add a recipe
 
-## Known limitations (be aware, don't need to fix before pitching)
+Recipes live in [`cube-mvp/recipes/pack.json`](cube-mvp/recipes/pack.json). See [`cube-mvp/recipes/README.md`](cube-mvp/recipes/README.md) for the format, then check your work:
 
-- If you reload the page with a half-finished merge on the Merge Lab bench, that in-progress state now persists correctly (fixed during testing) — but closing/reopening in a different browser or clearing site data loses all progress.
-- There's no server/backend — this is a single-player, single-browser demo. Good enough for a pitch; would need real state sync for the "Teams" tier described in the doc.
-- The file-photo-upload step accepts any image and just previews it locally — nothing is uploaded anywhere.
+```bash
+python3 cube-mvp/recipes/validate.py
+python3 cube-mvp/tests/pack_test.py <recipe_id>
+```
 
-## If you want to extend before the pitch
+## Tests
 
-- Swap the placeholder icon circles (`ST`, `PU`, etc. in `app.js`'s `ITEMS` object) for real photos of your actual scavenged parts — more convincing on stage than initials-in-a-circle.
-- Add a real photo of your physical (if you built one) robot arm as the completion-screen image instead of the trophy emoji.
+| Command | Checks |
+|---------|--------|
+| `python3 cube-mvp/tests/smoke.py` | Server endpoints and the full Robot Arm build in a headless browser |
+| `python3 cube-mvp/tests/pack_test.py` | Builds all 100 pack recipes end to end |
+| `python3 cube-mvp/tests/test_recipes.py` | AI recipe validation rules |
+| `python3 cube-mvp/tests/scan_browser.py` | Camera scan flow with a fake camera |
+| `cd cube-mvp && npm i --no-save jsdom && node tests/scan_logic.test.js` | Camera scan permission and timeout paths |
+| `python3 cube-mvp/tests/recipe_quality.py --stub` | Recipe quality harness (drop `--stub` to run against the API) |
+
+Browser tests need Playwright: `pip install playwright && python3 -m playwright install chromium`.
+
+## Project docs
+
+- [TASKS.md](TASKS.md): task board and status
+- [PITCH.md](PITCH.md): pitch script and live-demo plan
+- [DEPLOYMENT.md](DEPLOYMENT.md): hosting on Render
+- [cube-mvp/README.md](cube-mvp/README.md): how the app works under the hood

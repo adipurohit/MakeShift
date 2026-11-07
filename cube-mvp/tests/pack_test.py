@@ -79,6 +79,8 @@ def main():
             page.evaluate("localStorage.clear()")
             page.reload()
             page.wait_for_selector("#catalogList .idea-row")
+            if page.locator("#introModal.visible").count():
+                page.click("#introStartBtn")  # dismiss the how-it-works screen
 
             shown = page.locator("#catalogList .idea-row").count()
             if shown < len(pack) + 1 and not only:

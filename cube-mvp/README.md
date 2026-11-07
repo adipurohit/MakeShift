@@ -1,4 +1,4 @@
-# CUBE — Fusion-style scrap-to-creation demo (MVP)
+# MakeShift — Fusion-style scrap-to-creation demo (MVP)
 
 "Turn what you have into what you need." Scan or type in materials, get AI-generated build ideas, then craft one in a CAD-inspired workspace — a 2D bubble-merge canvas or a real 3D viewer, your choice, with a recipe catalog and live red/green requirements always visible.
 
@@ -7,7 +7,7 @@
 - **Top bar** — camera Scan button, badges, Reset.
 - **Left panel** — your Inventory (add/scan materials, +/- quantities) and **Buildable Now**: ideas the AI thinks you can start with exactly what you've got.
 - **Center** — the viewer. Toggle **2D** (drag-to-merge bubble canvas) or **3D** (real Three.js scene: orbit the camera, drag parts around a staging area, drop new parts in from the palette, merge by proximity). Below it, the active recipe's red/green requirements and the **Build It** button.
-- **Right panel** — the full **Recipe Catalog**: every idea CUBE knows about, ready or not, so there's always something to work toward.
+- **Right panel** — the full **Recipe Catalog**: every idea MakeShift knows about, ready or not, so there's always something to work toward.
 
 Selecting a recipe (left, right, or the pinned offline example) sets it as the active blueprint: its missing sub-assemblies appear as **holograms** — dashed ghost chips in 2D, translucent wireframe shapes floating above the 3D staging area — that fill in solid as you craft the right parts.
 
@@ -42,7 +42,7 @@ The 3D viewer uses Three.js, downloaded once into `vendor/` during development �
 
 ## Camera scan
 
-Click **📷 Scan Material** → camera opens → **Capture** → the photo is sent to Claude's vision model, which guesses a material name you can edit before adding it to Inventory. If the camera is unavailable (permissions, no device, bad lighting) or vision identification fails, it falls back to a plain "type it in" form automatically — tested and confirmed working in this build.
+Click **Scan Material** → camera opens → **Capture** → the photo is sent to Claude's vision model, which guesses a material name you can edit before adding it to Inventory. If the camera is unavailable (permissions, no device, bad lighting) or vision identification fails, it falls back to a plain "type it in" form automatically — tested and confirmed working in this build.
 
 ## Judgment calls made without asking (flag if you want these changed)
 
