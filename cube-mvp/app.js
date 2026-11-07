@@ -369,7 +369,7 @@ function renderCatalog() {
   const list = document.getElementById("catalogList");
   list.innerHTML = "";
   const ideas = allIdeas();
-  document.getElementById("catalogCount").textContent = ideas.length ? `${ideas.length} recipes` : "";
+  document.getElementById("catalogCount").textContent = ideas.length ? `${ideas.length} recipe${ideas.length === 1 ? "" : "s"}` : "";
   document.getElementById("catalogEmptyNote").classList.toggle("visible", ideas.length === 0);
   ideas.forEach((idea) => list.appendChild(buildIdeaRow(idea, false)));
 }

@@ -12,6 +12,22 @@ Work breakdown for the CUBE demo (`cube-mvp/`) so teammates and agents can pick 
 
 ---
 
+## Status on `mvp-integration` (2026-11-07)
+
+| # | Task | Status |
+|---|------|--------|
+| 1 | Camera scan on a real device | Open. Needs a person with a webcam. |
+| 2 | Real part icons | Done (PR #6). |
+| 3 | 3D shapes per category | Done (PR #6). |
+| 4 | Recipe quality pass | Open. Needs an API key and a batch review. |
+| 5 | Smoke test | Done. `python3 cube-mvp/tests/smoke.py` passes 21/21. |
+| 6 | Hosted deploy | Config ready (`render.yaml`, `DEPLOYMENT.md`). Public URL not created yet. |
+| 7 | Pitch narrative | Draft done (`PITCH.md`). Rehearsal pending. |
+| 8 | Mobile + accessibility | Done. No horizontal overflow at 390px. |
+| - | Offline demo bug fixes | Done (PR #4). |
+
+---
+
 ## Open tasks
 
 ### 1. Test the camera scan on a real device
