@@ -46,7 +46,7 @@ The AI gets one optional 20-second beat after the build (see "Optional live AI b
 2. Point to AI Ideas filling in, each marked Ready or Need N more, and to Catalog matches below.
 3. If AI Ideas shows "AI is busy", don't wait: point to Catalog matches, which need no AI, and move on.
 
-**Pre-warm at the venue, 30 minutes before judging:** open adipurohit.com/makeshift on the presentation laptop, on the venue Wi-Fi, and enter exactly those three parts. Wait for the ideas. The Worker caches ideas per inventory for 6 hours in the nearest Cloudflare data center, so pre-warming at home may not help at the venue.
+**Pre-warm at the venue, 30 minutes before judging:** open adipurohit.com/makeshift on the presentation laptop, on the venue Wi-Fi, and enter exactly those three parts. Wait for the ideas, then open the top idea and press Build It once so its step guide is cached too. The Worker caches ideas and step guides for 6 hours in the nearest Cloudflare data center, so pre-warming at home may not help at the venue.
 
 ### Describe—the expansion
 

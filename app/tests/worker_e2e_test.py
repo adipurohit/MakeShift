@@ -309,8 +309,15 @@ def main():
         before = len(gemini_calls)
         status, data = post(port, "/makeshift/api/generate-steps", {"idea": {"title": "Overloaded"}})
         paths = [c["path"] for c in gemini_calls[before:]]
-        check(status == 200 and data.get("model") == "gemini-3.6-flash" and len(paths) == 2 and "gemini-3.6-flash" in paths[1],
+        # one call if an earlier failure already put the main model on cooldown, two otherwise
+        check(status == 200 and data.get("model") == "gemini-3.6-flash" and paths and "gemini-3.6-flash" in paths[-1],
               "when the main model is overloaded, the backup model answers", f"{status}, model {data.get('model')}")
+        gemini_mode["overloaded"] = set()
+        before = len(gemini_calls)
+        status, data = post(port, "/makeshift/api/generate-steps", {"idea": {"title": "Right after overload"}})
+        paths = [c["path"] for c in gemini_calls[before:]]
+        check(status == 200 and len(paths) == 1 and "gemini-3.6-flash" in paths[0],
+              "right after an overload, requests skip the main model and go straight to the backup", f"{paths}")
         gemini_mode["overloaded"] = {"gemini-3.8-flash", "gemini-3.6-flash"}
         status, data = post(port, "/makeshift/api/generate-steps", {"idea": {"title": "All overloaded"}})
         check(status == 503 and data.get("error") == "ai_busy" and "Catalog matches still work" in data.get("message", "")
