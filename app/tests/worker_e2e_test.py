@@ -266,6 +266,12 @@ def main():
         status, data = post(port, "/makeshift/api/generate-ideas", materials)
         check(status == 200 and data.get("cached") is True and len(gemini_calls) == before,
               "the same inventory again is served from cache without calling Gemini", f"{len(gemini_calls) - before} Gemini call(s)")
+        brief = {"idea": {"title": "Cache Me", "pitch": "Same brief twice."}}
+        first_status, _ = post(port, "/makeshift/api/generate-steps", brief)
+        before = len(gemini_calls)
+        status, data = post(port, "/makeshift/api/generate-steps", brief)
+        check(first_status == 200 and status == 200 and data.get("cached") is True and len(gemini_calls) == before,
+              "the same step-guide request again is served from cache without calling Gemini", f"{len(gemini_calls) - before} Gemini call(s)")
 
         gemini_429["left"] = 1
         before = len(gemini_calls)

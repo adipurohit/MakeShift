@@ -10,12 +10,16 @@ import {
 const API_RE = /\/api\/(generate-ideas|generate-steps|suggest-sources|identify-material)$/;
 
 // ---- idea cache (Cloudflare Cache API, per data center) ----
-async function ideasCacheKey(url, materials) {
-  const key = JSON.stringify([CONFIG_VERSION, materials.map((m) => [m.id, m.name, m.qty]).sort()]);
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(key));
+async function cacheKeyFor(url, kind, value) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify([CONFIG_VERSION, value])));
   const hex = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
-  return new Request(`${url.origin}/makeshift/__cache/ideas/${hex}`);
+  return new Request(`${url.origin}/makeshift/__cache/${kind}/${hex}`);
 }
+const ideasCacheKey = (url, materials) =>
+  cacheKeyFor(url, "ideas", materials.map((m) => [m.id, m.name, m.qty]).sort());
+// Step guides take ~1 minute from Gemini; the same brief gets the same guide for 6 hours, so a pre-warmed
+// demo build answers instantly.
+const stepsCacheKey = (url, brief) => cacheKeyFor(url, "steps", brief);
 async function cacheGet(key) {
   try {
     const hit = typeof caches !== "undefined" && (await caches.default.match(key));
@@ -111,8 +115,12 @@ export default {
         if (!brief || typeof brief !== "object" || Array.isArray(brief)) {
           return json(400, { error: "bad_request", message: "Missing idea details." });
         }
+        const stepsKey = await stepsCacheKey(url, brief);
+        const cachedSteps = await cacheGet(stepsKey);
+        if (cachedSteps) return json(200, { ...cachedSteps, cached: true });
         const steps = await generateSteps(aiEnv, brief);
         if (!steps.length) return json(502, { error: "no_steps", message: "Couldn't generate assembly steps. Try again." });
+        await cachePut(stepsKey, { assembly_steps: steps, model: model() });
         return json(200, { assembly_steps: steps, model: model() });
       }
       if (match[1] === "suggest-sources") {
