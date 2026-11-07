@@ -19,7 +19,7 @@ OUT = ROOT / "worker" / "ai-config.json"
 
 
 def build():
-    for key in ("GEMINI_TEXT_MODEL", "GEMINI_VISION_MODEL"):
+    for key in ("GEMINI_TEXT_MODEL", "GEMINI_VISION_MODEL", "GEMINI_THINKING_LEVEL"):
         os.environ.pop(key, None)
     sys.path.insert(0, str(ROOT / "cube-mvp"))
     import server  # noqa: E402
@@ -27,6 +27,7 @@ def build():
     return {
         "_note": "Generated from cube-mvp/server.py by scripts/export-ai-config.py. Do not edit by hand.",
         "text_model": server.TEXT_MODEL,
+        "thinking_level": server.THINKING_LEVEL,
         "vision_model": server.VISION_MODEL,
         "idea_system_prompt": server.IDEA_SYSTEM_PROMPT,
         "steps_system_prompt": server.STEPS_SYSTEM_PROMPT,
