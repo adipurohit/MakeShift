@@ -439,3 +439,9 @@ body {
   max-width: 90vw; text-align: center;
 }
 .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------- Part icons (parts.js, TASKS.md #2) ---------- */
+.item-icon, .chip-icon { color: #fff; }
+.item-icon svg { width: 20px; height: 20px; }
+.chip-icon svg { width: 16px; height: 16px; }
+.hologram-chip .chip-icon svg { width: 12px; height: 12px; }

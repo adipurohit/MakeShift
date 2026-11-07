@@ -8,6 +8,7 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "./vendor/OrbitControls.js";
+import { iconSvg, partGeometry } from "./parts.js";
 
 const STORAGE_KEY = "cube_mvp_state_v3";
 
@@ -196,7 +197,7 @@ function renderInventory() {
     card.className = "item-card";
     card.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div class="item-icon" style="background:${item.color}">${item.short}</div>
+        <div class="item-icon" style="background:${item.color}" title="${item.name}">${iconSvg(item)}</div>
         <button class="item-remove" data-id="${id}" title="Remove">✕</button>
       </div>
       <div class="item-name">${item.name}</div>
@@ -430,7 +431,7 @@ function renderHolograms(idea) {
       const have = inv[id] || 0;
       const chip = document.createElement("div");
       chip.className = "hologram-chip" + (have >= need ? " satisfied" : "");
-      chip.innerHTML = `<span class="chip-icon" style="background:${item.color}">${item.short}</span>${item.name} ${have}/${need}`;
+      chip.innerHTML = `<span class="chip-icon" style="background:${item.color}">${iconSvg(item)}</span>${item.name} ${have}/${need}`;
       row.appendChild(chip);
     });
   }
@@ -485,7 +486,7 @@ function renderPalette() {
     chip.className = "chip" + (available <= 0 ? " disabled" : "");
     chip.dataset.id = id;
     chip.innerHTML = `
-      <span class="chip-icon" style="background:${item.color}">${item.short}</span>
+      <span class="chip-icon" style="background:${item.color}">${iconSvg(item)}</span>
       <span>${item.name}</span>
       <span class="chip-qty">${available}</span>
     `;
@@ -567,7 +568,7 @@ function renderBench2D() {
     el.style.left = tok.x + "px";
     el.style.top = tok.y + "px";
     el.innerHTML = `
-      <span class="chip-icon" style="background:${item.color}">${item.short}</span>
+      <span class="chip-icon" style="background:${item.color}">${iconSvg(item)}</span>
       <span>${item.name}</span>
     `;
     attachTokenDrag2D(el, tok);
@@ -689,9 +690,14 @@ function makeTextSprite(text, color) {
   ctx2d.fillStyle = "rgba(0,0,0,0)";
   ctx2d.fillRect(0, 0, canvas.width, canvas.height);
   ctx2d.font = "bold 32px -apple-system, sans-serif";
-  ctx2d.fillStyle = color || "#1c1e1b";
   ctx2d.textAlign = "center";
   ctx2d.textBaseline = "middle";
+  // Light outline keeps dark labels readable over parts and the grid.
+  ctx2d.lineWidth = 6;
+  ctx2d.lineJoin = "round";
+  ctx2d.strokeStyle = "rgba(255,255,255,0.9)";
+  ctx2d.strokeText(text, canvas.width / 2, canvas.height / 2);
+  ctx2d.fillStyle = color || "#1c1e1b";
   ctx2d.fillText(text, canvas.width / 2, canvas.height / 2);
   const texture = new THREE.CanvasTexture(canvas);
   const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false });
@@ -700,10 +706,10 @@ function makeTextSprite(text, color) {
   return sprite;
 }
 
+// Shape per part category (motor, rail, board, ...) from parts.js. The geometry
+// is shared and cached per category, so callers must not dispose it.
 function meshGeometryFor(item) {
-  return item.raw
-    ? new THREE.BoxGeometry(0.7, 0.7, 0.7)
-    : new THREE.IcosahedronGeometry(0.5, 0);
+  return partGeometry(item);
 }
 
 function initThreeIfNeeded() {
@@ -784,7 +790,7 @@ function renderBench3D() {
       const mat = new THREE.MeshStandardMaterial({ color: item.color, roughness: 0.5, metalness: 0.1 });
       mesh = new THREE.Mesh(geo, mat);
       mesh.userData.uid = tok.uid;
-      const label = makeTextSprite(item.short, "#ffffff");
+      const label = makeTextSprite(item.name, "#1c1e1b");
       label.position.set(0, 0.7, 0);
       mesh.add(label);
       three.scene.add(mesh);
