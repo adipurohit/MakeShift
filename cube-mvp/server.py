@@ -38,7 +38,7 @@ load_dotenv(DIR / ".env")
 # ---- Groq (OpenAI-compatible chat API) ----
 # Override either model from .env without touching code; see https://console.groq.com/docs/models
 TEXT_MODEL = os.environ.get("GROQ_TEXT_MODEL", "openai/gpt-oss-120b")           # ideas + steps (needs JSON-schema support)
-VISION_MODEL = os.environ.get("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")  # camera scan (needs image input)
+VISION_MODEL = os.environ.get("GROQ_VISION_MODEL", "qwen/qwen3.8-27b")  # camera scan (needs image input)
 
 
 def groq_client():
@@ -57,7 +57,9 @@ def chat_json(system, user, name, schema, max_tokens, model=None):
     model = model or TEXT_MODEL
     extra = {}
     if model.startswith("openai/gpt-oss"):
-        extra["reasoning_effort"] = "low"  # reasoning tokens count against max_completion_tokens
+        extra["reasoning_effort"] = "low"   # reasoning tokens count against max_completion_tokens
+    elif model.startswith("qwen/"):
+        extra["reasoning_effort"] = "none"  # instruct mode: no thinking text mixed into the JSON
     return groq_client().chat.completions.create(
         model=model,
         max_completion_tokens=max_tokens,
@@ -70,7 +72,7 @@ def chat_json(system, user, name, schema, max_tokens, model=None):
     )
 
 MAX_BODY_BYTES = 8 * 1024 * 1024        # reject absurd request bodies
-MAX_IMAGE_B64_CHARS = 4 * 1024 * 1024   # Groq caps base64-encoded image requests at about 4 MB
+MAX_IMAGE_B64_CHARS = 4 * 1024 * 1024   # keep captures small; Groq has documented a ~4 MB cap for base64 images
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
 
 
