@@ -93,7 +93,7 @@ def start_server(with_ai):
     if not with_ai:
         # An empty value wins over cube-mvp/.env (load_dotenv skips keys already set),
         # so the server runs in no-key mode without touching your .env.
-        env["ANTHROPIC_API_KEY"] = ""
+        env["GROQ_API_KEY"] = ""
     proc = subprocess.Popen(
         [sys.executable, str(APP_DIR / "server.py")],
         cwd=str(APP_DIR), env=env,
