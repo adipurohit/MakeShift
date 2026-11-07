@@ -254,13 +254,24 @@ export class BusyError extends ApiError {}
 
 // Try the configured model; if Gemini reports it overloaded, rate limited or too slow, try the backup model once.
 // Google answered "503: model is experiencing high demand" during testing, which would sink a live demo.
+// After the main model fails, skip it for a while so each request doesn't first wait out a timeout.
+// Per Worker instance, best effort.
+const COOLDOWN_MS = 120000;
+const cooldownUntil = new Map(); // model -> timestamp
+export function resetModelCooldowns() { cooldownUntil.clear(); }
+
 async function chatJson(env, system, user, name, schema, maxTokens, model) {
   model = model || env.GEMINI_TEXT_MODEL || CFG.text_model;
   const fallback = env.GEMINI_FALLBACK_MODEL || CFG.fallback_model;
+  const canFallBack = fallback && fallback !== "off" && fallback !== model;
+  if (canFallBack && Date.now() < (cooldownUntil.get(model) || 0)) {
+    return await chatJsonOnce(env, system, user, name, schema, maxTokens, fallback);
+  }
   try {
     return await chatJsonOnce(env, system, user, name, schema, maxTokens, model);
   } catch (e) {
-    if (!(e instanceof BusyError) || !fallback || fallback === "off" || fallback === model) throw e;
+    if (!(e instanceof BusyError) || !canFallBack) throw e;
+    cooldownUntil.set(model, Date.now() + COOLDOWN_MS);
     return await chatJsonOnce(env, system, user, name, schema, maxTokens, fallback);
   }
 }
