@@ -135,6 +135,13 @@ def http_checks(with_ai):
         err = json.loads(body or b"{}").get("error")
         record(status == 503 and err == "no_api_key", "No-key mode: generate-ideas returns 503 no_api_key",
                f"got {status} {err}")
+        status, body = http("POST", "/api/suggest-sources", body={
+            "project": "Desk organizer",
+            "materials": [{"name": "Cardboard", "needed": 2, "have": 1, "missing": 1}],
+        })
+        data = json.loads(body or b"{}")
+        record(status == 200 and data.get("fallback") is True and data.get("suggestions") == [],
+               "No-key mode: source suggestions advertise the offline fallback", f"got {status} {data}")
         return
 
     status, body = http("POST", "/api/generate-ideas", body={"materials": materials})
@@ -191,6 +198,12 @@ def browser_checks(headed):
         page.locator("#catalogList .idea-row", has_text="Robot Arm").click()
         record(page.locator("#requirementsActive").is_visible(), "Selecting Robot Arm shows its requirements")
         record(page.locator("#buildBtn").is_disabled(), "Build button starts disabled")
+        record(page.locator("#hologramRow .final-hologram-card", has_text="Robot Arm").count() == 1,
+               "Hologram names and previews the final product")
+        page.click("#findSourcesBtn")
+        page.wait_for_selector("#sourceSuggestions:not([hidden]) .source-card")
+        record(page.locator("#sourceSuggestions .source-card").count() >= 6,
+               "Material sourcing guide works without an API key")
 
         # --- craft every sub-assembly by dragging chips onto the 2D bench ---
         bench = page.locator("#bench").bounding_box()
@@ -265,6 +278,8 @@ def browser_checks(headed):
         if page.locator("#introModal.visible").count():
             page.click("#introStartBtn")
         page.locator("#catalogList .idea-row", has_text="Robot Arm").click()
+        bench = page.locator("#bench").bounding_box()
+        target = (bench["x"] + bench["width"] / 2, bench["y"] + bench["height"] / 2)
         drag_chip("Stepper Motor")
         page.reload()
         page.wait_for_selector("#catalogList .idea-row")
@@ -283,6 +298,21 @@ def browser_checks(headed):
         size = page.evaluate("(() => { const c = document.getElementById('threeCanvas'); return [c.width, c.height]; })()")
         record(page.locator("#viewer3d").is_visible() and size[0] > 0 and size[1] > 0,
                "3D view opens with a sized canvas", f"canvas {size[0]}x{size[1]}")
+        record(page.locator("#threeCanvas").get_attribute("data-final-preview") == "Robot Arm",
+               "3D hologram includes a final-product model")
+        category_examples = [
+            "Jar Lantern", "Self-Watering Planter", "Cardboard Phone Stand", "Jar Lid Spice Rack",
+            "Bluetooth Speaker Revival", "Marble Run", "Camp Lantern", "Magnetic Parts Tray",
+            "Electromagnet",
+        ]
+        category_models_ok = True
+        for title in category_examples:
+            page.locator("#catalogList .idea-row", has_text=title).first.click()
+            page.wait_for_timeout(40)
+            if page.locator("#threeCanvas").get_attribute("data-final-preview") != title:
+                category_models_ok = False
+                break
+        record(category_models_ok, "3D final-product models render across all project categories")
 
         # --- phone width: no horizontal page scroll ---
         page.set_viewport_size({"width": 390, "height": 844})
