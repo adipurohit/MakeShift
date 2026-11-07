@@ -656,7 +656,7 @@ async function suggestMaterialSources() {
   btn.textContent = "Finding sources...";
   let result;
   try {
-    const res = await fetch("/api/suggest-sources", {
+    const res = await fetch("api/suggest-sources", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ project: idea.title, materials }),

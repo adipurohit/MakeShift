@@ -18,9 +18,11 @@ import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -57,11 +59,13 @@ class FakeGroq(BaseHTTPRequestHandler):
         elif name == "steps":
             content = {"assembly_steps": ["1. Glue the tube to the base.", "Step 2: Tie the pulley on.", "<i>Check</i> it spins freely."]}
         elif name == "sources":
+            brief = json.loads(body["messages"][1]["content"].split("\n", 1)[1])
             content = {"suggestions": [
                 {"material": "Motor", "places": ["<b>Repair shop</b>", "Repair shop", "E-waste center"],
                  "salvage_tip": "Check an old printer.", "safety_note": "Ask permission."},
                 {"material": "Invented part", "places": ["Nowhere"], "salvage_tip": "", "safety_note": ""},
-            ]}
+            ] + [{"material": m["name"], "places": ["Makerspace parts bin"], "salvage_tip": "Look in old printers.",
+                  "safety_note": "Ask first."} for m in brief["materials"] if m["name"] != "Motor"]}
         else:
             content = {"ideas": [
                 {"id": "Crank!", "title": "Hand Crank", "pitch": "A winch.", "uses_material_ids": [],
@@ -80,7 +84,10 @@ class FakeGroq(BaseHTTPRequestHandler):
 
 
 def start_worker(port, extra_vars):
-    cmd = WRANGLER.split() + ["dev", "--port", str(port), "--ip", "127.0.0.1", "--show-interactive-dev-session=false"]
+    # a fresh state folder per run, so rate-limit counters from an earlier run never leak in
+    state_dir = tempfile.mkdtemp(prefix="makeshift-wrangler-")
+    cmd = WRANGLER.split() + ["dev", "--port", str(port), "--ip", "127.0.0.1", "--show-interactive-dev-session=false",
+                              "--persist-to", state_dir]
     for k, v in extra_vars.items():
         cmd += ["--var", f"{k}:{v}"]
     proc = subprocess.Popen(cmd, cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
@@ -131,6 +138,8 @@ def main():
             page = ctx.new_page()
             errors = []
             page.on("pageerror", lambda e: errors.append(str(e)))
+            requested = []
+            page.on("request", lambda r: requested.append(urllib.parse.urlsplit(r.url).path) if r.url.startswith(base) else None)
             page.goto(f"{base}/makeshift/")
             page.evaluate("localStorage.setItem('makeshift_intro_seen', '1')")
             page.reload()
@@ -142,6 +151,16 @@ def main():
             name = page.input_value("#scanNameInput")
             check(name == "broken stepper motor", "scan in the browser returns the Worker's cleaned answer", name)
             check(not errors, "no page errors during scan", "; ".join(errors))
+
+            # sourcing from the real button, on the page served under /makeshift/
+            page.click("#closeScanBtn")
+            page.locator("#catalogList .idea-row", has_text="Robot Arm").first.click()
+            page.click("#findSourcesBtn")
+            page.wait_for_selector("#sourceSuggestions .source-mode-note", timeout=10000)
+            note = page.inner_text("#sourceSuggestions .source-mode-note")
+            check(note.startswith("AI suggestions"), "sourcing button on the hosted page gets AI suggestions, not the offline fallback", note)
+            outside = sorted({u for u in requested if not u.startswith("/makeshift/") and u != "/makeshift"})
+            check(not outside, "every request from the page stays under /makeshift/", ", ".join(outside))
             browser.close()
 
         scan_call = next((c for c in groq_calls if c["body"]["response_format"]["json_schema"]["name"] == "material"), None)
