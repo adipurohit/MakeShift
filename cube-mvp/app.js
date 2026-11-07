@@ -1526,6 +1526,18 @@ function initAssemblyModal() {
   document.getElementById("closeCompleteBtn").addEventListener("click", () => {
     document.getElementById("completeModal").classList.remove("visible");
     stopConfetti();
+    // Built-in recipes bring their own parts: restock them, so the recipe can be built again (or demoed
+    // twice) instead of sitting there all red with every part used up.
+    if (assemblyIdea && assemblyIdea.offline) {
+      state.offlineBoxes[assemblyIdea.id] = { inventory: {}, discovered: [], bench: [] };
+      resolveIdea(assemblyIdea);
+      saveState();
+      renderPalette();
+      renderBench();
+      renderRequirements();
+      renderCatalog();
+      toast(`Parts restocked. Build ${assemblyIdea.title} again, or pick another recipe.`);
+    }
   });
 }
 

@@ -270,6 +270,11 @@ def browser_checks(headed):
             demo_seconds = time.perf_counter() - demo_started
             record(demo_seconds < 210, "Automated demo path finishes under 3:30", f"{demo_seconds:.1f}s")
             page.click("#closeCompleteBtn")
+            page.wait_for_timeout(150)
+            record(palette_qty("Stepper Motor") == 4 and page.locator("#reqList .req-item.red").count() > 0
+                   and page.locator("#mergeGuide .merge-missing").count() == 0,
+                   "Finishing a built-in recipe restocks its parts for another build",
+                   f"Stepper Motor qty {palette_qty('Stepper Motor')}")
 
         # --- 2D bench state survives a reload, and new tokens still merge afterwards ---
         page.evaluate("localStorage.clear()")
