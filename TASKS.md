@@ -12,17 +12,17 @@ Work breakdown for the MakeShift demo (`cube-mvp/`) so teammates and agents can 
 
 ---
 
-## Status on `mvp-integration` (2026-11-07)
+## Status on `main` (2026-11-07)
 
 | # | Task | Status |
 |---|------|--------|
-| 1 | Camera scan on a real device | Code audited and fixed; passes in headless Chromium with a synthetic camera (`cube-mvp/tests/scan_browser.py`). **Still open:** one pass on a physical webcam using the checklist in `NOTES-tasks-1-and-4.md`. |
+| 1 | Camera scan on a real device | Code audited and fixed; passes 11 state tests and 10 real-browser checks with a synthetic camera. A visible-browser attempt on 2026-11-07 reached the correct “No camera found” fallback because this environment exposes no webcam. **Still open:** one pass on the presentation device's physical webcam. |
 | 2 | Real part icons | Done (PR #6). |
 | 3 | 3D shapes per category | Done (PR #6). |
-| 4 | Recipe quality pass | Prompts + validator tightened, harness built (`cube-mvp/tests/recipe_quality.py`). **Still open:** run it with an API key and review the report; before/after examples need that run. |
-| 5 | Smoke test | Done. `python3 cube-mvp/tests/smoke.py` passes 21/21. |
-| 6 | Hosted deploy | Config ready (`render.yaml`, `DEPLOYMENT.md`). Public URL not created yet. |
-| 7 | Pitch narrative | Draft done (`PITCH.md`). Rehearsal pending. |
+| 4 | Recipe quality pass | Prompts + validator tightened, ordered recipe graph now reaches step generation, 16 validator tests pass, and the 12-scenario harness works on Windows. **Still open:** run it with a real API key and review the report; before/after examples need that run. |
+| 5 | Smoke test | Done. `python3 cube-mvp/tests/smoke.py` passes 23/23 locally and against the hosted deployment. |
+| 6 | Hosted deploy | Public deployment live at [makeshift-cube-demo.onrender.com](https://makeshift-cube-demo.onrender.com), tracking `main`; hosted no-key smoke passes 23/23. **Still open for connected AI:** add a dedicated capped `ANTHROPIC_API_KEY` in Render. |
+| 7 | Pitch narrative | Draft done (`PITCH.md`); the complete deterministic UI path passes its automated rehearsal under 3:30. **Still open:** presenters rehearse the spoken delivery on the presentation laptop. |
 | 8 | Mobile + accessibility | Done. No horizontal overflow at 390px. |
 | - | Offline demo bug fixes | Done (PR #4). |
 | - | Offline recipe pack | Done. 100 recipes in `cube-mvp/recipes/pack.json`, all verified by `cube-mvp/tests/pack_test.py`. |

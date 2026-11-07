@@ -11,6 +11,7 @@ Usage (from the repo root or cube-mvp/):
     python3 cube-mvp/tests/smoke.py            # offline mode, key forced off
     python3 cube-mvp/tests/smoke.py --with-ai  # also call /api/generate-ideas with your real key
     python3 cube-mvp/tests/smoke.py --headed   # watch the browser
+    python3 cube-mvp/tests/smoke.py --base-url https://example.onrender.com  # test a deployment
 
 Needs: pip install playwright && python3 -m playwright install chromium
 (If Playwright is missing, the HTTP checks still run and browser checks are skipped.)
@@ -31,7 +32,7 @@ import urllib.request
 from pathlib import Path
 
 APP_DIR = Path(__file__).resolve().parent.parent
-PORT = 8743
+PORT = int(os.environ.get("CUBE_TEST_PORT", "8743"))
 BASE = f"http://localhost:{PORT}"
 
 # Offline Robot Arm recipe graph, in crafting order: (a, b) -> result name.
@@ -90,6 +91,7 @@ def start_server(with_ai):
         print(f"Port {PORT} is already in use. Stop the other MakeShift server first.", file=sys.stderr)
         sys.exit(1)
     env = os.environ.copy()
+    env["PORT"] = str(PORT)
     if not with_ai:
         # An empty value wins over cube-mvp/.env (load_dotenv skips keys already set),
         # so the server runs in no-key mode without touching your .env.
@@ -143,7 +145,13 @@ def http_checks(with_ai):
     record(len(ideas) > 0, "generate-ideas returns at least one validated idea", f"{len(ideas)} ideas")
     if ideas:
         idea = ideas[0]
-        brief = {"title": idea["title"], "pitch": idea["pitch"], "sub_assemblies": [], "final_parts": []}
+        brief = {
+            "title": idea["title"], "pitch": idea["pitch"],
+            "recipe_graph": [{"a": r["a"], "b": r["b"], "result": r["result_name"]}
+                             for r in idea["recipes"]],
+            "sub_assemblies": [r["result_name"] for r in idea["recipes"]],
+            "final_parts": [f"{f['id']} x{f['qty']}" for f in idea["final_requires"]],
+        }
         status, body = http("POST", "/api/generate-steps", body={"idea": brief})
         steps = json.loads(body or b"{}").get("assembly_steps", [])
         record(status == 200 and len(steps) >= 4, "generate-steps returns 4+ steps", f"got {status}, {len(steps)} steps")
@@ -175,8 +183,11 @@ def browser_checks(headed):
         if page.locator("#introModal.visible").count():
             page.click("#introStartBtn")  # dismiss the how-it-works screen
         record(True, "Page loads and renders the recipe catalog")
+        catalog_rows = page.locator("#catalogList .idea-row").count()
+        record(catalog_rows >= 101, "Offline recipe pack loads", f"{catalog_rows} catalog rows")
 
         # --- select the offline Robot Arm ---
+        demo_started = time.perf_counter()
         page.locator("#catalogList .idea-row", has_text="Robot Arm").click()
         record(page.locator("#requirementsActive").is_visible(), "Selecting Robot Arm shows its requirements")
         record(page.locator("#buildBtn").is_disabled(), "Build button starts disabled")
@@ -243,6 +254,8 @@ def browser_checks(headed):
             page.wait_for_selector("#completeModal.visible")
             record(page.locator("#badgeRow .badge-pill", has_text="Robot Arm").count() == 1,
                    "Completion awards a Robot Arm badge")
+            demo_seconds = time.perf_counter() - demo_started
+            record(demo_seconds < 210, "Automated demo path finishes under 3:30", f"{demo_seconds:.1f}s")
             page.click("#closeCompleteBtn")
 
         # --- 2D bench state survives a reload, and new tokens still merge afterwards ---
@@ -285,21 +298,26 @@ def browser_checks(headed):
 
 
 def main():
+    global BASE
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--with-ai", action="store_true", help="use the real API key and exercise AI endpoints")
     ap.add_argument("--headed", action="store_true", help="show the browser window")
+    ap.add_argument("--base-url", help="test an already-running local or hosted deployment instead of starting server.py")
     args = ap.parse_args()
+    if args.base_url:
+        BASE = args.base_url.rstrip("/")
 
-    server = start_server(args.with_ai)
+    server = None if args.base_url else start_server(args.with_ai)
     try:
         http_checks(args.with_ai)
         browser_checks(args.headed)
     finally:
-        server.terminate()
-        try:
-            server.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            server.kill()
+        if server:
+            server.terminate()
+            try:
+                server.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                server.kill()
 
     fails = [r for r in results if r[0] == "FAIL"]
     warns = [r for r in results if r[0] == "WARN"]
