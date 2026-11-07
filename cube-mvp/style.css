@@ -295,6 +295,10 @@ body {
   color: #fff; font-size: 10px; font-weight: 800; flex-shrink: 0;
 }
 .chip-qty { color: var(--text-dim); font-weight: 700; margin-left: 2px; }
+/* Part icons (parts.js, TASKS.md #2) */
+.item-icon, .chip-icon { color: #fff; }
+.item-icon svg { width: 20px; height: 20px; }
+.chip-icon svg { width: 16px; height: 16px; }
 
 .bench {
   position: absolute;
@@ -332,6 +336,7 @@ body {
 }
 .hologram-chip.satisfied { border-style: solid; background: var(--green-bg); color: var(--green); }
 .hologram-chip .chip-icon { width: 18px; height: 18px; font-size: 8px; }
+.hologram-chip .chip-icon svg { width: 12px; height: 12px; }
 .bench-token.shake { animation: shake .3s; }
 @keyframes shake {
   0%,100% { transform: translateX(0); }
@@ -439,9 +444,3 @@ body {
   max-width: 90vw; text-align: center;
 }
 .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-/* ---------- Part icons (parts.js, TASKS.md #2) ---------- */
-.item-icon, .chip-icon { color: #fff; }
-.item-icon svg { width: 20px; height: 20px; }
-.chip-icon svg { width: 16px; height: 16px; }
-.hologram-chip .chip-icon svg { width: 12px; height: 12px; }
