@@ -1,7 +1,7 @@
 // Cloudflare Worker for MakeShift at adipurohit.com/makeshift.
 // Serves the static app from ./dist, and answers the four AI endpoints the Python server
 // answers locally: POST .../api/generate-ideas, generate-steps, suggest-sources, identify-material.
-// The Groq key lives in a Worker secret named GROQ_API_KEY, never in the repo.
+// The Gemini key lives in a Worker secret named GEMINI_API_KEY, never in the repo.
 import {
   ApiError, BadImage, MAX_BODY_BYTES,
   cleanMaterials, cleanSourceMaterials, generateIdeas, generateSteps, generateSourceSuggestions, identifyMaterial,
@@ -28,7 +28,7 @@ export default {
       return json(403, { error: "forbidden", message: "This endpoint only serves the MakeShift app." });
     }
 
-    // Per-visitor rate limit, so a public page can't burn through the Groq key.
+    // Per-visitor rate limit, so a public page can't burn through the Gemini key.
     if (env.AI_LIMIT) {
       const who = request.headers.get("CF-Connecting-IP") || "unknown";
       const { success } = await env.AI_LIMIT.limit({ key: who });
@@ -49,11 +49,11 @@ export default {
       return json(400, { error: "bad_request", message: "Expected a JSON object." });
     }
 
-    if (!env.GROQ_API_KEY) {
+    if (!env.GEMINI_API_KEY) {
       if (match[1] === "suggest-sources") return json(200, { suggestions: [], fallback: true });
       return json(503, {
         error: "no_api_key",
-        message: "AI features are off: no GROQ_API_KEY secret on this site. Catalog recipes still work.",
+        message: "AI features are off: no GEMINI_API_KEY secret on this site. Catalog recipes still work.",
       });
     }
 

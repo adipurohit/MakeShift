@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
 MakeShift backend: serves the static demo files and exposes the AI endpoints, so the
-Groq API key never reaches the browser.
+Gemini API key never reaches the browser.
 
   POST /api/generate-ideas    materials -> a catalog of buildable project ideas (no steps yet)
   POST /api/generate-steps    one chosen idea -> assembly steps, generated on demand
   POST /api/suggest-sources   needed materials -> safe places to look for them
   POST /api/identify-material photo -> a guessed material name (camera scan)
 
-Run: python3 server.py   (reads GROQ_API_KEY from the environment or a local .env)
+Run: python3 server.py   (reads GEMINI_API_KEY from the environment or a local .env)
 """
 import base64
 import json
@@ -36,67 +36,60 @@ def load_dotenv(path):
 
 load_dotenv(DIR / ".env")
 
-# ---- Groq (OpenAI-compatible chat API) ----
-# Override either model from .env without touching code; see https://console.groq.com/docs/models
-TEXT_MODEL = os.environ.get("GROQ_TEXT_MODEL", "openai/gpt-oss-120b")           # ideas + steps (needs JSON-schema support)
-VISION_MODEL = os.environ.get("GROQ_VISION_MODEL", "qwen/qwen3.8-27b")  # camera scan (needs image input)
+# ---- Gemini (Google AI Studio) ----
+# Override either model from .env without touching code. Keep model IDs current:
+# https://ai.google.dev/gemini-api/docs/models
+TEXT_MODEL = os.environ.get("GEMINI_TEXT_MODEL", "gemini-3.8-flash")
+VISION_MODEL = os.environ.get("GEMINI_VISION_MODEL", TEXT_MODEL)
 
 
-def groq_client():
-    from groq import Groq  # imported lazily so the offline demo works without the package
-
-    return Groq()  # reads GROQ_API_KEY from the environment
-
-
-def json_format(name, schema):
-    # strict stays at Groq's default (best effort): validate_and_clean() enforces the real rules server-side.
-    return {"type": "json_schema", "json_schema": {"name": name, "schema": api_schema(schema)}}
+def gemini_client():
+    from google import genai  # imported lazily so offline mode works without the SDK
+    # Pass the key explicitly; this avoids GOOGLE_API_KEY taking precedence unexpectedly.
+    return genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 
 def chat_json(system, user, name, schema, max_tokens, model=None):
-    """One Groq chat call that must return JSON matching `schema`. `user` is a string or a list of content parts."""
-    model = model or TEXT_MODEL
-    extra = {}
-    if model.startswith("openai/gpt-oss"):
-        extra["reasoning_effort"] = "low"   # reasoning tokens count against max_completion_tokens
-    elif model.startswith("qwen/"):
-        extra["reasoning_effort"] = "none"  # instruct mode: no thinking text mixed into the JSON
-    return groq_client().chat.completions.create(
-        model=model,
-        max_completion_tokens=max_tokens,
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
-        response_format=json_format(name, schema),
-        **extra,
+    """Call Gemini's generateContent API and request a schema-constrained JSON response."""
+    from google.genai import types
+
+    contents = user
+    if isinstance(user, list):
+        # Convert our compact internal image/text parts into the current google-genai Part API.
+        parts = []
+        for part in user:
+            if part.get("type") == "text":
+                parts.append(types.Part.from_text(text=part["text"]))
+            elif part.get("type") == "image":
+                parts.append(types.Part.from_bytes(
+                    data=base64.b64decode(part["data"]), mime_type=part["mime_type"]
+                ))
+        contents = [types.Content(role="user", parts=parts)]
+
+    response = gemini_client().models.generate_content(
+        model=model or TEXT_MODEL,
+        contents=contents,
+        config=types.GenerateContentConfig(
+            system_instruction=system,
+            max_output_tokens=max_tokens,
+            response_mime_type="application/json",
+            response_json_schema=api_schema(schema),
+        ),
     )
+    return response
 
 MAX_BODY_BYTES = 8 * 1024 * 1024        # reject absurd request bodies
-MAX_IMAGE_B64_CHARS = 4 * 1024 * 1024   # keep captures small; Groq has documented a ~4 MB cap for base64 images
-ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+MAX_IMAGE_B64_CHARS = 6 * 1024 * 1024   # keep camera captures comfortably below request limits
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"}
 
 
 def api_schema(schema):
-    """Copy of a JSON schema that structured outputs will accept.
-
-    Decoding-level enforcement only supports minItems of 0 or 1 and no maxItems, so those bounds are
-    moved into the field description (the model still sees them) and are enforced server-side in
-    validate_and_clean() instead.
-    """
+    """Return a JSON-schema copy for Gemini structured output."""
     if isinstance(schema, list):
-        return [api_schema(x) for x in schema]
-    if not isinstance(schema, dict):
-        return schema
-    out = {k: api_schema(v) for k, v in schema.items()}
-    hints = []
-    if out.get("minItems", 0) > 1:
-        hints.append(f"at least {out.pop('minItems')} items")
-    if "maxItems" in out:
-        hints.append(f"at most {out.pop('maxItems')} items")
-    if hints:
-        out["description"] = (out.get("description", "") + " Provide " + " and ".join(hints) + ".").strip()
-    return out
+        return [api_schema(item) for item in schema]
+    if isinstance(schema, dict):
+        return {key: api_schema(value) for key, value in schema.items()}
+    return schema
 
 
 _TAG_RE = re.compile(r"[<>\x00-\x08\x0b\x0c\x0e-\x1f]")
@@ -259,11 +252,11 @@ def generate_ideas(materials):
 
 
 def first_text(response):
-    """Text of the first choice, with a readable error for truncated / empty responses."""
-    choice = response.choices[0]
-    if choice.finish_reason == "length":
+    """Text of Gemini's response, with a readable error for truncated / empty responses."""
+    candidates = getattr(response, "candidates", None) or []
+    if candidates and str(getattr(candidates[0], "finish_reason", "")).upper().endswith("MAX_TOKENS"):
         raise RuntimeError("The model ran out of room before finishing. Try again.")
-    text = (choice.message.content or "").strip()
+    text = (getattr(response, "text", None) or "").strip()
     if not text:
         raise RuntimeError("The model returned an empty response. Try again.")
     return text
@@ -630,15 +623,15 @@ def identify_material(data_url):
     media_type = m.group("mime").lower()
     image_data = m.group("data")
     if media_type not in ALLOWED_IMAGE_TYPES:
-        raise ValueError("Unsupported image type. Use JPEG, PNG, GIF or WebP.")
+        raise ValueError("Unsupported image type. Use JPEG, PNG, WebP, HEIC or HEIF.")
     if len(image_data) > MAX_IMAGE_B64_CHARS:
         raise ValueError("That photo is too large. Try again with a smaller capture.")
 
     response = chat_json(
         IDENTIFY_SYSTEM_PROMPT,
         [
-            {"type": "image_url", "image_url": {"url": f"data:{media_type};base64,{image_data}"}},
             {"type": "text", "text": "What is this?"},
+            {"type": "image", "data": image_data, "mime_type": media_type},
         ],
         "material", IDENTIFY_SCHEMA, 512, model=VISION_MODEL,
     )
@@ -686,7 +679,7 @@ class Handler(SimpleHTTPRequestHandler):
             self._send_json(400, {"error": "bad_request", "message": "Expected a JSON object."})
             return
 
-        if not os.environ.get("GROQ_API_KEY"):
+        if not os.environ.get("GEMINI_API_KEY"):
             # Sourcing has a useful client-side category fallback. Return a
             # quiet capability signal instead of logging a failed resource in
             # the browser console; the other routes still require AI.
@@ -695,7 +688,7 @@ class Handler(SimpleHTTPRequestHandler):
                 return
             self._send_json(503, {
                 "error": "no_api_key",
-                "message": "No GROQ_API_KEY configured on the server. Set it in cube-mvp/.env and restart the server, or use the offline example idea instead.",
+                "message": "No GEMINI_API_KEY configured on the server. Set it in cube-mvp/.env and restart the server, or use the offline example idea instead.",
             })
             return
 
@@ -774,19 +767,26 @@ class Handler(SimpleHTTPRequestHandler):
         self._send_json(200, result)
 
     def _friendly_error(self, e):
-        try:
-            import groq
-        except ImportError:
-            return "The 'groq' Python package isn't installed. Run: pip install groq  (then restart the server)."
-        if isinstance(e, groq.AuthenticationError):
-            return "The API key was rejected. Check GROQ_API_KEY in cube-mvp/.env."
-        if isinstance(e, groq.RateLimitError):
-            return "Rate limited by the API. Wait a moment and try again."
-        if isinstance(e, groq.APIConnectionError):
-            return "Couldn't reach the Groq API. Check your internet connection."
-        if isinstance(e, groq.APIStatusError):
-            return f"API error ({e.status_code}): {e.message}"
-        return f"Unexpected error: {e}"
+        if isinstance(e, ImportError):
+            return "The 'google-genai' Python package isn't installed. Run: pip install -r requirements.txt (then restart the server)."
+        code = getattr(e, "code", None) or getattr(e, "status_code", None)
+        detail = str(getattr(e, "message", None) or e)
+        if callable(code):
+            try:
+                code = code()
+            except Exception:
+                code = None
+        if code == 429:
+            return "Rate limited by the Gemini API. Wait a moment and try again."
+        if code in (401, 403) or (code == 400 and "api key" in detail.lower()):
+            return "The API key was rejected. Check GEMINI_API_KEY in cube-mvp/.env."
+        if code == 404:
+            return f"Gemini model not found ({detail}). Set GEMINI_TEXT_MODEL or GEMINI_VISION_MODEL to a current model."
+        if isinstance(code, int):
+            return f"Gemini API error ({code}): {detail}"
+        if any(word in type(e).__name__.lower() for word in ("connect", "timeout", "network")):
+            return "Couldn't reach the Gemini API. Check your internet connection."
+        return f"Gemini request failed: {detail}"
 
     def _send_json(self, status, payload):
         body = json.dumps(payload).encode("utf-8")
@@ -798,6 +798,6 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    has_key = bool(os.environ.get("GROQ_API_KEY"))
-    print(f"MakeShift server on http://localhost:{PORT}  (GROQ_API_KEY {'found' if has_key else 'NOT found — AI features will be unavailable, offline example still works'})")
+    has_key = bool(os.environ.get("GEMINI_API_KEY"))
+    print(f"MakeShift server on http://localhost:{PORT}  (GEMINI_API_KEY {'found' if has_key else 'NOT found — AI features will be unavailable, offline example still works'})")
     ThreadingHTTPServer(("", PORT), Handler).serve_forever()

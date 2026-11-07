@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline unit tests for the AI-output guards in server.py (no API key, no network, no groq package).
+"""Offline unit tests for the AI-output guards in server.py (no API key, no network, no google-genai package).
 
     python3 cube-mvp/tests/test_recipes.py
 """
@@ -107,12 +107,11 @@ class ValidatorTests(unittest.TestCase):
 
 
 class HelperTests(unittest.TestCase):
-    def test_api_schema_strips_unsupported_bounds(self):
+    def test_api_schema_preserves_gemini_json_schema_bounds(self):
         out = server.api_schema(server.IDEA_SCHEMA)
         arr = out["properties"]["ideas"]
-        self.assertNotIn("minItems", arr)
-        self.assertNotIn("maxItems", arr)
-        self.assertIn(f"at least {server.IDEA_SCHEMA['properties']['ideas']['minItems']}", arr["description"])
+        self.assertEqual(arr["minItems"], 10)
+        self.assertEqual(arr["maxItems"], 14)
         self.assertIn("minItems", server.IDEA_SCHEMA["properties"]["ideas"])  # original untouched
 
     def test_steps_numbering_and_markup_removed(self):

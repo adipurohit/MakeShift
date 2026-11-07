@@ -10,7 +10,7 @@ MakeShift treats broken gear and scrap as a parts inventory. Pick a build, drag 
 - **2D and 3D build views.** Merge parts on a 2D bench, or switch to 3D to see each part as a shape.
 - **Assembly guide** with checkable steps, a progress photo, a completion badge, and a suggested next upgrade.
 - **How-it-works screen** on first visit, reopened any time from the top bar.
-- **AI features** (need a Groq API key): scan a material with your camera, and get 10 or more build ideas from your own inventory, refreshed as you change it.
+- **AI features** (need a Gemini API key): scan a material with your camera, and get 10 or more build ideas from your own inventory, refreshed as you change it.
 
 ## Run it
 
@@ -24,7 +24,7 @@ python3 server.py
 
 Open http://localhost:8743 in Chrome. Press Ctrl+C to stop the server.
 
-For the AI features, copy `cube-mvp/.env.example` to `cube-mvp/.env` and add your Groq API key. Never commit that file.
+For the AI features, copy `cube-mvp/.env.example` to `cube-mvp/.env` and add your Gemini API key. Never commit that file.
 
 To host MakeShift at adipurohit.com/makeshift on Cloudflare and turn on the AI features there, follow [DEPLOYMENT.md](DEPLOYMENT.md).
 
@@ -54,7 +54,7 @@ python3 cube-mvp/tests/pack_test.py <recipe_id>
 | `python3 cube-mvp/tests/bench_count_test.py` | Parts on the bench count toward the checklist, including as-is parts |
 | `python3 cube-mvp/tests/test_recipes.py` | AI recipe validation rules |
 | `python3 cube-mvp/tests/worker_parity_test.py` | Cloudflare Worker treats AI output exactly like `server.py` |
-| `python3 cube-mvp/tests/worker_e2e_test.py` | Cloudflare Worker end to end with a stand-in Groq (needs `wrangler`) |
+| `python3 cube-mvp/tests/worker_e2e_test.py` | Cloudflare Worker end to end with a stand-in Gemini (needs `wrangler`) |
 | `python3 cube-mvp/tests/scan_browser.py` | Camera scan flow with a fake camera |
 | `cd cube-mvp && npm i --no-save jsdom && node tests/scan_logic.test.js` | Camera scan permission and timeout paths |
 | `python3 cube-mvp/tests/recipe_quality.py --stub` | Recipe quality harness (drop `--stub` to run against the API) |

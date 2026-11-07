@@ -52,7 +52,7 @@ def main():
     from playwright.sync_api import sync_playwright
 
     server = subprocess.Popen([sys.executable, "server.py"], cwd=APP_DIR,
-                              env={"PATH": "/usr/bin:/bin", "GROQ_API_KEY": "stub"},
+                              env={"PATH": "/usr/bin:/bin", "GEMINI_API_KEY": "stub"},
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         for _ in range(50):

@@ -200,42 +200,55 @@ export function cleanMaterials(materials) {
     .filter((m) => m.id && m.name && m.qty > 0); // only parts the user has
 }
 
-// ---------------- Groq calls ----------------
+// ---------------- Gemini calls ----------------
 export class ApiError extends Error {}
 
 async function chatJson(env, system, user, name, schema, maxTokens, model) {
-  model = model || env.GROQ_TEXT_MODEL || CFG.text_model;
+  model = model || env.GEMINI_TEXT_MODEL || CFG.text_model;
+  const rawBase = env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta";
+  const base = rawBase.endsWith("/") ? rawBase.slice(0, -1) : rawBase;
+  const url = `${base}/models/${encodeURIComponent(model)}:generateContent`;
+  const contents = [{
+    role: "user",
+    parts: Array.isArray(user)
+      ? user.map((part) => part.type === "image"
+        ? { inlineData: { mimeType: part.mime_type, data: part.data } }
+        : { text: part.text })
+      : [{ text: user }],
+  }];
   const body = {
-    model,
-    max_completion_tokens: maxTokens,
-    messages: [{ role: "system", content: system }, { role: "user", content: user }],
-    response_format: { type: "json_schema", json_schema: { name, schema } },
+    systemInstruction: { parts: [{ text: system }] },
+    contents,
+    generationConfig: {
+      maxOutputTokens: maxTokens,
+      responseMimeType: "application/json",
+      responseSchema: schema,
+    },
   };
-  if (model.startsWith("openai/gpt-oss")) body.reasoning_effort = "low";
-  else if (model.startsWith("qwen/")) body.reasoning_effort = "none";
 
   let res;
   try {
-    res = await fetch((env.GROQ_BASE_URL || "https://api.groq.com/openai/v1") + "/chat/completions", {
+    res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.GROQ_API_KEY}` },
+      headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
       body: JSON.stringify(body),
     });
   } catch (e) {
-    throw new ApiError("Couldn't reach the Groq API. Try again in a moment.");
+    throw new ApiError("Couldn't reach the Gemini API. Try again in a moment.");
   }
   const data = await res.json().catch(() => ({}));
-  if (res.status === 401) throw new ApiError("The API key was rejected. Check the GROQ_API_KEY secret in the Cloudflare Worker settings.");
-  if (res.status === 429) throw new ApiError("Rate limited by the API. Wait a moment and try again.");
-  if (!res.ok) throw new ApiError(`API error (${res.status}): ${(data.error && data.error.message) || res.statusText}`);
+  const detail = data.error?.message || res.statusText;
+  if (res.status === 401 || res.status === 403) throw new ApiError("The API key was rejected. Check the GEMINI_API_KEY secret in the Cloudflare Worker settings.");
+  if (res.status === 429) throw new ApiError("Rate limited by the Gemini API. Wait a moment and try again.");
+  if (!res.ok) throw new ApiError(`Gemini API error (${res.status}): ${detail}`);
 
-  const choice = (data.choices || [])[0] || {};
-  if (choice.finish_reason === "length") throw new ApiError("The model ran out of room before finishing. Try again.");
-  const text = ((choice.message && choice.message.content) || "").trim();
+  const candidate = data.candidates?.[0];
+  if (candidate?.finishReason === "MAX_TOKENS") throw new ApiError("The model ran out of room before finishing. Try again.");
+  const text = (candidate?.content?.parts || []).map((part) => part.text || "").join("").trim();
   if (!text) throw new ApiError("The model returned an empty response. Try again.");
   try {
     return JSON.parse(text);
-  } catch (e) {
+  } catch {
     throw new ApiError("Unexpected error: the model's reply was not valid JSON.");
   }
 }
@@ -282,13 +295,13 @@ export async function identifyMaterial(env, dataUrl) {
   if (!m) throw new BadImage("Image must be a base64 data URL.");
   const mediaType = m[1].toLowerCase();
   const imageData = m[2];
-  if (!L.allowed_image_types.includes(mediaType)) throw new BadImage("Unsupported image type. Use JPEG, PNG, GIF or WebP.");
+  if (!L.allowed_image_types.includes(mediaType)) throw new BadImage("Unsupported image type. Use JPEG, PNG, WebP, HEIC or HEIF.");
   if (imageData.length > L.max_image_b64_chars) throw new BadImage("That photo is too large. Try again with a smaller capture.");
 
   const data = await chatJson(env, CFG.identify_system_prompt, [
-    { type: "image_url", image_url: { url: `data:${mediaType};base64,${imageData}` } },
     { type: "text", text: "What is this?" },
-  ], "material", CFG.identify_schema, 512, env.GROQ_VISION_MODEL || CFG.vision_model);
+    { type: "image", data: imageData, mime_type: mediaType },
+  ], "material", CFG.identify_schema, 512, env.GEMINI_VISION_MODEL || CFG.vision_model);
   const name = cleanText(isObj(data) ? data.name : "", 60) || "unclear item";
   const confidence = ["low", "medium", "high"].includes(data && data.confidence) ? data.confidence : "low";
   return { name, confidence };

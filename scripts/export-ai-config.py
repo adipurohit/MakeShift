@@ -19,17 +19,15 @@ OUT = ROOT / "worker" / "ai-config.json"
 
 
 def build():
-    for key in ("GROQ_TEXT_MODEL", "GROQ_VISION_MODEL"):
+    for key in ("GEMINI_TEXT_MODEL", "GEMINI_VISION_MODEL"):
         os.environ.pop(key, None)
     sys.path.insert(0, str(ROOT / "cube-mvp"))
     import server  # noqa: E402
 
-    src = (ROOT / "cube-mvp" / "server.py").read_text()
-    default = lambda var: re.search(rf'"{var}",\s*"([^"]+)"', src).group(1)
     return {
         "_note": "Generated from cube-mvp/server.py by scripts/export-ai-config.py. Do not edit by hand.",
-        "text_model": default("GROQ_TEXT_MODEL"),
-        "vision_model": default("GROQ_VISION_MODEL"),
+        "text_model": server.TEXT_MODEL,
+        "vision_model": server.VISION_MODEL,
         "idea_system_prompt": server.IDEA_SYSTEM_PROMPT,
         "steps_system_prompt": server.STEPS_SYSTEM_PROMPT,
         "sources_system_prompt": server.SOURCES_SYSTEM_PROMPT,
