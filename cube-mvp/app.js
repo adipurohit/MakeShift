@@ -1173,48 +1173,125 @@ function stopConfetti() {
 
 /* ================= CAMERA SCAN ================= */
 let scanStream = null;
+let scanSession = 0;        // bumped on every open/close/capture so late async results can't touch a newer scan
+let scanAbort = null;
+
+const SCAN_MAX_SIDE = 1024; // longest edge sent to the server; plenty for naming an object, keeps uploads small
+const SCAN_TIMEOUT_MS = 45000;
+
+function scanStatus(text) { document.getElementById("scanStatus").textContent = text; }
+
+function cameraErrorMessage(e) {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    return window.isSecureContext === false
+      ? "Camera needs a secure page — open this on http://localhost:8743 (not a network IP), or use https"
+      : "This browser can't access a camera";
+  }
+  switch (e && e.name) {
+    case "NotAllowedError": case "SecurityError": return "Camera permission was denied — allow it in the address bar, or type the item in";
+    case "NotFoundError": case "DevicesNotFoundError": return "No camera found";
+    case "NotReadableError": case "TrackStartError": return "The camera is in use by another app";
+    default: return "Camera unavailable" + (e && e.message ? " (" + e.message + ")" : "");
+  }
+}
+
+async function startCamera() {
+  if (scanStream) return true;                       // already live (Retake, or re-opening)
+  const session = scanSession;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    scanStatus(cameraErrorMessage() + " — type the material in instead.");
+    return false;
+  }
+  let stream;
+  try {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+    } catch (e) {
+      if (e && e.name === "OverconstrainedError") stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      else throw e;
+    }
+  } catch (e) {
+    if (session === scanSession) scanStatus(cameraErrorMessage(e) + " — type the material in instead.");
+    return false;
+  }
+  if (session !== scanSession) {                     // modal was closed while the permission prompt was open
+    stream.getTracks().forEach((t) => t.stop());
+    return false;
+  }
+  scanStream = stream;
+  const video = document.getElementById("scanVideo");
+  video.srcObject = stream;
+  video.play().catch(() => {});                      // some browsers ignore autoplay on a re-used element
+  scanStatus("Point your camera at the item and capture.");
+  return true;
+}
 
 function initScan() {
   document.getElementById("scanBtn").addEventListener("click", openScanModal);
   document.getElementById("closeScanBtn").addEventListener("click", closeScanModal);
   document.getElementById("captureBtn").addEventListener("click", captureScan);
   document.getElementById("scanManualBtn").addEventListener("click", () => showScanStep("manual"));
-  document.getElementById("manualBackBtn").addEventListener("click", () => showScanStep("camera"));
-  document.getElementById("scanRetryBtn").addEventListener("click", () => showScanStep("camera"));
-  document.getElementById("scanConfirmBtn").addEventListener("click", () => {
+  document.getElementById("manualBackBtn").addEventListener("click", () => retryCamera());
+  document.getElementById("scanRetryBtn").addEventListener("click", () => retryCamera());
+
+  const confirmScan = () => {
     const name = document.getElementById("scanNameInput").value.trim();
     const q = Math.max(1, parseInt(document.getElementById("scanQtyInput").value, 10) || 1);
     if (!name) return;
     addMaterial(name, q);
     toast(`📸 Added "${name}" to inventory`);
     closeScanModal();
-  });
-  document.getElementById("manualConfirmBtn").addEventListener("click", () => {
+  };
+  const confirmManual = () => {
     const name = document.getElementById("manualNameInput").value.trim();
     const q = Math.max(1, parseInt(document.getElementById("manualQtyInput").value, 10) || 1);
     if (!name) return;
     addMaterial(name, q);
     toast(`Added "${name}" to inventory`);
     closeScanModal();
+  };
+  document.getElementById("scanConfirmBtn").addEventListener("click", confirmScan);
+  document.getElementById("manualConfirmBtn").addEventListener("click", confirmManual);
+  ["scanNameInput", "scanQtyInput"].forEach((id) => document.getElementById(id).addEventListener("keydown", (e) => { if (e.key === "Enter") confirmScan(); }));
+  ["manualNameInput", "manualQtyInput"].forEach((id) => document.getElementById(id).addEventListener("keydown", (e) => { if (e.key === "Enter") confirmManual(); }));
+  document.getElementById("scanNameInput").maxLength = 60;
+  document.getElementById("manualNameInput").maxLength = 60;
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && document.getElementById("scanModal").classList.contains("visible")) closeScanModal();
   });
 }
 
 async function openScanModal() {
-  document.getElementById("scanModal").classList.add("visible");
+  const modal = document.getElementById("scanModal");
+  if (modal.classList.contains("visible")) return;   // double-click guard: never open two streams
+  scanSession++;
+  modal.classList.add("visible");
   showScanStep("camera");
-  try {
-    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-    document.getElementById("scanVideo").srcObject = scanStream;
-    document.getElementById("scanStatus").textContent = "Point your camera at the item and capture.";
-  } catch (e) {
-    document.getElementById("scanStatus").textContent = "Camera unavailable (" + e.message + ") — type the material in instead.";
-    showScanStep("manual");
+  scanStatus("Starting camera...");
+  if (!(await startCamera())) showScanStep("manual");
+}
+
+// "Back to camera" / "Retake": the stream may be gone (permission was denied, or the camera was unplugged).
+async function retryCamera() {
+  showScanStep("camera");
+  const track = scanStream && scanStream.getVideoTracks()[0];
+  if (scanStream && (!track || track.readyState === "ended")) {
+    scanStream.getTracks().forEach((t) => t.stop());
+    scanStream = null;
   }
+  scanStatus("Starting camera...");
+  if (!(await startCamera())) showScanStep("manual");
 }
 
 function closeScanModal() {
+  scanSession++;                                     // invalidates any in-flight permission prompt or identify call
+  if (scanAbort) { scanAbort.abort(); scanAbort = null; }
   document.getElementById("scanModal").classList.remove("visible");
   if (scanStream) { scanStream.getTracks().forEach((t) => t.stop()); scanStream = null; }
+  document.getElementById("scanVideo").srcObject = null;
+  document.getElementById("scanPreview").removeAttribute("src");
+  document.getElementById("scanPreview").hidden = true;
+  document.getElementById("scanNameInput").value = "";
 }
 
 function showScanStep(step) {
@@ -1232,9 +1309,17 @@ function showScanStep(step) {
 
 async function captureScan() {
   const video = document.getElementById("scanVideo");
+  if (!scanStream || !video.videoWidth || video.readyState < 2) {
+    scanStatus("Camera is still warming up — try again in a second.");
+    return;
+  }
+  const session = ++scanSession;
+
+  // Downscale: a 1080p/4K frame as base64 JPEG is slow to upload and gains nothing for naming an object.
+  const scale = Math.min(1, SCAN_MAX_SIDE / Math.max(video.videoWidth, video.videoHeight));
   const canvas = document.getElementById("scanCanvas");
-  canvas.width = video.videoWidth || 640;
-  canvas.height = video.videoHeight || 480;
+  canvas.width = Math.round(video.videoWidth * scale);
+  canvas.height = Math.round(video.videoHeight * scale);
   canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
   const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
 
@@ -1246,26 +1331,39 @@ async function captureScan() {
   preview.hidden = false;
   document.getElementById("scanCameraWrap").hidden = true;
   document.getElementById("scanActionsCapture").hidden = true;
-  document.getElementById("scanStatus").textContent = "Identifying...";
+  scanStatus("Identifying...");
 
+  scanAbort = new AbortController();
+  const abort = scanAbort;
+  const timer = setTimeout(() => abort.abort(), SCAN_TIMEOUT_MS);
   try {
     const res = await fetch("/api/identify-material", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ image: dataUrl }),
+      signal: abort.signal,
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "Couldn't identify the material");
-    document.getElementById("scanNameInput").value = data.name;
+    let data = {};
+    try { data = await res.json(); } catch (_) { /* non-JSON error page */ }
+    if (session !== scanSession) return;             // modal closed / new capture started meanwhile
+    if (!res.ok) throw new Error(data.message || "Couldn't identify the material (server error " + res.status + ")");
+    document.getElementById("scanNameInput").value = data.name || "";
     document.getElementById("scanQtyInput").value = "1";
-    document.getElementById("scanStatus").textContent = data.confidence === "low"
-      ? "Not totally sure — please check this before adding."
-      : "Here's what CUBE thinks this is:";
+    const unsure = data.confidence === "low" || !data.name || data.name === "unclear item";
+    scanStatus(unsure ? "Not sure what this is — please check or retake." : "Here's what CUBE thinks this is:");
     showScanStep("result");
     preview.hidden = false;
+    document.getElementById("scanNameInput").select();
   } catch (e) {
-    document.getElementById("scanStatus").textContent = "⚠️ " + e.message + " — type it in instead.";
+    if (session !== scanSession) return;
+    const msg = e.name === "AbortError" ? "Timed out waiting for the AI"
+      : e instanceof TypeError ? "Couldn't reach the CUBE server"
+      : e.message;
+    scanStatus("⚠️ " + msg + " — type it in instead.");
     showScanStep("manual");
+  } finally {
+    clearTimeout(timer);
+    if (scanAbort === abort) scanAbort = null;
   }
 }
 
