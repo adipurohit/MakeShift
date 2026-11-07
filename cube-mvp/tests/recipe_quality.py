@@ -157,6 +157,8 @@ def main():
             out += [f"- ⚑ {f}" for f in fl]
             if args.steps and not args.stub:
                 brief = {"title": idea["title"], "pitch": idea["pitch"],
+                         "recipe_graph": [{"a": names[r["a"]], "b": names[r["b"]], "result": r["result_name"]}
+                                          for r in idea["recipes"]],
                          "sub_assemblies": [r["result_name"] for r in idea["recipes"]],
                          "final_parts": [f"{names[f['id']]} x{f['qty']}" for f in idea["final_requires"]]}
                 try:
@@ -167,7 +169,7 @@ def main():
         if len(set(t.lower() for t in titles)) < len(titles):
             out.append("⚑ duplicate titles in this batch\n")
     out += ["---", f"Totals: {totals['returned']} ideas returned, {totals['kept']} kept, {totals['flagged']} with safety/claim/broken-part flags to read first."]
-    Path(args.out).write_text("\n".join(out) + "\n")
+    Path(args.out).write_text("\n".join(out) + "\n", encoding="utf-8")
     print(f"Wrote {args.out}  ({totals})")
 
 

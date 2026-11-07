@@ -5,6 +5,7 @@ Groq API key never reaches the browser.
 
   POST /api/generate-ideas    materials -> a catalog of buildable project ideas (no steps yet)
   POST /api/generate-steps    one chosen idea -> assembly steps, generated on demand
+  POST /api/suggest-sources   needed materials -> safe places to look for them
   POST /api/identify-material photo -> a guessed material name (camera scan)
 
 Run: python3 server.py   (reads GROQ_API_KEY from the environment or a local .env)
@@ -410,11 +411,12 @@ STEPS_SCHEMA = {
 }
 
 STEPS_SYSTEM_PROMPT = """You write physical assembly instructions for MakeShift, a scrap-to-creation sandbox.
-Given one project (name, pitch, the sub-assemblies it is built from, and the final parts list), write 4-9
+Given one project (name, pitch, its ordered recipe graph, sub-assemblies, and final parts list), write 4-9
 short, concrete steps in plain imperative language, in the order a maker would really do them.
 
-- Build the sub-assemblies first (each sub-assembly gets its own step), then combine them into the final
-  project. Do not start with the finished object.
+- Follow the ordered recipe graph: each `a + b -> result` merge must happen only after both inputs exist.
+  Build the sub-assemblies first (each merge gets its own step), then combine them into the final project.
+  Do not start with the finished object or describe a result before its inputs have been joined.
 - Use only the parts named in the brief, plus ordinary hand tools and consumables (tape, glue, string,
   screws). Do not introduce new parts, electronics or materials. If a step cannot be done with those, leave
   it out rather than inventing something.
@@ -452,6 +454,123 @@ def clean_steps(steps):
         if text:
             out.append(text)
     return out[:9]
+
+
+# ---------------------------------------------------------------
+# Material sourcing: safe, realistic places to find needed parts.
+# ---------------------------------------------------------------
+SOURCES_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "suggestions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 12,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "material": {"type": "string"},
+                    "places": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 4,
+                        "items": {"type": "string"},
+                    },
+                    "salvage_tip": {"type": "string"},
+                    "safety_note": {"type": "string"},
+                },
+                "required": ["material", "places", "salvage_tip", "safety_note"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["suggestions"],
+    "additionalProperties": False,
+}
+
+SOURCES_SYSTEM_PROMPT = """You are the material-sourcing guide inside MakeShift, a scrap-to-creation app.
+For each requested material, suggest realistic, low-cost places a maker could look locally. Prefer reuse:
+their own recycling, repair shops, community reuse centers, e-waste programs, thrift stores, maker spaces,
+schools or businesses that may give away clean offcuts. Hardware or craft stores are a last resort.
+
+- Give place categories, not invented business names, addresses, live inventory, prices or availability claims.
+- Copy each input material name exactly into the corresponding `material` field.
+- Keep each place to a short phrase and give 2-4 distinct options where possible.
+- The salvage tip should say what discarded object may contain the part and what condition to inspect.
+- Always tell the maker to ask permission before taking materials. Never recommend trespassing, taking from
+  private bins, unsafe roadside scavenging, or opening mains power supplies, microwaves, CRTs, swollen
+  batteries, pressurized containers, or hazardous equipment.
+- Use the supplied project and quantities for context. No markdown or HTML in any string.
+"""
+
+
+def clean_source_suggestions(data, requested_names):
+    """Sanitize source suggestions and keep only materials the caller requested."""
+    allowed = {name.casefold(): name for name in requested_names}
+    out = []
+    rows = data.get("suggestions", []) if isinstance(data, dict) else []
+    for row in rows if isinstance(rows, list) else []:
+        if not isinstance(row, dict):
+            continue
+        raw_name = clean_text(row.get("material"), 60)
+        canonical = allowed.get(raw_name.casefold())
+        if not canonical:
+            continue
+        places = []
+        for place in row.get("places", []) if isinstance(row.get("places"), list) else []:
+            place = clean_text(place, 100)
+            if place and place.casefold() not in {p.casefold() for p in places}:
+                places.append(place)
+            if len(places) >= 4:
+                break
+        tip = clean_text(row.get("salvage_tip"), 240)
+        safety = clean_text(row.get("safety_note"), 180)
+        if places:
+            out.append({
+                "material": canonical,
+                "places": places,
+                "salvage_tip": tip,
+                "safety_note": safety,
+            })
+        if len(out) >= 12:
+            break
+    return out
+
+
+def generate_source_suggestions(project, materials):
+    brief = {"project": clean_text(project, 80), "materials": materials}
+    response = chat_json(
+        SOURCES_SYSTEM_PROMPT,
+        "Suggest safe places to find these materials:\n" + json.dumps(brief, indent=2),
+        "sources", SOURCES_SCHEMA, 4096,
+    )
+    data = json.loads(first_text(response))
+    return clean_source_suggestions(data, [m["name"] for m in materials])
+
+
+def clean_source_materials(incoming):
+    """Normalize the sourcing request identically in Python and the Worker."""
+    if not isinstance(incoming, list):
+        return []
+    materials = []
+    for material in incoming[:12]:
+        if not isinstance(material, dict):
+            continue
+        name = clean_text(material.get("name"), 60)
+        if not name:
+            continue
+
+        def safe_qty(field):
+            value = material.get(field, 0)
+            return min(99, max(0, int(value))) if str(value).isdigit() else 0
+
+        materials.append({
+            "name": name,
+            "needed": safe_qty("needed"),
+            "have": safe_qty("have"),
+            "missing": safe_qty("missing"),
+        })
+    return materials
 
 
 # ---------------------------------------------------------------
@@ -517,6 +636,7 @@ class Handler(SimpleHTTPRequestHandler):
         routes = {
             "/api/generate-ideas": self._handle_generate_ideas,
             "/api/generate-steps": self._handle_generate_steps,
+            "/api/suggest-sources": self._handle_suggest_sources,
             "/api/identify-material": self._handle_identify_material,
         }
         handler = routes.get(self.path)
@@ -544,6 +664,12 @@ class Handler(SimpleHTTPRequestHandler):
             return
 
         if not os.environ.get("GROQ_API_KEY"):
+            # Sourcing has a useful client-side category fallback. Return a
+            # quiet capability signal instead of logging a failed resource in
+            # the browser console; the other routes still require AI.
+            if self.path == "/api/suggest-sources":
+                self._send_json(200, {"suggestions": [], "fallback": True})
+                return
             self._send_json(503, {
                 "error": "no_api_key",
                 "message": "No GROQ_API_KEY configured on the server. Set it in cube-mvp/.env and restart the server, or use the offline example idea instead.",
@@ -592,6 +718,22 @@ class Handler(SimpleHTTPRequestHandler):
             self._send_json(502, {"error": "no_steps", "message": "Couldn't generate assembly steps. Try again."})
             return
         self._send_json(200, {"assembly_steps": steps})
+
+    def _handle_suggest_sources(self, body):
+        project = clean_text(body.get("project"), 80)
+        materials = clean_source_materials(body.get("materials", []))
+        if not materials:
+            self._send_json(400, {"error": "no_materials", "message": "No needed materials were provided."})
+            return
+        try:
+            suggestions = generate_source_suggestions(project, materials)
+        except Exception as e:
+            self._send_json(502, {"error": "generation_failed", "message": self._friendly_error(e)})
+            return
+        if not suggestions:
+            self._send_json(502, {"error": "no_suggestions", "message": "Couldn't generate sourcing suggestions. Try again."})
+            return
+        self._send_json(200, {"suggestions": suggestions})
 
     def _handle_identify_material(self, body):
         image = body.get("image")

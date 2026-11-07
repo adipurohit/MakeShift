@@ -4,7 +4,7 @@ End-to-end test of the Cloudflare Worker (worker/ + wrangler.jsonc) without a re
 
 Runs the Worker locally with `wrangler dev`, pointed at a stand-in Groq server on localhost,
 then checks: the app loads at /makeshift/, the camera scan in a real browser (fake camera)
-reaches the Worker and gets a cleaned answer, ideas and steps come back validated, the Worker
+reaches the Worker and gets a cleaned answer, ideas, steps, and source suggestions come back validated, the Worker
 sends Groq the right key, model, and schema, and the guards work (no key, wrong origin,
 bad image, rate limit).
 
@@ -56,6 +56,12 @@ class FakeGroq(BaseHTTPRequestHandler):
             content = {"name": "  <b>broken</b> stepper   motor ", "confidence": "high"}
         elif name == "steps":
             content = {"assembly_steps": ["1. Glue the tube to the base.", "Step 2: Tie the pulley on.", "<i>Check</i> it spins freely."]}
+        elif name == "sources":
+            content = {"suggestions": [
+                {"material": "Motor", "places": ["<b>Repair shop</b>", "Repair shop", "E-waste center"],
+                 "salvage_tip": "Check an old printer.", "safety_note": "Ask permission."},
+                {"material": "Invented part", "places": ["Nowhere"], "salvage_tip": "", "safety_note": ""},
+            ]}
         else:
             content = {"ideas": [
                 {"id": "Crank!", "title": "Hand Crank", "pitch": "A winch.", "uses_material_ids": [],
@@ -158,12 +164,22 @@ def main():
         check(status == 200 and data.get("assembly_steps") == ["Glue the tube to the base.", "Tie the pulley on.", "Check it spins freely."],
               "steps come back with numbering and markup stripped", json.dumps(data)[:160])
 
+        status, data = post(port, "/makeshift/api/suggest-sources", {
+            "project": "Hand Crank",
+            "materials": [{"name": "Motor", "needed": 2, "have": 1, "missing": 1}],
+        })
+        suggestions = data.get("suggestions", [])
+        check(status == 200 and len(suggestions) == 1 and suggestions[0]["places"] == ["Repair shop", "E-waste center"],
+              "source suggestions are sanitized and limited to requested materials", json.dumps(data)[:180])
+
         status, data = post(port, "/makeshift/api/identify-material", {"image": "data:image/bmp;base64,AAAA"})
         check(status == 400 and data.get("error") == "bad_image", "unsupported image type is rejected", status)
         status, data = post(port, "/makeshift/api/identify-material", {"image": "data:image/png;base64,AAAA"}, origin="https://evil.example")
         check(status == 403, "requests from another website are refused", status)
         status, data = post(nokey_port, "/makeshift/api/identify-material", {"image": "data:image/png;base64,AAAA"})
         check(status == 503 and data.get("error") == "no_api_key", "without the secret the Worker reports AI is off", status)
+        status, data = post(nokey_port, "/makeshift/api/suggest-sources", {"materials": [{"name": "Motor"}]})
+        check(status == 200 and data.get("fallback") is True, "source finder quietly advertises its no-key fallback", status)
 
         codes = [post(port, "/makeshift/api/generate-steps", {"idea": {"title": "x"}})[0] for _ in range(30)]
         check(429 in codes, "rate limit kicks in after about 20 AI calls a minute", f"first 429 at call {codes.index(429) + 1 if 429 in codes else '-'}")

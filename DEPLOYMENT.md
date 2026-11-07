@@ -7,7 +7,7 @@ MakeShift is set up to run at **adipurohit.com/makeshift** on Cloudflare. A Rend
 A Cloudflare Worker named `makeshift` serves the app. The config lives in [`wrangler.jsonc`](wrangler.jsonc):
 
 - **Static app**: `scripts/build-web.sh` copies only the browser files into `dist/makeshift/`.
-- **AI endpoints**: [`worker/`](worker/) answers `/makeshift/api/generate-ideas`, `generate-steps`, and `identify-material` (the camera scan), the same three endpoints `server.py` answers locally. Prompts and schemas come from `server.py` through `worker/ai-config.json`.
+- **AI endpoints**: [`worker/`](worker/) answers `/makeshift/api/generate-ideas`, `generate-steps`, `suggest-sources`, and `identify-material` (the camera scan), the same four endpoints `server.py` answers locally. Prompts and schemas come from `server.py` through `worker/ai-config.json`.
 - **Route**: `adipurohit.com/makeshift*`. A route takes priority over the portfolio Worker for those paths only, so the rest of adipurohit.com is untouched.
 - **Rate limit**: about 20 AI calls per visitor per minute, so a public page can't drain the key. Requests from other websites are refused.
 
@@ -56,6 +56,8 @@ Delete or replace the `GROQ_API_KEY` secret in the Worker settings, then revoke 
 ## Render (Python server)
 
 [`render.yaml`](render.yaml) runs `cube-mvp/server.py` as one web service.
+
+The existing Render deployment is [https://makeshift-cube-demo.onrender.com](https://makeshift-cube-demo.onrender.com), service `makeshift-cube-demo`, tracking `main`. It was last fully smoke-tested at commit `b945f83`; rerun the hosted smoke suite after merging this branch.
 
 1. In the Render Dashboard, choose **New → Blueprint** and connect `adipurohit/MakeShift`.
 2. When prompted for `GROQ_API_KEY`, enter a dedicated key with a spending limit.

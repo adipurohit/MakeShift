@@ -109,15 +109,26 @@ def build_cases():
          {"id": "m_c", "name": "Third"}, {"id": "", "name": "x"}, {"id": 5, "name": "Num"}, "junk",
          {"id": "m_d", "name": "<b>Bold</b>", "qty": True}, {"id": "m_e", "name": "Float", "qty": "2.5"}],
     ]
-    return idea_cases, steps_cases, text_cases, material_cases
+    source_cases = [{"suggestions": [
+        {"material": "Cardboard", "places": ["<b>Reuse center</b>", "Reuse center", "Frame shop"],
+         "salvage_tip": "Use a <script>bad</script> clean box.", "safety_note": "Ask first."},
+        {"material": "Invented", "places": ["Nowhere"], "salvage_tip": "", "safety_note": ""},
+    ]}, None, {"suggestions": "nope"}]
+    source_material_cases = [[
+        {"name": " Cardboard ", "needed": 2, "have": "1", "missing": 1},
+        {"name": "<b>Motor</b>", "needed": 1000, "have": -1, "missing": True},
+        {"name": "", "needed": 1}, "junk",
+    ]]
+    return idea_cases, steps_cases, text_cases, material_cases, source_cases, source_material_cases
 
 
-def python_side(idea_cases, steps_cases, text_cases):
+def python_side(idea_cases, steps_cases, text_cases, source_cases):
     return {
         "ideas": [server.validate_and_clean(c, MATS) for c in idea_cases],
         "steps": [server.clean_steps(c) for c in steps_cases],
         "text": [server.clean_text(t, n) for t, n in text_cases],
         "short": [server.make_short(n) for n in ["Crank Unit", "winch", "", "3D Gear Box"]],
+        "sources": [server.clean_source_suggestions(c, ["Cardboard", "Motor"]) for c in source_cases],
     }
 
 
@@ -141,6 +152,8 @@ const out = {
   text: c.text_cases.map(([t, n]) => ai.cleanText(t, n)),
   short: ["Crank Unit", "winch", "", "3D Gear Box"].map((n) => ai.makeShort(n)),
   materials: c.material_cases.map((m) => ai.cleanMaterials(m)),
+  sources: c.source_cases.map((d) => ai.cleanSourceSuggestions(d, c.source_names)),
+  source_materials: c.source_material_cases.map((m) => ai.cleanSourceMaterials(m)),
 };
 process.stdout.write(JSON.stringify(out));
 """
@@ -155,25 +168,28 @@ def main():
     else:
         print("[PASS] worker/ai-config.json matches server.py prompts, schemas, and limits")
 
-    idea_cases, steps_cases, text_cases, material_cases = build_cases()
-    py = python_side(idea_cases, steps_cases, text_cases)
+    idea_cases, steps_cases, text_cases, material_cases, source_cases, source_material_cases = build_cases()
+    py = python_side(idea_cases, steps_cases, text_cases, source_cases)
     py["materials"] = [python_materials(m) for m in material_cases]
+    py["source_materials"] = [server.clean_source_materials(m) for m in source_material_cases]
 
     with tempfile.TemporaryDirectory() as tmp:
         cases = Path(tmp) / "cases.json"
         cases.write_text(json.dumps({"idea_cases": idea_cases, "steps_cases": steps_cases, "text_cases": text_cases,
-                                     "material_cases": material_cases, "mats": MATS}))
+                                     "material_cases": material_cases, "source_cases": source_cases,
+                                     "source_material_cases": source_material_cases,
+                                     "source_names": ["Cardboard", "Motor"], "mats": MATS}), encoding="utf-8")
         script = Path(tmp) / "run.mjs"
-        script.write_text(NODE)
+        script.write_text(NODE, encoding="utf-8")
         run = subprocess.run(["node", str(script), (ROOT / "worker" / "ai.js").as_uri(), str(cases)],
-                             capture_output=True, text=True)
+                             capture_output=True, text=True, encoding="utf-8")
     if run.returncode:
         print("[FAIL] node run failed:\n" + run.stderr)
         return 1
     js = json.loads(run.stdout)
 
     kept = sum(len(x) for x in py["ideas"])
-    for key in ("ideas", "steps", "text", "short", "materials"):
+    for key in ("ideas", "steps", "text", "short", "materials", "sources", "source_materials"):
         mismatches = [i for i, (a, b) in enumerate(zip(py[key], js[key])) if a != b]
         if len(py[key]) != len(js[key]) or mismatches:
             ok = False

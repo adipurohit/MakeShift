@@ -1,13 +1,13 @@
 // Cloudflare Worker for MakeShift at adipurohit.com/makeshift.
-// Serves the static app from ./dist, and answers the three AI endpoints the Python server
-// answers locally: POST .../api/generate-ideas, generate-steps, identify-material.
+// Serves the static app from ./dist, and answers the four AI endpoints the Python server
+// answers locally: POST .../api/generate-ideas, generate-steps, suggest-sources, identify-material.
 // The Groq key lives in a Worker secret named GROQ_API_KEY, never in the repo.
 import {
   ApiError, BadImage, MAX_BODY_BYTES,
-  cleanMaterials, generateIdeas, generateSteps, identifyMaterial,
+  cleanMaterials, cleanSourceMaterials, generateIdeas, generateSteps, generateSourceSuggestions, identifyMaterial,
 } from "./ai.js";
 
-const API_RE = /\/api\/(generate-ideas|generate-steps|identify-material)$/;
+const API_RE = /\/api\/(generate-ideas|generate-steps|suggest-sources|identify-material)$/;
 
 const json = (status, payload) =>
   new Response(JSON.stringify(payload), {
@@ -50,6 +50,7 @@ export default {
     }
 
     if (!env.GROQ_API_KEY) {
+      if (match[1] === "suggest-sources") return json(200, { suggestions: [], fallback: true });
       return json(503, {
         error: "no_api_key",
         message: "AI features are off: no GROQ_API_KEY secret on this site. Catalog recipes still work.",
@@ -74,6 +75,13 @@ export default {
         const steps = await generateSteps(env, brief);
         if (!steps.length) return json(502, { error: "no_steps", message: "Couldn't generate assembly steps. Try again." });
         return json(200, { assembly_steps: steps });
+      }
+      if (match[1] === "suggest-sources") {
+        const materials = cleanSourceMaterials(body.materials);
+        if (!materials.length) return json(400, { error: "no_materials", message: "No needed materials were provided." });
+        const suggestions = await generateSourceSuggestions(env, body.project, materials);
+        if (!suggestions.length) return json(502, { error: "no_suggestions", message: "Couldn't generate sourcing suggestions. Try again." });
+        return json(200, { suggestions });
       }
       if (!body.image) return json(400, { error: "bad_request", message: "No image provided." });
       return json(200, await identifyMaterial(env, body.image));

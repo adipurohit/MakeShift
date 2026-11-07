@@ -145,6 +145,48 @@ export function cleanSteps(steps) {
   return out.slice(0, 9);
 }
 
+export function cleanSourceSuggestions(data, requestedNames) {
+  const allowed = new Map(requestedNames.map((name) => [name.toLowerCase(), name]));
+  const out = [];
+  const rows = isObj(data) && Array.isArray(data.suggestions) ? data.suggestions : [];
+  for (const row of rows) {
+    if (!isObj(row)) continue;
+    const rawName = cleanText(row.material, 60);
+    const canonical = allowed.get(rawName.toLowerCase());
+    if (!canonical) continue;
+    const places = [];
+    for (const rawPlace of Array.isArray(row.places) ? row.places : []) {
+      const place = cleanText(rawPlace, 100);
+      if (place && !places.some((p) => p.toLowerCase() === place.toLowerCase())) places.push(place);
+      if (places.length >= 4) break;
+    }
+    const tip = cleanText(row.salvage_tip, 240);
+    const safety = cleanText(row.safety_note, 180);
+    if (places.length) {
+      out.push({ material: canonical, places, salvage_tip: tip, safety_note: safety });
+    }
+    if (out.length >= 12) break;
+  }
+  return out;
+}
+
+export function cleanSourceMaterials(incoming) {
+  if (!Array.isArray(incoming)) return [];
+  const out = [];
+  for (const material of incoming.slice(0, 12)) {
+    if (!isObj(material)) continue;
+    const name = cleanText(material.name, 60);
+    if (!name) continue;
+    const safeQty = (field) => {
+      const value = field in material ? material[field] : 0;
+      const text = pyStr(value);
+      return /^\d+$/.test(text) ? Math.min(99, Math.max(0, parseInt(text, 10))) : 0;
+    };
+    out.push({ name, needed: safeQty("needed"), have: safeQty("have"), missing: safeQty("missing") });
+  }
+  return out;
+}
+
 // Same cleanup server.py applies to the materials list before prompting.
 export function cleanMaterials(materials) {
   if (!Array.isArray(materials)) return [];
@@ -209,6 +251,13 @@ export async function generateSteps(env, brief) {
   const user = "Project:\n" + JSON.stringify(brief, null, 2) + "\n\nWrite the assembly steps, following the schema.";
   const data = await chatJson(env, CFG.steps_system_prompt, user, "steps", CFG.steps_schema, 3072);
   return cleanSteps(isObj(data) ? data.assembly_steps : []);
+}
+
+export async function generateSourceSuggestions(env, project, materials) {
+  const brief = { project: cleanText(project, 80), materials };
+  const user = "Suggest safe places to find these materials:\n" + JSON.stringify(brief, null, 2);
+  const data = await chatJson(env, CFG.sources_system_prompt, user, "sources", CFG.sources_schema, 4096);
+  return cleanSourceSuggestions(data, materials.map((m) => m.name));
 }
 
 export class BadImage extends Error {}
