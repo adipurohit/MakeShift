@@ -349,6 +349,16 @@ body {
 .hologram-chip.satisfied { border-style: solid; background: var(--green-bg); color: var(--green); }
 .hologram-chip .chip-icon { width: 18px; height: 18px; font-size: 8px; }
 .hologram-chip .chip-icon svg { width: 12px; height: 12px; }
+.final-hologram-card {
+  display: grid; grid-template-columns: auto auto; align-items: center; column-gap: 7px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  border-radius: 10px; padding: 5px 9px;
+  background: color-mix(in srgb, var(--accent) 13%, var(--surface)); color: var(--text);
+  box-shadow: 0 4px 14px rgba(0,0,0,.08);
+}
+.final-hologram-label { grid-row: span 2; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.final-hologram-card strong { font-size: 12px; line-height: 1.1; }
+.final-hologram-arrow { font-size: 9px; color: var(--text-dim); }
 .bench-token.shake { animation: shake .3s; }
 @keyframes shake {
   0%,100% { transform: translateX(0); }
@@ -405,6 +415,19 @@ body {
 .merge-missing { margin: 6px 0 0; font-size: 12px; color: var(--red); }
 .ideas-status { font-size: 12px; color: var(--accent); font-weight: 600; margin: -4px 0 8px; }
 .panel-section-head h3 .hint { font-weight: 600; margin-left: 4px; }
+
+.source-finder { margin: 10px 0 12px; }
+.source-finder[hidden] { display: none; }
+.source-finder-btn { width: 100%; justify-content: center; }
+.source-finder-hint { display: block; margin-top: 5px; font-size: 11px; line-height: 1.35; color: var(--text-dim); text-align: center; }
+.source-suggestions { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; margin-top: 10px; }
+.source-suggestions[hidden] { display: none; }
+.source-mode-note { grid-column: 1 / -1; margin: 0; padding: 7px 9px; border-radius: 8px; background: var(--surface-2); color: var(--text-dim); font-size: 11px; }
+.source-card { border: 1px solid var(--border); border-radius: 10px; padding: 9px 10px; background: var(--surface); font-size: 11px; line-height: 1.4; }
+.source-card-title { font-size: 12px; font-weight: 800; color: var(--text); }
+.source-card ul { margin: 5px 0; padding-left: 17px; }
+.source-card p { margin: 5px 0 0; color: var(--text-dim); }
+.source-card .source-safety { color: var(--red); }
 
 /* ---------- Modals ---------- */
 .modal-overlay {

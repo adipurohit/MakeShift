@@ -6,7 +6,7 @@
 
 - **Top bar** — camera Scan button, badges, Reset.
 - **Left panel** — your Inventory (add/scan materials, +/- quantities) and **Buildable Now**: ideas the AI thinks you can start with exactly what you've got.
-- **Center** — the viewer. Toggle **2D** (drag-to-merge bubble canvas) or **3D** (real Three.js scene: orbit the camera, drag parts around a staging area, drop new parts in from the palette, merge by proximity). Below it, the active recipe's red/green requirements and the **Build It** button.
+- **Center** — the viewer. Toggle **2D** (drag-to-merge bubble canvas) or **3D** (real Three.js scene: orbit the camera, drag parts around a staging area, drop new parts in from the palette, merge by proximity). The hologram includes a distinct final-product preview plus the parts that feed it. Below it, the active recipe's red/green requirements, a material-sourcing guide, and the **Build It** button.
 - **Right panel** — the full **Recipe Catalog**: every idea MakeShift knows about, ready or not, so there's always something to work toward.
 
 Selecting a recipe (left, right, or the pinned offline example) sets it as the active blueprint: its missing sub-assemblies appear as **holograms** — dashed ghost chips in 2D, translucent wireframe shapes floating above the 3D staging area — that fill in solid as you craft the right parts.
@@ -21,7 +21,7 @@ open -e .env
 
 Paste your real Groq key over the placeholder, save, close. Do this yourself in Terminal — never paste a key into a chat with Claude. `.env` is git-ignored.
 
-**No key? Everything still works.** The pinned "Robot Arm (offline)" recipe needs zero network calls — AI idea generation, step generation, and camera-vision scanning all degrade gracefully to manual alternatives if the key is missing or a call fails.
+**No key? Everything still works.** The pinned "Robot Arm (offline)" recipe needs zero network calls — AI idea generation, step generation, camera-vision scanning, and material sourcing all degrade gracefully to offline alternatives if the key is missing or a call fails.
 
 ## Run it
 

@@ -14,6 +14,7 @@ Needs: pip install playwright && python3 -m playwright install chromium
 Exit code 0 = every recipe built, 1 = at least one failure.
 """
 import json
+import os
 import re
 import socket
 import subprocess
@@ -23,7 +24,7 @@ from collections import Counter
 from pathlib import Path
 
 APP_DIR = Path(__file__).resolve().parent.parent
-PORT = 8743
+PORT = int(os.environ.get("CUBE_TEST_PORT", "8743"))
 BASE = f"http://localhost:{PORT}"
 
 
@@ -62,7 +63,7 @@ def main():
         pack = [r for r in pack if r["id"] in only]
 
     server = subprocess.Popen([sys.executable, "server.py"], cwd=APP_DIR,
-                              env={"PATH": "/usr/bin:/bin", "GROQ_API_KEY": ""},
+                              env={**os.environ, "PORT": str(PORT), "GROQ_API_KEY": ""},
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     failures = []
     try:

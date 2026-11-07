@@ -103,6 +103,7 @@ Run the full offline path at least twice on the actual presentation laptop:
 
 ### Rehearsal record
 
+- **2026-11-07, automated local + hosted rehearsal (`main` hosted at `b945f83`):** The complete Robot Arm interaction passed from recipe selection through all nine crafting merges, all-green requirements, seven assembly steps, photo preview, completion badge, 3D canvas, and mobile-width check with no console errors. The interaction path took 6.3 seconds locally and 6.3 seconds on the public Render deployment before narration. This verifies the technical stage path; presenters still need to rehearse the spoken 3:30 script with physical props on the presentation laptop.
 - **2026-11-07, `add-cube-mvp-demo` at `f42bc8d`:** The app loaded locally, the offline Robot Arm recipe selected correctly, and its palette, holograms, and six requirement lines rendered as documented. The base branch supplied only one Timing Belt, confirming that the build cannot reach completion there. Complete the full timed rehearsal after `task/fix-offline-demo` is merged; that branch changes the starting quantity to two and fixes persisted bench-token IDs.
 
 ## Differentiation and audience
