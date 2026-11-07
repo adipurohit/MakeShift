@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline unit tests for the AI-output guards in server.py (no API key, no network, no anthropic package).
+"""Offline unit tests for the AI-output guards in server.py (no API key, no network, no groq package).
 
     python3 cube-mvp/tests/test_recipes.py
 """

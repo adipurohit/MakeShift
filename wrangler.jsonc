@@ -1,0 +1,27 @@
+// Cloudflare Worker that serves MakeShift at adipurohit.com/makeshift.
+// The route takes priority over the portfolio Worker for /makeshift paths only.
+// Static files come from dist/ (built by scripts/build-web.sh). The Worker code in worker/
+// answers the AI endpoints under /makeshift/api/ using the GROQ_API_KEY secret.
+// Add the secret in the dashboard: Workers & Pages > makeshift > Settings > Variables and Secrets.
+{
+  "name": "makeshift",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-11-01",
+  "build": { "command": "sh scripts/build-web.sh" },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "none",
+    "run_worker_first": ["/makeshift/api/*"]
+  },
+  "routes": [
+    { "pattern": "adipurohit.com/makeshift*", "zone_name": "adipurohit.com" }
+  ],
+  // About 20 AI calls per visitor per minute, so a public page can't drain the Groq key.
+  "ratelimits": [
+    { "name": "AI_LIMIT", "namespace_id": "4207", "simple": { "limit": 20, "period": 60 } }
+  ],
+  "workers_dev": false,
+  "observability": { "enabled": true }
+}

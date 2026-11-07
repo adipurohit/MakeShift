@@ -7,12 +7,12 @@ checks the server uses, adds heuristic red flags, and writes a markdown report f
 judge ("would this actually work / is it safe / is it boring"). The flags only point at what to read first;
 they do not replace reading.
 
-    export ANTHROPIC_API_KEY=...            # or put it in cube-mvp/.env
+    export GROQ_API_KEY=...            # or put it in cube-mvp/.env
     python3 cube-mvp/tests/recipe_quality.py                       # all 12 lists -> recipe_quality_report.md
     python3 cube-mvp/tests/recipe_quality.py --only 3 7 --steps    # subset, also generate assembly steps
     python3 cube-mvp/tests/recipe_quality.py --stub                # no API: checks the harness itself
 
-Needs: pip install anthropic   (not needed for --stub)
+Needs: pip install groq   (not needed for --stub)
 """
 import argparse
 import json
@@ -103,13 +103,11 @@ def stub_generate(materials):
 
 
 def real_generate(materials, rejected):
-    import anthropic  # noqa: F401  (clear ImportError if missing)
-    client = anthropic.Anthropic()
-    response = client.messages.create(
-        model=server.MODEL, max_tokens=4096, system=server.IDEA_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": "Materials on hand (id, name, quantity):\n" + json.dumps(materials, indent=2)
-                   + "\n\nPropose a catalog of buildable project ideas using these materials, following the schema."}],
-        output_config={"format": {"type": "json_schema", "schema": server.api_schema(server.IDEA_SCHEMA)}},
+    response = server.chat_json(
+        server.IDEA_SYSTEM_PROMPT,
+        "Materials on hand (id, name, quantity):\n" + json.dumps(materials, indent=2)
+        + "\n\nPropose a catalog of buildable project ideas using these materials, following the schema.",
+        "ideas", server.IDEA_SCHEMA, 6144,
     )
     data = json.loads(server.first_text(response))
     return server.validate_and_clean(data, materials, rejected), len(data.get("ideas", []))
@@ -122,11 +120,11 @@ def main():
     ap.add_argument("--stub", action="store_true", help="no API calls; canned output to test the harness")
     ap.add_argument("--out", default=str(Path(__file__).resolve().parent / "recipe_quality_report.md"))
     args = ap.parse_args()
-    if not args.stub and not __import__("os").environ.get("ANTHROPIC_API_KEY"):
-        sys.exit("ANTHROPIC_API_KEY is not set (use --stub to test the harness without it).")
+    if not args.stub and not __import__("os").environ.get("GROQ_API_KEY"):
+        sys.exit("GROQ_API_KEY is not set (use --stub to test the harness without it).")
 
     chosen = [(i, s) for i, s in enumerate(SCENARIOS, 1) if not args.only or i in args.only]
-    out = ["# Recipe quality report", "", f"Model: `{server.MODEL}`" + ("  (STUB: canned output, not real model results)" if args.stub else ""), ""]
+    out = ["# Recipe quality report", "", f"Model: `{server.TEXT_MODEL}`" + ("  (STUB: canned output, not real model results)" if args.stub else ""), ""]
     totals = {"returned": 0, "kept": 0, "flagged": 0}
     for n, (label, mats) in chosen:
         materials = [{"id": server.slugify(name) if hasattr(server, "slugify") else "m_" + re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_"), "name": name, "qty": q} for name, q in mats]
