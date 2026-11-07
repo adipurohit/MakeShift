@@ -2,6 +2,16 @@
 
 The repository includes a Render Blueprint for a single Python web service. It serves the frontend and the three optional Anthropic-backed API endpoints from one origin.
 
+## Current deployment
+
+- **Public URL:** [https://makeshift-cube-demo.onrender.com](https://makeshift-cube-demo.onrender.com)
+- **Host:** Render free web service
+- **Source branch:** `task/deploy-hosted`
+- **Verified commit:** `f5f546a`
+- **AI status:** No hosted Anthropic key is configured. The offline Robot Arm works; AI generation and vision endpoints return a safe unavailable response until a limited key is added directly in Render.
+
+After a free instance has been idle, its first request can take longer while Render starts it again.
+
 ## Create the service
 
 1. Merge this branch into the branch Render will deploy.
