@@ -62,7 +62,18 @@ class FakeGemini(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b'{"error": {"message": "rate limit"}}')
             return
-        schema = body["generationConfig"]["responseSchema"]
+        # Mirror the real API: `responseSchema` is an OpenAPI subset and rejects JSON Schema keywords such as
+        # additionalProperties (the 400 users hit on the hosted site). Full JSON Schema must go in `responseJsonSchema`.
+        gen = body.get("generationConfig", {})
+        if "responseSchema" in gen and "additionalProperties" in json.dumps(gen["responseSchema"]):
+            self.send_response(400)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": {"code": 400, "status": "INVALID_ARGUMENT", "message":
+                "Invalid JSON payload received. Unknown name \"additionalProperties\" at "
+                "'generation_config.response_schema': Cannot find field."}}).encode())
+            return
+        schema = gen.get("responseJsonSchema") or gen.get("responseSchema") or {}
         props = schema.get("properties", {})
         if "confidence" in props:
             content = {"name": "  <b>broken</b> stepper   motor ", "confidence": "high"}
@@ -183,7 +194,11 @@ def main():
             check(not outside, "every request from the page stays under /makeshift/", ", ".join(outside))
             browser.close()
 
-        scan_call = next((c for c in gemini_calls if "confidence" in c["body"]["generationConfig"]["responseSchema"]["properties"]), None)
+        scan_call = next((c for c in gemini_calls if "confidence" in (c["body"]["generationConfig"].get("responseJsonSchema") or c["body"]["generationConfig"].get("responseSchema") or {}).get("properties", {})), None)
+        gens = [c["body"]["generationConfig"] for c in gemini_calls]
+        check(gens and all("responseJsonSchema" in g and "responseSchema" not in g for g in gens),
+              "every Gemini call sends its schema as responseJsonSchema, never the OpenAPI-subset responseSchema",
+              f"{len(gens)} call(s)")
         check(scan_call and scan_call["auth"] == "test-key", "Worker sends the GEMINI_API_KEY secret in x-goog-api-key")
         check(scan_call and "/models/gemini-3.8-flash:generateContent" in scan_call["path"],
               "scan uses the configured Gemini vision model", scan_call and scan_call["path"])

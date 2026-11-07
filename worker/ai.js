@@ -254,7 +254,10 @@ async function chatJson(env, system, user, name, schema, maxTokens, model) {
     generationConfig: {
       maxOutputTokens: maxTokens,
       responseMimeType: "application/json",
-      responseSchema: schema,
+      // responseJsonSchema takes standard JSON Schema (our schemas use additionalProperties, minItems, ...).
+      // The older responseSchema is an OpenAPI subset and answers 400 "Unknown name additionalProperties".
+      // cube-mvp/server.py uses the same mode (response_json_schema).
+      responseJsonSchema: schema,
     },
   };
 
