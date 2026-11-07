@@ -11,6 +11,19 @@ import { OrbitControls } from "./vendor/OrbitControls.js";
 import { iconSvg, partGeometry, projectGeometry, sourceHintsFor } from "./parts.js";
 
 const STORAGE_KEY = "cube_mvp_state_v4"; // v4: one isolated sandbox per offline recipe
+const AI_SESSION_KEY = "makeshift_ai_session_v1";
+
+// Cloudflare applies a per-session AI limit in addition to its per-network safety cap.
+// Keep one opaque identifier per browser so visitors sharing Wi-Fi get separate budgets.
+function aiRequestHeaders() {
+  let sessionId = localStorage.getItem(AI_SESSION_KEY);
+  if (!sessionId) {
+    sessionId = globalThis.crypto?.randomUUID?.()
+      || `ms-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 14)}`;
+    localStorage.setItem(AI_SESSION_KEY, sessionId);
+  }
+  return { "Content-Type": "application/json", "X-MakeShift-Session": sessionId };
+}
 
 const PALETTE_COLORS = ["#c0584a", "#3f8f5f", "#6f55c0", "#3a6fc0", "#b88a2e", "#2e9aa6"];
 function colorForId(id) {
@@ -431,7 +444,7 @@ async function generateIdeas({ manual } = { manual: true }) {
   try {
     const res = await fetch("api/generate-ideas", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: aiRequestHeaders(),
       body: JSON.stringify({ materials: rawMaterials }),
     });
     const data = await res.json();
@@ -658,7 +671,7 @@ async function suggestMaterialSources() {
   try {
     const res = await fetch("api/suggest-sources", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: aiRequestHeaders(),
       body: JSON.stringify({ project: idea.title, materials }),
     });
     const data = await res.json();
@@ -1371,7 +1384,7 @@ async function openAssemblyModal(idea) {
       };
       const res = await fetch("api/generate-steps", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: aiRequestHeaders(),
         body: JSON.stringify({ idea: brief }),
       });
       const data = await res.json();
@@ -1671,7 +1684,7 @@ async function captureScan() {
   try {
     const res = await fetch("api/identify-material", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: aiRequestHeaders(),
       body: JSON.stringify({ image: dataUrl }),
       signal: abort.signal,
     });

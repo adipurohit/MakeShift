@@ -58,7 +58,7 @@ export function validateIdea(idea, materialIds) {
     const n = i + 1;
     if (!isObj(r)) { problems.push(`recipe ${n} is not an object`); return; }
     const a = r.a, b = r.b, rid = r.result_id;
-    const rname = cleanText(r.result_name, 40);
+    const rname = cleanText(typeof r.result_name === "string" ? r.result_name.replace(/\s*\([^)]*\)/g, "") : null, 40);
     for (const side of [a, b]) {
       if (!known.has(side)) problems.push(`recipe ${n} uses unknown id ${JSON.stringify(side ?? null)}`);
       else if (results.has(side)) usedResults.add(side);
@@ -110,6 +110,32 @@ export function validateIdea(idea, materialIds) {
   }, []];
 }
 
+// Same checks as plausibility_problems() in server.py, with the same patterns from ai-config.json.
+const P = Object.fromEntries(Object.entries(CFG.plausibility).map(([k, v]) => [k, new RegExp(v, "i")]));
+
+export function plausibilityProblems(idea, names) {
+  const parts = idea.uses_material_ids.map((i) => names[i] || "").join(" ");
+  const text = [idea.title, idea.pitch, ...idea.recipes.map((r) => r.result_name)].join(" ");
+  const problems = [];
+  for (const i of idea.uses_material_ids) {
+    if (P.hazardous_part.test(names[i] || "")) problems.push(`uses a hazardous part: ${names[i]}`);
+  }
+  const hazard = P.hazard.exec(text);
+  if (hazard) problems.push("hazard: " + hazard[0]);
+  if (P.motion_claim.test(text) && !P.power_source.test(parts)) problems.push("claims powered motion with no power source");
+  if (P.stepper.test(parts) && P.stepper_motion.test(text) && !(P.controller.test(parts) && P.power_source.test(parts))) {
+    problems.push("stepper motion with no driver and power");
+  }
+  if (P.light_claim.test(text) && !P.light_source.test(parts)) problems.push("claims light with no light source");
+  for (const r of idea.recipes) {
+    const inputs = [names[r.a] || "", names[r.b] || ""];
+    if (inputs.some((n) => P.broken.test(n)) && P.functional.test(r.result_name)) {
+      problems.push(`broken part used as working ${r.result_name}`);
+    }
+  }
+  return problems;
+}
+
 export function validateAndClean(data, materials) {
   const materialIds = materials.map((m) => m.id);
   const clean = [];
@@ -119,6 +145,11 @@ export function validateAndClean(data, materials) {
   for (const item of raw) {
     let [idea, problems] = validateIdea(item, materialIds);
     if (idea) {
+      const names = Object.fromEntries(materials.map((m) => [m.id, m.name]));
+      idea.recipes.forEach((r) => { names[r.result_id] = r.result_name; });
+      problems = plausibilityProblems(idea, names);
+    }
+    if (idea && !problems.length) {
       if (seenTitles.has(idea.title.toLowerCase())) problems = ["duplicate title"];
       else {
         const base = idea.id;
@@ -202,6 +233,7 @@ export function cleanMaterials(materials) {
 
 // ---------------- Gemini calls ----------------
 export class ApiError extends Error {}
+export class BusyError extends ApiError {}
 
 async function chatJson(env, system, user, name, schema, maxTokens, model) {
   model = model || env.GEMINI_TEXT_MODEL || CFG.text_model;
@@ -226,20 +258,32 @@ async function chatJson(env, system, user, name, schema, maxTokens, model) {
     },
   };
 
+  const send = () => fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
+    body: JSON.stringify(body),
+  });
   let res;
   try {
-    res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
-      body: JSON.stringify(body),
-    });
+    res = await send();
+    // Retry one transient Gemini rate limit, respecting Retry-After but never sleeping indefinitely.
+    if (res.status === 429) {
+      const retryAfter = Number.parseFloat(res.headers.get("retry-after"));
+      const waitSeconds = Math.min(8, Math.max(1, Number.isFinite(retryAfter) ? retryAfter : 2));
+      await new Promise((resolve) => setTimeout(resolve, waitSeconds * 1000));
+      res = await send();
+    }
   } catch (e) {
     throw new ApiError("Couldn't reach the Gemini API. Try again in a moment.");
   }
   const data = await res.json().catch(() => ({}));
   const detail = data.error?.message || res.statusText;
-  if (res.status === 401 || res.status === 403) throw new ApiError("The API key was rejected. Check the GEMINI_API_KEY secret in the Cloudflare Worker settings.");
-  if (res.status === 429) throw new ApiError("Rate limited by the Gemini API. Wait a moment and try again.");
+  if (res.status === 401 || res.status === 403) {
+    throw new ApiError("The API key was rejected. Check the GEMINI_API_KEY secret in the Cloudflare Worker settings.");
+  }
+  if (res.status === 429) {
+    throw new BusyError("The Gemini API is busy or rate limited. Wait a moment and try again. Catalog matches still work.");
+  }
   if (!res.ok) throw new ApiError(`Gemini API error (${res.status}): ${detail}`);
 
   const candidate = data.candidates?.[0];
@@ -308,3 +352,5 @@ export async function identifyMaterial(env, dataUrl) {
 }
 
 export const MAX_BODY_BYTES = L.max_body_bytes;
+// Changes whenever prompts, schemas or checks change, so cached ideas never outlive the rules that made them.
+export const CONFIG_VERSION = JSON.stringify(CFG).length + ":" + [...JSON.stringify(CFG)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);

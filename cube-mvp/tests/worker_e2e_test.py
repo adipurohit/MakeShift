@@ -31,6 +31,7 @@ ROOT = Path(__file__).resolve().parents[2]
 WRANGLER = os.environ.get("WRANGLER") or shutil.which("wrangler") or "npx wrangler"
 results = []
 gemini_calls = []
+gemini_429 = {"left": 0}  # respond with 429 this many times before succeeding
 
 
 def check(ok, name, detail=""):
@@ -53,6 +54,14 @@ class FakeGemini(BaseHTTPRequestHandler):
     def do_POST(self):
         body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
         gemini_calls.append({"auth": self.headers.get("x-goog-api-key"), "body": body, "path": self.path})
+        if gemini_429["left"] > 0:
+            gemini_429["left"] -= 1
+            self.send_response(429)
+            self.send_header("Retry-After", "1")
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"error": {"message": "rate limit"}}')
+            return
         schema = body["generationConfig"]["responseSchema"]
         props = schema.get("properties", {})
         if "confidence" in props:
@@ -60,7 +69,7 @@ class FakeGemini(BaseHTTPRequestHandler):
         elif "assembly_steps" in props:
             content = {"assembly_steps": ["1. Glue the tube to the base.", "Step 2: Tie the pulley on.", "<i>Check</i> it spins freely."]}
         elif "suggestions" in props:
-            brief = json.loads(body["contents"][0]["parts"][0]["text"].split("\\n", 1)[1])
+            brief = json.loads(body["contents"][0]["parts"][0]["text"].split("\n", 1)[1])
             content = {"suggestions": [
                 {"material": "Motor", "places": ["<b>Repair shop</b>", "Repair shop", "E-waste center"],
                  "salvage_tip": "Check an old printer.", "safety_note": "Ask permission."},
@@ -101,9 +110,11 @@ def start_worker(port, extra_vars):
     raise RuntimeError("wrangler dev did not start")
 
 
-def post(port, path, payload, origin=None):
-    req = urllib.request.Request(f"http://127.0.0.1:{port}{path}", data=json.dumps(payload).encode(), method="POST",
-                                 headers={"Content-Type": "application/json", **({"Origin": origin} if origin else {})})
+def post(port, path, payload, origin="same", session="test-session"):
+    # like the app: same-origin Origin header and a session id; origin=None sends no Origin at all
+    origin = f"http://127.0.0.1:{port}" if origin == "same" else origin
+    headers = {"Content-Type": "application/json", "X-MakeShift-Session": session, **({"Origin": origin} if origin else {})}
+    req = urllib.request.Request(f"http://127.0.0.1:{port}{path}", data=json.dumps(payload).encode(), method="POST", headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=20) as r:
             return r.status, json.loads(r.read())
@@ -140,7 +151,14 @@ def main():
             errors = []
             page.on("pageerror", lambda e: errors.append(str(e)))
             requested = []
-            page.on("request", lambda r: requested.append(urllib.parse.urlsplit(r.url).path) if r.url.startswith(base) else None)
+            session_headers = []
+            def record_request(request):
+                if request.url.startswith(base):
+                    path = urllib.parse.urlsplit(request.url).path
+                    requested.append(path)
+                    if "/api/" in path:
+                        session_headers.append(request.headers.get("x-makeshift-session"))
+            page.on("request", record_request)
             page.goto(f"{base}/makeshift/")
             page.evaluate("localStorage.setItem('makeshift_intro_seen', '1')")
             page.reload()
@@ -152,6 +170,7 @@ def main():
             name = page.input_value("#scanNameInput")
             check(name == "broken stepper motor", "scan in the browser returns the Worker's cleaned answer", name)
             check(not errors, "no page errors during scan", "; ".join(errors))
+            check(bool(session_headers) and all(session_headers), "browser AI requests include a per-browser session ID")
 
             # sourcing from the real button, on the page served under /makeshift/
             page.click("#closeScanBtn")
@@ -197,6 +216,25 @@ def main():
         check(status == 200 and len(suggestions) == 1 and suggestions[0]["places"] == ["Repair shop", "E-waste center"],
               "source suggestions are sanitized and limited to requested materials", json.dumps(data)[:180])
 
+        materials = {"materials": [{"id": "m_motor", "name": "Motor", "qty": 2}, {"id": "m_pulley", "name": "Pulley", "qty": 2},
+                                   {"id": "m_zip", "name": "Zip Tie", "qty": 5}]}
+        before = len(gemini_calls)
+        status, data = post(port, "/makeshift/api/generate-ideas", materials)
+        check(status == 200 and data.get("cached") is True and len(gemini_calls) == before,
+              "the same inventory again is served from cache without calling Gemini", f"{len(gemini_calls) - before} Gemini call(s)")
+
+        gemini_429["left"] = 1
+        before = len(gemini_calls)
+        status, data = post(port, "/makeshift/api/generate-steps", {"idea": {"title": "Retry"}})
+        check(status == 200 and len(gemini_calls) - before == 2, "a Gemini rate limit is retried once and then succeeds", f"{status}, {len(gemini_calls) - before} calls")
+        gemini_429["left"] = 2
+        status, data = post(port, "/makeshift/api/generate-steps", {"idea": {"title": "Busy"}})
+        check(status == 503 and data.get("error") == "ai_busy", "two Gemini rate limits in a row report the AI as busy", f"{status} {data.get('error')}")
+        gemini_429["left"] = 0
+
+        status, data = post(port, "/makeshift/api/identify-material", {"image": "data:image/png;base64,AAAA"}, origin=None)
+        check(status == 403, "requests with no Origin (curl, scripts) are refused", status)
+
         status, data = post(port, "/makeshift/api/identify-material", {"image": "data:image/bmp;base64,AAAA"})
         check(status == 400 and data.get("error") == "bad_image", "unsupported image type is rejected", status)
         status, data = post(port, "/makeshift/api/identify-material", {"image": "data:image/png;base64,AAAA"}, origin="https://evil.example")
@@ -206,8 +244,10 @@ def main():
         status, data = post(nokey_port, "/makeshift/api/suggest-sources", {"materials": [{"name": "Motor"}]})
         check(status == 200 and data.get("fallback") is True, "source finder quietly advertises its no-key fallback", status)
 
-        codes = [post(port, "/makeshift/api/generate-steps", {"idea": {"title": "x"}})[0] for _ in range(30)]
-        check(429 in codes, "rate limit kicks in after about 20 AI calls a minute", f"first 429 at call {codes.index(429) + 1 if 429 in codes else '-'}")
+        codes = [post(port, "/makeshift/api/generate-steps", {"idea": {"title": "x"}}, session="busy-visitor")[0] for _ in range(30)]
+        check(429 in codes, "one session is limited to about 20 AI calls a minute", f"first 429 at call {codes.index(429) + 1 if 429 in codes else '-'}")
+        status, _ = post(port, "/makeshift/api/generate-steps", {"idea": {"title": "x"}}, session="another-visitor")
+        check(status == 200, "another session on the same network still gets through", status)
     finally:
         stop(worker)
         stop(nokey)

@@ -106,6 +106,61 @@ class ValidatorTests(unittest.TestCase):
             self.assertEqual(server.validate_and_clean(data, MATS), [])
 
 
+class PlausibilityTests(unittest.TestCase):
+    """Real failures from gpt-oss-120b on 2026-11-07, run through the live site (docs/recipe-quality.md)."""
+
+    def run_idea(self, title, pitch, mats, recipes, finals):
+        idea = {"id": "x", "title": title, "pitch": pitch, "uses_material_ids": [], "recipes": recipes, "final_requires": finals}
+        return server.validate_and_clean({"ideas": [idea]}, mats)
+
+    def mats(self, *names):
+        return [{"id": "m_" + n.lower().replace(" ", "_"), "name": n, "qty": 3} for n in names]
+
+    def test_catapult_rejected(self):
+        m = self.mats("Tin Can", "Rubber Band")
+        r = [{"a": "m_tin_can", "b": "m_rubber_band", "result_id": "arm", "result_name": "Can Arm", "result_short": "CA"}]
+        self.assertEqual(self.run_idea("Hand-Powered Rubber Band Catapult", "Launch paper discs.", m, r, [{"id": "arm", "qty": 1}]), [])
+
+    def test_candle_lantern_rejected(self):
+        m = self.mats("Tin Can", "Cork")
+        r = [{"a": "m_tin_can", "b": "m_cork", "result_id": "base", "result_name": "Can with Cork Base", "result_short": "CB"}]
+        self.assertEqual(self.run_idea("Tin Can Holder", "Ambient lighting with a candle.", m, r, [{"id": "base", "qty": 1}]), [])
+
+    def test_stepper_without_driver_rejected_but_ok_with_one(self):
+        r = [{"a": "m_stepper_motor", "b": "m_smooth_rod", "result_id": "lift", "result_name": "Lift Base", "result_short": "LB"}]
+        f = [{"id": "lift", "qty": 1}]
+        self.assertEqual(self.run_idea("Stepper-Powered Lift", "Lifts a carriage.", self.mats("Stepper Motor", "Smooth Rod"), r, f), [])
+        m = self.mats("Stepper Motor", "Smooth Rod", "Driver Board", "Power Bank")
+        r2 = r + [{"a": "lift", "b": "m_driver_board", "result_id": "ctl", "result_name": "Controlled Lift", "result_short": "CL"},
+                  {"a": "ctl", "b": "m_power_bank", "result_id": "done", "result_name": "Powered Lift", "result_short": "PL"}]
+        self.assertEqual(len(self.run_idea("Stepper-Powered Lift", "Lifts a carriage.", m, r2, [{"id": "done", "qty": 1}])), 1)
+
+    def test_lamp_without_light_source_rejected(self):
+        m = self.mats("Plastic Bottle", "Bottle Cap")
+        r = [{"a": "m_plastic_bottle", "b": "m_bottle_cap", "result_id": "shade", "result_name": "Shade", "result_short": "SH"}]
+        self.assertEqual(self.run_idea("Bottle Lamp", "A desk lamp.", m, r, [{"id": "shade", "qty": 1}]), [])
+
+    def test_broken_part_as_working_part_rejected(self):
+        m = self.mats("Broken Phone Screen", "USB Cable")
+        r = [{"a": "m_broken_phone_screen", "b": "m_usb_cable", "result_id": "disp", "result_name": "Mini Display", "result_short": "MD"}]
+        self.assertEqual(self.run_idea("Photo Frame", "Shows photos.", m, r, [{"id": "disp", "qty": 1}]), [])
+
+    def test_hazardous_parts_rejected_even_as_decoration(self):
+        m = self.mats("Large Capacitor", "Copper Wire")
+        r = [{"a": "m_large_capacitor", "b": "m_copper_wire", "result_id": "end", "result_name": "Bookend Core", "result_short": "BC"}]
+        self.assertEqual(self.run_idea("Heavy Capacitor Bookend", "Keeps books upright.", m, r, [{"id": "end", "qty": 1}]), [])
+        m2 = self.mats("Broken Phone Screen", "Circuit Board")
+        r2 = [{"a": "m_broken_phone_screen", "b": "m_circuit_board", "result_id": "back", "result_name": "Frame Back", "result_short": "FB"}]
+        self.assertEqual(self.run_idea("Screen Photo Frame", "A glossy photo frame.", m2, r2, [{"id": "back", "qty": 1}]), [])
+
+    def test_honest_idea_kept_and_counts_stripped_from_names(self):
+        m = self.mats("Pine Offcut", "Wood Glue")
+        r = [{"a": "m_pine_offcut", "b": "m_wood_glue", "result_id": "set", "result_name": "Coaster Set (4 coasters)", "result_short": "CS"}]
+        out = self.run_idea("Pine Coaster Set", "Glued and sanded coasters.", m, r, [{"id": "set", "qty": 1}])
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["recipes"][0]["result_name"], "Coaster Set")
+
+
 class HelperTests(unittest.TestCase):
     def test_api_schema_preserves_gemini_json_schema_bounds(self):
         out = server.api_schema(server.IDEA_SCHEMA)
