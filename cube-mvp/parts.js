@@ -256,7 +256,55 @@ const SOURCE_HINTS = {
   generic: { places: ["Community reuse center", "Maker space donation shelf", "Local repair shop scrap bin"], tip: "Bring a photo or dimensions, ask permission, and inspect the part for damage before taking it." },
 };
 
+// Donor objects: the discarded things that usually contain a specific part, and how to get it out.
+// Checked before the broad category hints above, first match wins, so specific parts sit first.
+const PART_DONORS = [
+  [/stepper/, ["Dead inkjet or laser printer (paper-feed motor)", "Old flatbed scanner (carriage motor)", "Broken 3D printer from a school or maker space"], "Unplug the 4-wire connector at the board, then remove the 2-4 screws on the motor face. Spin the shaft by hand: it should step evenly with no grinding."],
+  [/servo/, ["Broken RC car or plane", "Old robot or hobby kit", "Maker space spares drawer"], "Servos unscrew from their mount and unplug from a 3-pin header. Turn the horn gently; a stripped servo slips or clicks."],
+  [/vibration motor/, ["Dead phone or game controller", "Broken electric toothbrush (sealed battery removed first)", "Pager-style toys"], "The coin-shaped motor is glued near the case edge; pry it off with a plastic tool and keep its two thin wires."],
+  [/\bfan\b/, ["Old desktop PC (case fans)", "Dead laptop (small blower fan)", "Broken game console"], "PC case fans come off with 4 screws and a 3- or 4-pin plug. Never take the fan out of a power supply box."],
+  [/motor/, ["Broken toy car or remote-control toy", "Dead cordless (not corded) handheld fan", "Old CD or DVD drive (tray motor)"], "Small DC motors are held by 2 screws or a clip. Check the shaft turns freely and the two terminals are not snapped off."],
+  [/timing belt|\bbelt\b/, ["Dead inkjet printer (carriage belt)", "Old flatbed scanner", "Broken 3D printer"], "Loosen the idler or tensioner screw first so the belt slides off without stretching. Look for missing teeth and cracks."],
+  [/pulley|gear|sprocket/, ["Dead printer or scanner", "Broken VCR or cassette deck", "Old wind-up or motorized toy"], "Most pulleys and gears press onto a shaft or use a tiny set screw; a 1.5 mm hex key fits many. Check teeth are not worn flat."],
+  [/smooth rod|linear rod|steel rod/, ["Dead inkjet printer (carriage rod)", "Old flatbed scanner", "Broken 3D printer"], "Rods sit in clips or end brackets; pop the clips and slide the rod out. Roll it on a table to check it is straight."],
+  [/bearing/, ["Worn skateboard or inline-skate wheels (608 bearings)", "Dead printer or scanner carriage", "Broken fidget spinner"], "Push the bearing out with a bolt as a punch. It should spin quietly; grinding means grit or rust."],
+  [/extrusion/, ["Broken 3D printer frame", "Old display stand or trade-show rig", "Maker space offcut rack"], "Frame corners use T-nuts and hex bolts; loosen, slide the corner bracket off, and keep the T-nuts."],
+  [/nozzle/, ["Clogged 3D printer spares bag", "Maker space nozzle jar"], "Only remove a nozzle from a cold printer. Keep them in a jar; the tips are small and sharp."],
+  [/limit switch|endstop|micro ?switch/, ["Broken 3D printer", "Old computer mouse (click switches)", "Dead arcade or game controller"], "Endstops come off with 2 small screws and a plug. Press the lever: you should hear a clean click."],
+  [/control board|\barduino\b|microcontroller/, ["Broken 3D printer or CNC kit", "School robotics kit leftovers", "Maker space donation shelf"], "Unplug every connector and photograph the wiring first. Skip boards with burnt spots or bulging capacitors."],
+  [/power supply|\bpsu\b|adapter/, ["Old router, modem or LED strip with a sealed wall adapter", "Electronics reuse center", "Your own drawer of unused chargers"], "Use only sealed plug-in adapters with a printed voltage label. Never open a power supply box or a mains appliance."],
+  [/power bank/, ["Your own drawer of old chargers", "Electronics reuse center"], "Use only power banks that are not swollen, cracked or hot. Recycle damaged ones at an e-waste point; don't open them."],
+  [/coin cell/, ["Dead car-key fob or bathroom scale", "Old calculator or motherboard"], "Coin cells slide out sideways. Keep them away from small children; they are a serious swallowing hazard."],
+  [/battery holder/, ["Broken battery-powered toy or flashlight", "Old remote control"], "Desolder or cut the holder's two wires close to the old board, then strip 5 mm of insulation."],
+  [/\bled\b|led strip/, ["Broken battery toy or bike light", "Old electronics with indicator lights", "Leftover LED strip from a room makeover"], "Snip LEDs with their legs as long as possible. The longer leg is plus. Cut LED strips only on the marked copper pads."],
+  [/speaker/, ["Broken radio, toy or laptop", "Old computer speakers", "Dead headphones"], "Speakers unscrew from the case; cut the two wires near the old board. Press the cone gently: it should move without scraping."],
+  [/magnet/, ["Dead hard drive (very strong, pinch hazard)", "Old fridge magnets or cabinet latches", "Broken toys"], "Hard-drive magnets snap together hard enough to pinch skin; slide them apart sideways and keep them away from phones and cards."],
+  [/spring/, ["Broken retractable pen", "Old mattress or chair mechanism", "Clothespins and binder clips"], "Springs store energy. Point them away from your face when removing, and wear glasses for anything bigger than a pen spring."],
+  [/usb cable|cable/, ["Your drawer of old phone cables", "Electronics reuse center"], "Cut the plug end off a USB cable and strip it: red is 5V, black is ground. Check the outer jacket is not split."],
+  [/solar/, ["Broken solar garden light", "Old solar calculator"], "Garden-light panels lift out of the lid with 2-4 small screws; keep the wires attached and test in sunlight."],
+  [/mirror|lens|\bcd\b/, ["Old makeup compact or bathroom mirror tile", "Broken flashlight or magnifier", "Scratched CDs and DVDs"], "Tape over glass mirrors before cutting or snapping, and wear gloves. Avoid cracked glass entirely."],
+  [/cardboard|cereal box|shoe box|pizza box/, ["Your own clean recycling", "Grocery or appliance store box pile (ask first)"], "Pick dry, unprinted-inside boxes. Corrugated board is stiffer along the flutes, so cut with the flutes running the long way."],
+  [/bottle cap|\bcap\b/, ["Your own recycling", "Café or school collection jar (ask first)"], "Wash caps in warm soapy water and let them dry before gluing."],
+  [/plastic bottle|bottle/, ["Your own recycling", "School or office recycling bin (ask first)"], "Rinse and dry. Clear PET bottles cut cleanly with scissors after a starter slit from a craft knife."],
+  [/jar|\blid\b/, ["Your own kitchen recycling", "Thrift store housewares"], "Soak off labels in warm water. Check the rim for chips before handling."],
+  [/tin can|\bcan\b/, ["Your own kitchen recycling"], "Use a safety can opener that leaves a smooth edge, and file or tape any sharp rim."],
+  [/cork/, ["Restaurant or wine bar (they often save them)", "Your own kitchen"], "Natural cork cuts with a serrated knife; synthetic corks are rubbery and don't slice cleanly."],
+  [/dowel|popsicle|chopstick|skewer/, ["Broken chair rungs or old roller blinds", "Takeout chopsticks", "Craft store scrap bin"], "Check the grain runs straight along the stick; diagonal grain snaps under load."],
+  [/pallet|plank|scrap wood|offcut|\bwood\b/, ["Pallets marked HT (heat treated) from a store's loading dock (ask first)", "Cabinet or framing shop offcut bin", "Community workshop scrap rack"], "Avoid pallets stamped MB (chemically treated). Pull every nail and staple before cutting or sanding."],
+  [/pvc|pipe/, ["Plumber or renovation offcuts (ask first)", "Community reuse center"], "Use a hacksaw and sand the cut edge. Skip pipe that held chemicals or has an unknown residue."],
+  [/hose|tubing/, ["Leaky garden hose", "Old aquarium setup"], "Cut out the split section and keep the clean lengths; rinse inside before reuse."],
+  [/rubber band|elastic|inner tube/, ["Produce bands from the grocery store", "Punctured bike inner tube from a bike shop (they bin them daily)"], "Bike shops usually give away punctured tubes free. Cut rings for heavy-duty bands."],
+  [/zip tie|binder clip|clothespin|paper clip|hanger/, ["Office supply drawer", "Dry cleaner (wire hangers)", "Your own junk drawer"], "Wire hangers straighten with pliers; wear eye protection when bending the cut ends."],
+  [/t-shirt|tshirt|jeans|denim|fabric|felt|sock|towel/, ["Your own worn-out clothes", "Thrift store rag bin", "Community fabric-swap bin"], "Wash first. Jersey t-shirt fabric curls when cut, which makes clean, no-sew cord."],
+  [/egg carton|paper towel tube|cardboard tube|toilet roll/, ["Your own recycling"], "Paper egg cartons are compostable seed trays; foam ones are better for paint palettes."],
+  [/hinge|bracket|caster|bolt|screw|nail|washer/, ["Broken furniture or cabinet doors", "Community reuse center hardware bins", "Hardware store bulk bin (last resort)"], "Keep fasteners in a labeled jar per size; rusty screws often still work once wire-brushed."],
+  [/phone|keyboard|laptop|circuit board/, ["Your own dead devices", "Certified e-waste drop-off"], "Remove or tape over any battery before taking a device apart, and never puncture a lithium battery."],
+];
+
 export function sourceHintsFor(item) {
+  const name = (item && item.name ? item.name : "").toLowerCase();
+  const donor = PART_DONORS.find(([re]) => re.test(name));
+  if (donor) return { places: donor[1], tip: donor[2], donor: true };
   return SOURCE_HINTS[categoryFor(item)] || SOURCE_HINTS.generic;
 }
 

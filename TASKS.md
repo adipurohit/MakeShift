@@ -8,7 +8,7 @@ Work breakdown for the MakeShift demo (`cube-mvp/`) so teammates and agents can 
 2. Branch off `main` (once [PR #1](https://github.com/adipurohit/MakeShift/pull/1) is merged) as `task/<short-name>`, e.g. `task/real-part-photos`.
 3. Each task below lists which files it touches — if your task isn't listed as touching `app.js`, don't edit it; flag here instead if you think you need to, so we don't get silent merge conflicts on the biggest file.
 4. Open a PR back to `main` when done. Small, reviewable PRs over one giant one.
-5. You'll need your own Anthropic API key in `cube-mvp/.env` (copy from `.env.example`) for anything that touches AI features — never commit that file.
+5. You'll need your own Gemini API key (`GEMINI_API_KEY`) in `cube-mvp/.env` (copy from `.env.example`) for anything that touches AI features. Never commit that file. The production key lives only in Cloudflare.
 
 ---
 
@@ -19,13 +19,15 @@ Work breakdown for the MakeShift demo (`cube-mvp/`) so teammates and agents can 
 | 1 | Camera scan on a real device | Code audited and fixed; passes 11 state tests and 10 real-browser checks with a synthetic camera. A visible-browser attempt on 2026-11-07 reached the correct “No camera found” fallback because this environment exposes no webcam. **Still open:** one pass on the presentation device's physical webcam. |
 | 2 | Real part icons | Done (PR #6). |
 | 3 | 3D shapes per category | Done (PR #6). |
-| 4 | Recipe quality pass | Prompts + validator tightened, ordered recipe graph now reaches step generation, 16 validator tests pass, and the 12-scenario harness works on Windows. **Still open:** run it with a real API key and review the report; before/after examples need that run. |
-| 5 | Smoke test | Done. `python3 cube-mvp/tests/smoke.py` passes 23/23 locally and against the hosted deployment. |
-| 6 | Hosted deploy | Public deployment live at [makeshift-cube-demo.onrender.com](https://makeshift-cube-demo.onrender.com), tracking `main`; hosted no-key smoke passes 23/23. **Still open for connected AI:** add a dedicated capped `GEMINI_API_KEY` in Render. |
+| 4 | Recipe quality pass | Real-model run done: 120 ideas from `gpt-oss-120b`, report in [docs/recipe-quality.md](docs/recipe-quality.md). New plausibility checks reject 25 (hazardous parts, projectiles, unpowered motors, fake lights). **Still open:** re-measure step guides after the parts-list fix; about 15% of kept ideas are physically doubtful and need a judge pass or human review. |
+| 5 | Smoke test | Done. `smoke.py` passes 28/28 locally. Ten suites in total, listed in the README. |
+| 6 | Hosted deploy | Done. One public URL: [adipurohit.com/makeshift](https://adipurohit.com/makeshift) on Cloudflare, AI via the `GEMINI_API_KEY` Worker secret. The old Render URL redirects there. **Open:** set a spending cap on the Gemini key. |
 | 7 | Pitch narrative | Draft done (`PITCH.md`); the complete deterministic UI path passes its automated rehearsal under 3:30. **Still open:** presenters rehearse the spoken delivery on the presentation laptop. |
 | 8 | Mobile + accessibility | Done. No horizontal overflow at 390px. |
 | - | Offline demo bug fixes | Done (PR #4). |
-| - | Offline recipe pack | Done. 100 recipes in `cube-mvp/recipes/pack.json`, all verified by `cube-mvp/tests/pack_test.py`. |
+| - | Offline recipe pack | Done. 100 recipes in `cube-mvp/recipes/pack.json`, all verified by `cube-mvp/tests/pack_test.py`. 16 deepened to 5 steps; catapult and stilts replaced. Ranked by the user's parts in Catalog matches, with no AI. |
+| - | Real-user testing | **Open.** Run [docs/user-testing.md](docs/user-testing.md) with 3-5 people and put their quotes in PITCH.md. |
+| - | Scan accuracy | **Open.** Photograph 30 real scrap items, then run `cube-mvp/tests/scan_accuracy.py` (see the script). |
 
 ---
 

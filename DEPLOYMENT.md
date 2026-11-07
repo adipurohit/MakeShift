@@ -1,6 +1,6 @@
 # Deploy MakeShift
 
-MakeShift is set up to run at **adipurohit.com/makeshift** on Cloudflare. A Render setup for the Python server also exists, at the end of this file.
+MakeShift runs at **adipurohit.com/makeshift** on Cloudflare. That is the only public URL; the old Render copy redirects to it.
 
 ## Cloudflare (adipurohit.com/makeshift)
 
@@ -53,19 +53,22 @@ Runs the Worker with `wrangler dev` against a stand-in Gemini server: page load,
 
 Delete or replace the `GEMINI_API_KEY` secret in the Worker settings, then revoke the old key in the Google AI Studio.
 
-## Render (Python server)
+## Render (retired)
 
-[`render.yaml`](render.yaml) runs `cube-mvp/server.py` as one web service.
+The old Render service, makeshift-cube-demo.onrender.com, still tracks `main`, but `server.py` now redirects every request there to adipurohit.com/makeshift (Render sets `RENDER=true`, which turns the redirect on). One canonical URL means a judge can't land on a copy with no AI and a cold start. Delete the service in the Render dashboard whenever convenient; nothing depends on it.
 
-The existing Render deployment is [https://makeshift-cube-demo.onrender.com](https://makeshift-cube-demo.onrender.com), service `makeshift-cube-demo`, tracking `main`. It was last fully smoke-tested at commit `b945f83`; rerun the hosted smoke suite after merging this branch.
-
-1. In the Render Dashboard, choose **New → Blueprint** and connect `adipurohit/MakeShift`.
-2. When prompted for `GEMINI_API_KEY`, enter a dedicated key with a spending limit.
-3. Wait for the health check at `/` to pass.
-
-Render supplies the listening port through `PORT`. Locally, without `PORT`, the server listens on 8743:
+## Run locally
 
 ```bash
 cd cube-mvp
-python3 server.py
+python3 server.py              # http://localhost:8743, Python server
 ```
+
+Or run the exact production code with Wrangler (needs Node 18+):
+
+```bash
+npm install
+npm run dev                    # http://localhost:8787/makeshift/
+```
+
+For AI locally, put `GEMINI_API_KEY=...` in `cube-mvp/.env` for the Python server, or in `.dev.vars` at the repo root for Wrangler. Never commit either file.
