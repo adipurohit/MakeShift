@@ -327,7 +327,7 @@ async function generateIdeas() {
   toast("Generating build ideas...");
 
   try {
-    const res = await fetch("/api/generate-ideas", {
+    const res = await fetch("api/generate-ideas", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ materials: rawMaterials }),
@@ -1078,7 +1078,7 @@ async function openAssemblyModal(idea) {
         }, {})),
         final_parts: Object.entries(resolved.finalRequires).map(([id, q]) => `${state.items[id].name} x${q}`),
       };
-      const res = await fetch("/api/generate-steps", {
+      const res = await fetch("api/generate-steps", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idea: brief }),
@@ -1378,7 +1378,7 @@ async function captureScan() {
   const abort = scanAbort;
   const timer = setTimeout(() => abort.abort(), SCAN_TIMEOUT_MS);
   try {
-    const res = await fetch("/api/identify-material", {
+    const res = await fetch("api/identify-material", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ image: dataUrl }),
