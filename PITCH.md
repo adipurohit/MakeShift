@@ -1,14 +1,14 @@
-# CUBE — Pitch and Live Demo Runbook
+# MakeShift — Pitch and Live Demo Runbook
 
 ## Core story
 
 **North star:** Turn what you have into what you need.
 
-**Judge-ready pitch:** CUBE turns discarded materials into a playable engineering inventory. Scan what you have, combine parts to discover ideas, and follow an interactive assembly guide to build something real.
+**Judge-ready pitch:** MakeShift turns discarded materials into a playable engineering inventory. Scan what you have, combine parts to discover ideas, and follow an interactive assembly guide to build something real.
 
-**One-sentence version:** CUBE is a scrap-to-creation workspace that recognizes the parts people already have, proposes useful builds, and guides them from loose materials to a finished project.
+**One-sentence version:** MakeShift is a scrap-to-creation workspace that recognizes the parts people already have, proposes useful builds, and guides them from loose materials to a finished project.
 
-Lead with the familiar drawer of dead electronics, scrap wood, and broken parts—not with “this is an AI app.” The physical build is the point; AI is how CUBE helps a maker get there.
+Lead with the familiar drawer of dead electronics, scrap wood, and broken parts—not with “this is an AI app.” The physical build is the point; AI is how MakeShift helps a maker get there.
 
 The live demo should prove one idea, not tour every feature: a pile of parts from two broken 3D printers can become a working robot-arm plan. The offline Robot Arm recipe is the stage path because it is deterministic and does not need Wi-Fi or an API key. Describe the generative catalog and camera vision after the successful build instead of making the live result depend on either service.
 
@@ -17,14 +17,14 @@ The live demo should prove one idea, not tour every feature: a pile of parts fro
 | Time | Screen/action | Speaker script |
 | --- | --- | --- |
 | 0:00–0:20 | Hold up a stepper motor, timing belt, and dead nozzle. Keep the app visible behind them. | “These look like leftovers from broken 3D printers. In most workshops they become clutter or e-waste. But they are still motors, rails, bearings, and control electronics. The problem is not that we have nothing—it is that we cannot see what these parts could become.” |
-| 0:20–0:40 | Put the parts down. Point to the CUBE tagline. | “CUBE’s north star is simple: **turn what you have into what you need**. It converts discarded parts into a playable engineering inventory, then gives you a path from inventory to a real build.” |
-| 0:40–0:58 | Select **Robot Arm** from the Recipe Catalog. Point to the available-parts palette, holograms, and red requirements. | “Here is a guaranteed offline example built from two stripped printers. CUBE maps the available parts into a recipe graph. Red requirements show what is still missing, and these holograms show the subassemblies we are working toward.” |
-| 0:58–1:45 | In 2D, merge parts. First demonstrate `Stepper Motor + Pulley → Drive Unit`, then complete the remaining robot-arm subassemblies. Narrate only the first and most meaningful merges. | “Instead of asking someone to begin with a blank CAD file, CUBE makes fabrication exploratory. A stepper motor and pulley become a drive unit. Add a timing belt and that becomes a motorized joint. The same pattern turns rails and bearings into arm segments—and even dead nozzle tips and zip ties into a gripper claw.” |
+| 0:20–0:40 | Put the parts down. Point to the MakeShift tagline. | “MakeShift’s north star is simple: **turn what you have into what you need**. It converts discarded parts into a playable engineering inventory, then gives you a path from inventory to a real build.” |
+| 0:40–0:58 | Select **Robot Arm** from the Recipe Catalog. Point to the available-parts palette, holograms, and red requirements. | “Here is a guaranteed offline example built from two stripped printers. MakeShift maps the available parts into a recipe graph. Red requirements show what is still missing, and these holograms show the subassemblies we are working toward.” |
+| 0:58–1:45 | In 2D, merge parts. First demonstrate `Stepper Motor + Pulley → Drive Unit`, then complete the remaining robot-arm subassemblies. Narrate only the first and most meaningful merges. | “Instead of asking someone to begin with a blank CAD file, MakeShift makes fabrication exploratory. A stepper motor and pulley become a drive unit. Add a timing belt and that becomes a motorized joint. The same pattern turns rails and bearings into arm segments—and even dead nozzle tips and zip ties into a gripper claw.” |
 | 1:45–2:02 | Briefly switch to 3D and orbit once. Point to the now-solid holograms and green requirements; return to 2D only if needed. | “The 2D workspace makes the logic easy to learn; the 3D workspace lets a maker stage and inspect the same build spatially. As parts are crafted, the holograms become solid and the build moves from red to green.” |
-| 2:02–2:42 | Click **Build It**. Check the assembly steps and upload the prepared progress photo. Click **Mark Build Complete**. | “Once the recipe is ready, CUBE turns the design into an ordered assembly guide. The builder checks off physical progress and records a photo, so the workflow ends with something made—not just something generated.” |
+| 2:02–2:42 | Click **Build It**. Check the assembly steps and upload the prepared progress photo. Click **Mark Build Complete**. | “Once the recipe is ready, MakeShift turns the design into an ordered assembly guide. The builder checks off physical progress and records a photo, so the workflow ends with something made—not just something generated.” |
 | 2:42–2:55 | Let the completion badge and confetti land. Stop interacting with the UI. | “That is the loop: see value in what you have, discover what it can become, and build it.” |
 | 2:55–3:22 | Keep the completed screen visible. Describe, do not live-demo, camera scanning and AI ideas. | “The Robot Arm path works entirely offline. With connectivity, a maker can photograph an unfamiliar part, let vision suggest an editable inventory name, and generate a broader catalog of immediately buildable and aspirational projects. Assembly instructions are generated only for the project they choose, which keeps the experience focused and efficient.” |
-| 3:22–3:30 | Hold up the physical parts again. | “CUBE does not start by asking what you want to buy. It starts by asking what you already have—and helps you turn it into what you need.” |
+| 3:22–3:30 | Hold up the physical parts again. | “MakeShift does not start by asking what you want to buy. It starts by asking what you already have—and helps you turn it into what you need.” |
 
 ## What is live versus described
 
@@ -107,7 +107,7 @@ Run the full offline path at least twice on the actual presentation laptop:
 
 ## Differentiation and audience
 
-- **Not a shopping list:** CUBE begins with parts the user already owns.
+- **Not a shopping list:** MakeShift begins with parts the user already owns.
 - **Not a fixed tutorial library:** Connected mode generates recipes against the actual inventory.
 - **Not ideas that end as text:** The core loop ends in assembly guidance and a completion record.
 - **Designed to degrade gracefully:** Manual inventory entry and the offline Robot Arm keep the core experience usable when camera access, AI, or venue Wi-Fi fails.

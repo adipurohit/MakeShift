@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CUBE smoke test.
+MakeShift smoke test.
 
 Starts server.py, checks the HTTP endpoints, then drives the page in a
 headless browser through the offline Robot Arm demo path (no API key needed):
@@ -87,7 +87,7 @@ def http(method, path, body=None, raw=None):
 
 def start_server(with_ai):
     if port_in_use(PORT):
-        print(f"Port {PORT} is already in use. Stop the other CUBE server first.", file=sys.stderr)
+        print(f"Port {PORT} is already in use. Stop the other MakeShift server first.", file=sys.stderr)
         sys.exit(1)
     env = os.environ.copy()
     if not with_ai:
@@ -172,6 +172,8 @@ def browser_checks(headed):
         page.evaluate("localStorage.clear()")
         page.reload()
         page.wait_for_selector("#catalogList .idea-row")
+        if page.locator("#introModal.visible").count():
+            page.click("#introStartBtn")  # dismiss the how-it-works screen
         record(True, "Page loads and renders the recipe catalog")
 
         # --- select the offline Robot Arm ---
@@ -247,6 +249,8 @@ def browser_checks(headed):
         page.evaluate("localStorage.clear()")
         page.reload()
         page.wait_for_selector("#catalogList .idea-row")
+        if page.locator("#introModal.visible").count():
+            page.click("#introStartBtn")
         page.locator("#catalogList .idea-row", has_text="Robot Arm").click()
         drag_chip("Stepper Motor")
         page.reload()

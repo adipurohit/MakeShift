@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CUBE backend: serves the static demo files and exposes the AI endpoints, so the
+MakeShift backend: serves the static demo files and exposes the AI endpoints, so the
 Anthropic API key never reaches the browser.
 
   POST /api/generate-ideas    materials -> a catalog of buildable project ideas (no steps yet)
@@ -92,7 +92,7 @@ IDEA_SCHEMA = {
     "additionalProperties": False,
 }
 
-IDEA_SYSTEM_PROMPT = """You are the idea engine inside CUBE, a scrap-to-creation sandbox for makers.
+IDEA_SYSTEM_PROMPT = """You are the idea engine inside MakeShift, a scrap-to-creation sandbox for makers.
 Given a list of raw materials someone has on hand, propose a broad CATALOG of distinct, physically
 buildable projects that make creative use of what they have — a mix of projects they can fully build
 right now, and more ambitious ones that would need a bit more material, so there's something to work
@@ -181,7 +181,7 @@ STEPS_SCHEMA = {
     "additionalProperties": False,
 }
 
-STEPS_SYSTEM_PROMPT = """You write physical assembly instructions for CUBE, a scrap-to-creation sandbox.
+STEPS_SYSTEM_PROMPT = """You write physical assembly instructions for MakeShift, a scrap-to-creation sandbox.
 Given one specific project (its name, pitch, the sub-assemblies it's built from, and the final parts
 list), write 4-9 short, concrete, numbered assembly steps in plain imperative language, in the order
 a maker would actually do them. Reference the named parts naturally. Safe for a general audience: no
@@ -374,5 +374,5 @@ class Handler(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     has_key = bool(os.environ.get("ANTHROPIC_API_KEY"))
-    print(f"CUBE server on http://localhost:{PORT}  (ANTHROPIC_API_KEY {'found' if has_key else 'NOT found — AI features will be unavailable, offline example still works'})")
+    print(f"MakeShift server on http://localhost:{PORT}  (ANTHROPIC_API_KEY {'found' if has_key else 'NOT found — AI features will be unavailable, offline example still works'})")
     ThreadingHTTPServer(("", PORT), Handler).serve_forever()

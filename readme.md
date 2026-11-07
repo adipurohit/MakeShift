@@ -1,4 +1,4 @@
-# CUBE — Robot Arm demo (MVP)
+# MakeShift — Robot Arm demo (MVP)
 
 "Turn what you have into what you need." Scrap-to-creation sandbox: turn broken 3D printers into a robot arm.
 
