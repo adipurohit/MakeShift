@@ -172,8 +172,10 @@
 
     <div class="scan-actions" id="scanActionsCapture">
       <button class="primary-btn big" id="captureBtn">Capture</button>
+      <button class="ghost-btn" id="uploadPhotoBtn">Upload a photo instead</button>
       <button class="ghost-btn" id="scanManualBtn">Type it in instead</button>
     </div>
+    <input type="file" id="scanFileInput" accept="image/*" hidden>
 
     <div class="scan-result" id="scanResult" hidden>
       <label class="photo-label" for="scanNameInput">What MakeShift thinks this is (edit if wrong)</label>
