@@ -14,11 +14,12 @@ Only the AI features need a back end: camera scan, AI ideas, AI steps, and AI so
 
 ## Why the logic exists twice, and how it stays in sync
 
-This is duplicated logic, on purpose. Cloudflare Workers run JavaScript, not Python, and the team prototypes in Python, so both exist. Three things keep them from drifting:
+This is duplicated logic, on purpose. Cloudflare Workers run JavaScript, not Python, and the team prototypes in Python, so both exist. Four things keep them from drifting:
 
-1. **One source for prompts and schemas.** `server.py` owns every prompt, schema, and limit. `scripts/export-ai-config.py` writes them to `worker/ai-config.json`, which the Worker imports. Nobody edits the JSON by hand.
-2. **A parity test.** `tests/worker_parity_test.py` fails if the JSON is out of date, and feeds 500 generated model responses through both validators, requiring identical output.
-3. **An end-to-end test of the Worker.** `tests/worker_e2e_test.py` runs the real Worker with `wrangler dev` against a stand-in Gemini that rejects malformed requests the way the real API does.
+1. **One source for model names.** `models.json` at the repo root. Both back ends read it directly.
+2. **One source for prompts and schemas.** `server.py` owns every prompt, schema, and limit. `scripts/export-ai-config.py` writes them to `worker/ai-config.json`, which the Worker imports. Nobody edits the JSON by hand.
+3. **A parity test.** `tests/worker_parity_test.py` fails if the JSON is out of date, and feeds 500 generated model responses through both validators, requiring identical output.
+4. **An end-to-end test of the Worker.** `tests/worker_e2e_test.py` runs the real Worker with `wrangler dev` against a stand-in Gemini that rejects malformed requests the way the real API does.
 
 What the parity test does not cover: the HTTP call to Gemini differs (the Python SDK versus a raw `fetch`). That gap caused one live outage: the Worker sent the schema in a field Gemini rejects. The stand-in Gemini now checks for it.
 

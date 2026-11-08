@@ -33,24 +33,34 @@ Set a spending limit on the key in the Google AI Studio. Anyone who opens the si
 
 Gemini enforces limits **per project and per model**: a second API key in the same project adds nothing, but each different model has its own allowance. Requests per day reset at midnight Pacific time. Google lists the limits in its [rate-limits documentation](https://ai.google.dev/gemini-api/docs/rate-limits), and AI Studio shows your project's actual usage. Lite variants of a model have generally allowed more requests per minute than the full model.
 
-The model is a Worker variable, not a setting in the web app: every visitor shares your key and your quota, so a model picker in the page would let anyone spend it on whichever model they like, and a different choice would not add capacity anyway.
+The model is a repo setting, not a choice in the web app: every visitor shares your key and your quota, so a model picker in the page would let anyone spend it on whichever model they like, and a different choice would not add capacity anyway.
 
-**Workers & Pages → makeshift → Settings → Variables and Secrets → Add** (type **Text**), then **Deploy**. It takes effect right away, with no code change:
+**Change it on GitHub.** Open [`models.json`](models.json) in the repo, click the pencil icon, change a name, and commit to `main`. The site redeploys in about a minute. The local server reads the same file.
 
-| Variable | What it does | Default |
+| Key in `models.json` | What it does | Now |
 |---|---|---|
-| `GEMINI_TEXT_MODEL` | Model for ideas, steps and sourcing | `gemini-3.8-flash` |
-| `GEMINI_VISION_MODEL` | Model for photo scans | same as the text model |
-| `GEMINI_FALLBACK_MODEL` | Models to try, in order, when the one above is rate limited, overloaded or not found. **Comma-separated**, e.g. `gemini-3.6-flash, gemini-3.1-flash-lite`. `off` disables fallbacks | `gemini-3.6-flash` |
-| `GEMINI_THINKING_LEVEL` | `low` (default) or `off` to send no thinking setting | `low` |
+| `main` | Model for ideas, steps and sourcing | `gemini-3.8-flash` |
+| `backup` | Models to try, in order, when `main` is rate limited, overloaded or not found. **Comma-separated**, e.g. `gemini-3.6-flash, gemini-3.1-flash-lite`. `off` disables backups | `gemini-3.6-flash` |
+| `scan` | Model for photo scans | `gemini-3.8-flash` |
 
-Model IDs come from the [model list](https://ai.google.dev/gemini-api/docs/models). A `models/` prefix and extra spaces are fine. Defaults live in `app/server.py`.
+**Check what's live:** open [adipurohit.com/makeshift/api/models](https://adipurohit.com/makeshift/api/models). It lists the models in use and where each name came from.
 
-How it behaves: a model that answers 429, 503, 404 or times out is skipped for 2 minutes, so the next requests go straight to the next model in the list instead of waiting out another failure. If every model fails, the page shows a plain "AI is busy" message and the catalog recipes keep working. A misspelled model name falls through to the next model rather than breaking the AI, and the error message names the variables to fix if none of them exist.
+**Emergency switch without a commit:** a Worker variable in the dashboard overrides the file. **Workers & Pages → makeshift → Settings → Variables and Secrets → Add** (type **Text**), then **Deploy**. Delete the variable afterward, or later edits to `models.json` won't apply; `/api/models` says "Cloudflare dashboard variable" while one is set.
+
+| Variable | Overrides |
+|---|---|
+| `GEMINI_TEXT_MODEL` | `main` |
+| `GEMINI_FALLBACK_MODEL` | `backup` |
+| `GEMINI_VISION_MODEL` | `scan` |
+| `GEMINI_THINKING_LEVEL` | `low` (default) or `off` to send no thinking setting |
+
+Model IDs come from the [model list](https://ai.google.dev/gemini-api/docs/models). A `models/` prefix and extra spaces are fine. Switching `main` also starts a fresh idea and step cache, so you never see the old model's answers.
+
+How it behaves: a model that answers 429, 503, 404 or times out is skipped for 2 minutes, so the next requests go straight to the next model in the list instead of waiting out another failure. If every model fails, the page shows a plain "AI is busy" message and the catalog recipes keep working. A misspelled model name falls through to the next model rather than breaking the AI, and the error message points to `models.json` if none of them exist.
 
 To see what happened, open the Worker's **Logs** (Observability) tab: lines starting with `[ai]` say which model was skipped and when a fallback answered. The JSON reply of each AI call also has a `model` field naming the model that answered.
 
-`wrangler.jsonc` sets `keep_vars: true`, so variables you add in the dashboard survive the redeploy that follows every push to `main`. For local runs, set the same names in `app/.env`.
+`wrangler.jsonc` sets `keep_vars: true`, so variables you add in the dashboard survive the redeploy that follows every push to `main`. For local runs, `app/.env` overrides `models.json` with the same variable names.
 
 ### Change a prompt
 

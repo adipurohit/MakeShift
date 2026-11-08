@@ -26,10 +26,7 @@ def build():
 
     return {
         "_note": "Generated from app/server.py by scripts/export-ai-config.py. Do not edit by hand.",
-        "text_model": server.TEXT_MODEL,
         "thinking_level": server.THINKING_LEVEL,
-        "fallback_model": server.FALLBACK_MODEL,
-        "vision_model": server.VISION_MODEL,
         "idea_system_prompt": server.IDEA_SYSTEM_PROMPT,
         "steps_system_prompt": server.STEPS_SYSTEM_PROMPT,
         "sources_system_prompt": server.SOURCES_SYSTEM_PROMPT,

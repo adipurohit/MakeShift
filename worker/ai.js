@@ -3,6 +3,9 @@
 // from ai-config.json, which scripts/export-ai-config.py generates from server.py.
 // tests/worker_parity_test.py checks this file gives the same results as server.py.
 import CFG from "./ai-config.json" with { type: "json" };
+// Model names, edited on GitHub (see models.json at the repo root). A Worker variable set in the Cloudflare
+// dashboard (GEMINI_TEXT_MODEL, GEMINI_FALLBACK_MODEL, GEMINI_VISION_MODEL) overrides the file.
+import MODELS from "../models.json" with { type: "json" };
 
 const L = CFG.limits;
 
@@ -281,8 +284,21 @@ export function parseModelList(value) {
 }
 
 export function modelChain(env, model) {
-  const primary = normalizeModel(model || env.GEMINI_TEXT_MODEL) || normalizeModel(CFG.text_model);
-  return [...new Set([primary, ...parseModelList(env.GEMINI_FALLBACK_MODEL || CFG.fallback_model)])];
+  const primary = normalizeModel(model || env.GEMINI_TEXT_MODEL) || normalizeModel(MODELS.main);
+  return [...new Set([primary, ...parseModelList(env.GEMINI_FALLBACK_MODEL || MODELS.backup)])];
+}
+
+export const visionModel = (env) => normalizeModel(env.GEMINI_VISION_MODEL) || normalizeModel(MODELS.scan) || modelChain(env)[0];
+
+// What GET /api/models reports: the models in use, and where each name came from.
+export function activeModels(env) {
+  const from = (name) => (env[name] ? "Cloudflare dashboard variable " + name + " (overrides models.json)" : "models.json on GitHub");
+  return {
+    main: modelChain(env)[0],
+    backup: modelChain(env).slice(1),
+    scan: visionModel(env),
+    source: { main: from("GEMINI_TEXT_MODEL"), backup: from("GEMINI_FALLBACK_MODEL"), scan: from("GEMINI_VISION_MODEL") },
+  };
 }
 
 async function chatJson(env, system, user, name, schema, maxTokens, model) {
@@ -375,7 +391,7 @@ async function chatJsonOnce(env, system, user, name, schema, maxTokens, model) {
     throw new ApiError("The API key was rejected. Check the GEMINI_API_KEY secret in the Cloudflare Worker settings.");
   }
   if (res.status === 404) {
-    throw new ModelUnavailableError(`The AI model "${model}" wasn't found. Check the GEMINI_TEXT_MODEL, GEMINI_VISION_MODEL and GEMINI_FALLBACK_MODEL variables in the Worker settings. Catalog matches still work.`);
+    throw new ModelUnavailableError(`The AI model "${model}" wasn't found. Fix the name in models.json on GitHub, or the GEMINI_TEXT_MODEL, GEMINI_VISION_MODEL and GEMINI_FALLBACK_MODEL variables if set in the Worker settings. Catalog matches still work.`);
   }
   if (res.status === 429 || res.status === 503) {
     throw new BusyError("The AI service is overloaded right now. Wait a moment and try again. Catalog matches still work.");
@@ -448,7 +464,7 @@ export async function identifyMaterial(env, dataUrl) {
   const data = await chatJson(env, CFG.identify_system_prompt, [
     { type: "text", text: "What is this?" },
     { type: "image", data: imageData, mime_type: mediaType },
-  ], "material", CFG.identify_schema, 512, env.GEMINI_VISION_MODEL || CFG.vision_model);
+  ], "material", CFG.identify_schema, 512, visionModel(env));
   const name = cleanText(isObj(data) ? data.name : "", 60) || "unclear item";
   const confidence = ["low", "medium", "high"].includes(data && data.confidence) ? data.confidence : "low";
   return { name, confidence };

@@ -3,23 +3,26 @@
 // answers locally: POST .../api/generate-ideas, generate-steps, suggest-sources, identify-material.
 // The Gemini key lives in a Worker secret named GEMINI_API_KEY, never in the repo.
 import {
-  ApiError, BadImage, BusyError, CONFIG_VERSION, MAX_BODY_BYTES,
+  ApiError, BadImage, BusyError, CONFIG_VERSION, MAX_BODY_BYTES, activeModels, modelChain,
   cleanMaterials, cleanSourceMaterials, generateIdeas, generateSteps, generateSourceSuggestions, identifyMaterial,
 } from "./ai.js";
 
 const API_RE = /\/api\/(generate-ideas|generate-steps|suggest-sources|identify-material)$/;
+const MODELS_RE = /\/api\/models$/;
 
 // ---- idea cache (Cloudflare Cache API, per data center) ----
-async function cacheKeyFor(url, kind, value) {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify([CONFIG_VERSION, value])));
+// The main model is part of the key, so switching models in models.json never serves the old model's answers.
+async function cacheKeyFor(url, env, kind, value) {
+  const digest = await crypto.subtle.digest("SHA-256",
+    new TextEncoder().encode(JSON.stringify([CONFIG_VERSION, modelChain(env)[0], value])));
   const hex = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
   return new Request(`${url.origin}/makeshift/__cache/${kind}/${hex}`);
 }
-const ideasCacheKey = (url, materials) =>
-  cacheKeyFor(url, "ideas", materials.map((m) => [m.id, m.name, m.qty]).sort());
+const ideasCacheKey = (url, env, materials) =>
+  cacheKeyFor(url, env, "ideas", materials.map((m) => [m.id, m.name, m.qty]).sort());
 // Step guides take ~1 minute from Gemini; the same brief gets the same guide for 6 hours, so a pre-warmed
 // demo build answers instantly.
-const stepsCacheKey = (url, brief) => cacheKeyFor(url, "steps", brief);
+const stepsCacheKey = (url, env, brief) => cacheKeyFor(url, env, "steps", brief);
 async function cacheGet(key) {
   try {
     const hit = typeof caches !== "undefined" && (await caches.default.match(key));
@@ -46,6 +49,8 @@ const json = (status, payload) =>
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    // GET /makeshift/api/models: which Gemini models the site runs. Model names only, no secrets.
+    if (MODELS_RE.test(url.pathname)) return json(200, { ...activeModels(env), ai_enabled: Boolean(env.GEMINI_API_KEY) });
     const match = API_RE.exec(url.pathname);
     if (!match) return env.ASSETS.fetch(request);
     if (request.method !== "POST") return json(405, { error: "method_not_allowed", message: "Use POST." });
@@ -100,7 +105,7 @@ export default {
         const materials = cleanMaterials(body.materials);
         if (!materials.length) return json(400, { error: "no_materials", message: "Add at least one material first." });
         // Same inventory, same ideas for 6 hours: saves Gemini quota and lets you pre-warm a demo inventory.
-        const cacheKey = await ideasCacheKey(url, materials);
+        const cacheKey = await ideasCacheKey(url, env, materials);
         const cached = await cacheGet(cacheKey);
         if (cached) return json(200, { ...cached, cached: true });
         const ideas = await generateIdeas(aiEnv, materials);
@@ -115,7 +120,7 @@ export default {
         if (!brief || typeof brief !== "object" || Array.isArray(brief)) {
           return json(400, { error: "bad_request", message: "Missing idea details." });
         }
-        const stepsKey = await stepsCacheKey(url, brief);
+        const stepsKey = await stepsCacheKey(url, env, brief);
         const cachedSteps = await cacheGet(stepsKey);
         if (cachedSteps) return json(200, { ...cachedSteps, cached: true });
         const steps = await generateSteps(aiEnv, brief);

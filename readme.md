@@ -44,7 +44,7 @@ Open http://localhost:8743 in Chrome. Press Ctrl+C to stop the server.
 
 For the AI features, copy `app/.env.example` to `app/.env` and add your Gemini API key. Never commit that file. (If you had a key in the old `cube-mvp/.env`, move it to `app/.env`.)
 
-Hosting and the Cloudflare setup are in [DEPLOYMENT.md](DEPLOYMENT.md). The single public URL is adipurohit.com/makeshift; the old Render copy redirects there.
+To change the Gemini model, edit [`models.json`](models.json) on GitHub and commit to `main`. Hosting and the Cloudflare setup are in [DEPLOYMENT.md](DEPLOYMENT.md). The single public URL is adipurohit.com/makeshift; the old Render copy redirects there.
 
 ## How a build works
 

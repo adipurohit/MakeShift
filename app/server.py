@@ -38,17 +38,19 @@ def load_dotenv(path):
 load_dotenv(DIR / ".env")
 
 # ---- Gemini (Google AI Studio) ----
-# Override either model from .env without touching code. Keep model IDs current:
+# Model names live in models.json at the repo root, shared with the Cloudflare Worker, so one edit on GitHub
+# changes both. A .env variable overrides the file on your machine. Keep model IDs current:
 # https://ai.google.dev/gemini-api/docs/models
-TEXT_MODEL = os.environ.get("GEMINI_TEXT_MODEL", "gemini-3.8-flash")
-VISION_MODEL = os.environ.get("GEMINI_VISION_MODEL", TEXT_MODEL)
+MODELS = json.loads((DIR.parent / "models.json").read_text())
+TEXT_MODEL = os.environ.get("GEMINI_TEXT_MODEL", MODELS["main"])
+VISION_MODEL = os.environ.get("GEMINI_VISION_MODEL", MODELS.get("scan") or TEXT_MODEL)
 # Gemini 3 Flash thinks at "medium" by default, which took 100+ s per request on the live site.
 # "low" is the floor for gemini-3.8-flash. Set GEMINI_THINKING_LEVEL=off to send no thinking setting.
 THINKING_LEVEL = os.environ.get("GEMINI_THINKING_LEVEL", "low")
 # When the main model is overloaded, rate limited or not found, try these next, in order. Comma-separated, e.g.
 # "gemini-3.6-flash,gemini-3.1-flash-lite". Gemini quotas are per project AND per model, so each extra model in the
 # list is extra capacity. "off" disables fallbacks. (Gemini answered "503: high demand" during testing.)
-FALLBACK_MODEL = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-3.6-flash")
+FALLBACK_MODEL = os.environ.get("GEMINI_FALLBACK_MODEL", MODELS.get("backup", "off"))
 
 
 def normalize_model(name):
@@ -63,7 +65,7 @@ def parse_model_list(value):
 
 def model_chain(model=None):
     """Models to try in order: the requested/main model, then each fallback (same rule as worker/ai.js)."""
-    primary = normalize_model(model or TEXT_MODEL) or normalize_model("gemini-3.8-flash")
+    primary = normalize_model(model or TEXT_MODEL) or normalize_model(MODELS["main"])
     return list(dict.fromkeys([primary, *parse_model_list(FALLBACK_MODEL)]))
 
 

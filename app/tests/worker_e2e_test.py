@@ -358,6 +358,26 @@ def main():
         status, _ = post(port, "/makeshift/api/generate-steps", {"idea": {"title": "x"}}, session="another-visitor")
         check(status == 200, "another session on the same network still gets through", status)
 
+        # ---- models.json on GitHub picks the models; dashboard variables override it ----
+        repo_models = json.loads((ROOT / "models.json").read_text())
+        def get_models(p):
+            with urllib.request.urlopen(f"http://127.0.0.1:{p}/makeshift/api/models", timeout=5) as r:
+                return json.loads(r.read())
+        info = get_models(port)
+        check(info.get("main") == repo_models["main"] and info.get("scan") == repo_models["scan"]
+              and info.get("backup") == [m.strip() for m in repo_models["backup"].split(",")]
+              and info["source"]["main"].startswith("models.json") and info.get("ai_enabled") is True,
+              "GET /api/models reports the models from models.json", json.dumps(info)[:160])
+        before = len(gemini_calls)
+        post(port, "/makeshift/api/generate-steps", {"idea": {"title": "Default model from models.json"}}, session="models-json")
+        sent_to = gemini_calls[before]["path"] if len(gemini_calls) > before else ""
+        check(f"/models/{repo_models['main']}:generateContent" in sent_to, "with no variables, the Worker calls the main model in models.json", sent_to)
+        info = get_models(models_port)
+        check(info.get("main") == "alpha-model" and info.get("backup") == ["bravo-model", "charlie-model"]
+              and info.get("scan") == "vision-model" and "dashboard" in info["source"]["main"],
+              "GET /api/models shows a dashboard variable overriding models.json", json.dumps(info)[:160])
+        check(get_models(nokey_port).get("ai_enabled") is False, "GET /api/models reports AI off when there's no key")
+
         # ---- model selection through Worker variables (GEMINI_TEXT_MODEL / _VISION_MODEL / _FALLBACK_MODEL) ----
         def ask_steps(title):
             before = len(gemini_calls)
