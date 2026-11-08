@@ -1617,7 +1617,7 @@ function cameraErrorMessage(e) {
       : "This browser can't access a camera";
   }
   switch (e && e.name) {
-    case "NotAllowedError": case "SecurityError": return "Camera permission was denied — allow it in the address bar, or type the item in";
+    case "NotAllowedError": case "SecurityError": return "Camera permission was denied — allow it in the address bar, upload a photo, or type the item in";
     case "NotFoundError": case "DevicesNotFoundError": return "No camera found";
     case "NotReadableError": case "TrackStartError": return "The camera is in use by another app";
     default: return "Camera unavailable" + (e && e.message ? " (" + e.message + ")" : "");
@@ -1659,7 +1659,9 @@ function initScan() {
   document.getElementById("scanBtn").addEventListener("click", openScanModal);
   document.getElementById("closeScanBtn").addEventListener("click", closeScanModal);
   document.getElementById("captureBtn").addEventListener("click", captureScan);
-  document.getElementById("uploadPhotoBtn").addEventListener("click", () => document.getElementById("scanFileInput").click());
+  const pickPhoto = () => document.getElementById("scanFileInput").click();
+  document.getElementById("uploadPhotoBtn").addEventListener("click", pickPhoto);
+  document.getElementById("manualUploadBtn").addEventListener("click", pickPhoto); // camera blocked: upload still works
   document.getElementById("scanFileInput").addEventListener("change", handleUploadedPhoto);
   document.getElementById("scanManualBtn").addEventListener("click", () => showScanStep("manual"));
   document.getElementById("manualBackBtn").addEventListener("click", () => retryCamera());
@@ -1749,6 +1751,7 @@ async function identifyFromDataUrl(dataUrl) {
   preview.hidden = false;
   document.getElementById("scanCameraWrap").hidden = true;
   document.getElementById("scanActionsCapture").hidden = true;
+  document.getElementById("manualAddPanel").hidden = true;
   scanStatus("Identifying...");
 
   scanAbort = new AbortController();

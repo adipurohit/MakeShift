@@ -13,7 +13,7 @@ MakeShift treats broken gear and scrap as a parts inventory. Tell it what you ha
 - **Works without AI.** 101 built-in recipes across 10 categories. Type in your scrap and **Catalog matches** ranks the recipes by how many of their parts you already have. No API key, no Wi-Fi.
 - **Guides every build.** The "How to build it" list shows each merge in order and checks it off as you go. Parts marked **as-is** go straight into the build.
 - **AI ideas from your own parts** (needs a Gemini key): up to 14 builds using only what's in your inventory (10 for a full inventory, fewer for a short list so the AI doesn't pad it), refreshed as you edit it, each marked Ready or Need N more. A validator rejects unsafe or impossible ideas, such as reusing capacitors, launchers, a "motorized" build with no power source, rubber trivets for hot pans, or circuit-board coasters.
-- **Camera scan** (needs a Gemini key): photograph a part to add it. The photo goes to Google's Gemini service to name the part and isn't stored.
+- **Camera scan** (needs a Gemini key): photograph a part to add it, or upload a photo when the camera is blocked or you shot it earlier. The photo goes to Google's Gemini service to name the part and isn't stored.
 - **Where to find parts:** donor objects that usually contain each part (a dead inkjet printer for a stepper motor and belt, worn skate wheels for bearings) and how to get it out.
 
 | | |
@@ -73,7 +73,7 @@ python3 app/tests/pack_test.py <recipe_id>
 | `python3 app/tests/test_recipes.py` | AI recipe validation and plausibility rules |
 | `python3 app/tests/worker_parity_test.py` | Cloudflare Worker treats AI output exactly like `server.py` |
 | `python3 app/tests/worker_e2e_test.py` | Cloudflare Worker end to end, served under /makeshift/, with a stand-in Gemini that rejects malformed requests like the real one (needs `wrangler`) |
-| `python3 app/tests/scan_browser.py` | Camera scan flow with a fake camera |
+| `python3 app/tests/scan_browser.py` | Camera scan and photo upload with a fake camera, including a blocked camera |
 | `cd app && npm i --no-save jsdom && node tests/scan_logic.test.js` | Camera scan permission and timeout paths |
 | `python3 app/tests/recipe_quality.py --stub` | Recipe quality harness (drop `--stub` to run against the real model) |
 
