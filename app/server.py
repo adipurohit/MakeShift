@@ -14,6 +14,7 @@ import base64
 import json
 import os
 import re
+import sys
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 
@@ -44,8 +45,26 @@ VISION_MODEL = os.environ.get("GEMINI_VISION_MODEL", TEXT_MODEL)
 # Gemini 3 Flash thinks at "medium" by default, which took 100+ s per request on the live site.
 # "low" is the floor for gemini-3.8-flash. Set GEMINI_THINKING_LEVEL=off to send no thinking setting.
 THINKING_LEVEL = os.environ.get("GEMINI_THINKING_LEVEL", "low")
-# When the main model is overloaded (Gemini answered "503: high demand" during testing), try this one once.
+# When the main model is overloaded, rate limited or not found, try these next, in order. Comma-separated, e.g.
+# "gemini-3.6-flash,gemini-3.1-flash-lite". Gemini quotas are per project AND per model, so each extra model in the
+# list is extra capacity. "off" disables fallbacks. (Gemini answered "503: high demand" during testing.)
 FALLBACK_MODEL = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-3.6-flash")
+
+
+def normalize_model(name):
+    """Accept "models/gemini-x" and stray spaces, so a value pasted from AI Studio still works."""
+    name = str(name or "").strip()
+    return name[len("models/"):] if name.lower().startswith("models/") else name
+
+
+def parse_model_list(value):
+    return [m for m in (normalize_model(x) for x in str(value or "").split(",")) if m and m.lower() != "off"]
+
+
+def model_chain(model=None):
+    """Models to try in order: the requested/main model, then each fallback (same rule as worker/ai.js)."""
+    primary = normalize_model(model or TEXT_MODEL) or normalize_model("gemini-3.8-flash")
+    return list(dict.fromkeys([primary, *parse_model_list(FALLBACK_MODEL)]))
 
 
 def gemini_client():
@@ -78,14 +97,15 @@ def chat_json(system, user, name, schema, max_tokens, model=None):
         response_json_schema=api_schema(schema),
         **thinking_config(types),
     )
-    model = model or TEXT_MODEL
-    try:
-        return gemini_client().models.generate_content(model=model, contents=contents, config=config)
-    except Exception as e:
-        # Same rule as the Worker: an overloaded or rate-limited model gets one try on the backup model.
-        if getattr(e, "code", None) not in (429, 503) or not FALLBACK_MODEL or FALLBACK_MODEL in ("off", model):
-            raise
-        return gemini_client().models.generate_content(model=FALLBACK_MODEL, contents=contents, config=config)
+    chain = model_chain(model)
+    for i, m in enumerate(chain):
+        try:
+            return gemini_client().models.generate_content(model=m, contents=contents, config=config)
+        except Exception as e:
+            # Same rule as the Worker: an overloaded, rate-limited or unknown model hands over to the next one.
+            if getattr(e, "code", None) not in (429, 503, 404) or i == len(chain) - 1:
+                raise
+            print(f"[ai] model {m} unavailable ({getattr(e, 'code', '?')}); trying {chain[i + 1]}", file=sys.stderr)
 
 
 def thinking_config(types):

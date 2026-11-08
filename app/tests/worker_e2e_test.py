@@ -32,7 +32,7 @@ WRANGLER = os.environ.get("WRANGLER") or shutil.which("wrangler") or "npx wrangl
 results = []
 gemini_calls = []
 # reject_json_schema: act like a Gemini that doesn't know responseJsonSchema, to exercise the fallback
-gemini_mode = {"reject_json_schema": False, "reject_thinking": False, "overloaded": set()}
+gemini_mode = {"reject_json_schema": False, "reject_thinking": False, "overloaded": set(), "missing": set()}
 
 
 def schema_of(body):
@@ -76,6 +76,15 @@ class FakeGemini(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(b'{"error": {"message": "rate limit"}}')
+            return
+        if any(m in self.path for m in gemini_mode["missing"]):  # like Google's answer for a retired or misspelled model
+            out = json.dumps({"error": {"code": 404, "status": "NOT_FOUND", "message":
+                              "models/typo is not found for API version v1beta, or is not supported for generateContent."}}).encode()
+            self.send_response(404)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(out)))
+            self.end_headers()
+            self.wfile.write(out)
             return
         if any(m in self.path for m in gemini_mode["overloaded"]):  # like Google's "high demand" answer
             out = json.dumps({"error": {"code": 503, "status": "UNAVAILABLE", "message":
@@ -173,11 +182,17 @@ def stop(proc):
 def main():
     from playwright.sync_api import sync_playwright
 
-    gemini_port, port, nokey_port = free_port(), free_port(), free_port()
+    gemini_port, port, nokey_port, models_port = free_port(), free_port(), free_port(), free_port()
     gemini = ThreadingHTTPServer(("127.0.0.1", gemini_port), FakeGemini)
     threading.Thread(target=gemini.serve_forever, daemon=True).start()
     worker = start_worker(port, {"GEMINI_API_KEY": "test-key", "GEMINI_BASE_URL": f"http://127.0.0.1:{gemini_port}/v1beta"})
     nokey = start_worker(nokey_port, {})
+    # Model selection is a Worker variable. Messy on purpose: a "models/" prefix and stray spaces must still work.
+    models = start_worker(models_port, {
+        "GEMINI_API_KEY": "test-key", "GEMINI_BASE_URL": f"http://127.0.0.1:{gemini_port}/v1beta",
+        "GEMINI_TEXT_MODEL": "models/alpha-model", "GEMINI_VISION_MODEL": "vision-model",
+        "GEMINI_FALLBACK_MODEL": " bravo-model , charlie-model ",
+    })
     try:
         base = f"http://127.0.0.1:{port}"
         with urllib.request.urlopen(f"{base}/makeshift", timeout=5) as r:
@@ -342,9 +357,46 @@ def main():
         check(429 in codes, "one session is limited to about 20 AI calls a minute", f"first 429 at call {codes.index(429) + 1 if 429 in codes else '-'}")
         status, _ = post(port, "/makeshift/api/generate-steps", {"idea": {"title": "x"}}, session="another-visitor")
         check(status == 200, "another session on the same network still gets through", status)
+
+        # ---- model selection through Worker variables (GEMINI_TEXT_MODEL / _VISION_MODEL / _FALLBACK_MODEL) ----
+        def ask_steps(title):
+            before = len(gemini_calls)
+            status, data = post(models_port, "/makeshift/api/generate-steps", {"idea": {"title": title}})
+            return status, data, [c["path"].split("/models/")[1].split(":")[0] for c in gemini_calls[before:]]
+
+        before = len(gemini_calls)
+        status, data, used = ask_steps("Variable picks the model")
+        check(status == 200 and used == ["alpha-model"] and data.get("model") == "alpha-model",
+              "GEMINI_TEXT_MODEL selects the model (a 'models/' prefix is tolerated)", f"{status}, called {used}")
+        post(models_port, "/makeshift/api/identify-material", {"image": "data:image/png;base64,AAAA"})
+        vision_path = gemini_calls[-1]["path"]
+        check("/models/vision-model:generateContent" in vision_path,
+              "GEMINI_VISION_MODEL selects the model for photo scans", vision_path)
+
+        gemini_mode["missing"] = {"alpha-model"}  # a typo'd or retired model name must not take the AI down
+        status, data, used = ask_steps("Main model not found")
+        check(status == 200 and data.get("model") == "bravo-model" and used == ["alpha-model", "bravo-model"],
+              "a model name Google doesn't know falls through to the next model in GEMINI_FALLBACK_MODEL", f"{status}, called {used}")
+        gemini_mode["missing"] = set()
+        status, data, used = ask_steps("Right after a not-found")
+        check(status == 200 and used == ["bravo-model"], "a not-found model is skipped for a while, like an overloaded one", f"called {used}")
+
+        gemini_mode["overloaded"] = {"bravo-model"}  # fallback list is a chain: bravo is rate limited too, charlie answers
+        status, data, used = ask_steps("Second model limited")
+        check(status == 200 and data.get("model") == "charlie-model" and used[-1] == "charlie-model",
+              "GEMINI_FALLBACK_MODEL takes a comma-separated list; the chain continues past a second limited model", f"{status}, called {used}")
+        gemini_mode["overloaded"] = set()
+
+        gemini_mode["missing"] = {"alpha-model", "bravo-model", "charlie-model"}
+        status, data, used = ask_steps("Nothing found")
+        msg = data.get("message", "")
+        check(status == 503 and data.get("error") == "ai_busy" and "wasn't found" in msg and "GEMINI_TEXT_MODEL" in msg,
+              "if no model in the chain exists, the message names the variables to fix", msg[:120])
+        gemini_mode["missing"] = set()
     finally:
         stop(worker)
         stop(nokey)
+        stop(models)
         gemini.shutdown()
     print(f"\n{sum(results)} passed, {len(results) - sum(results)} failed")
     return 0 if all(results) else 1

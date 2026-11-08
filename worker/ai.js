@@ -258,29 +258,51 @@ const GEMINI_TIMEOUT_MS = 55000;
 
 export class ApiError extends Error {}
 export class BusyError extends ApiError {}
+// A configured model name Google doesn't know (typo, retired model). Extends BusyError so the chain moves on
+// to the next model instead of failing the request.
+export class ModelUnavailableError extends BusyError {}
 
-// Try the configured model; if Gemini reports it overloaded, rate limited or too slow, try the backup model once.
+// Models are tried in order: the main model, then each model in GEMINI_FALLBACK_MODEL. Gemini quotas are per
+// project AND per model, so every extra model in the chain is extra capacity when one is rate limited.
+// A model that is overloaded, rate limited, too slow or not found is skipped for COOLDOWN_MS so later requests
+// don't first wait out its failure. Cooldowns are per Worker instance, best effort.
 // Google answered "503: model is experiencing high demand" during testing, which would sink a live demo.
-// After the main model fails, skip it for a while so each request doesn't first wait out a timeout.
-// Per Worker instance, best effort.
 const COOLDOWN_MS = 120000;
 const cooldownUntil = new Map(); // model -> timestamp
 export function resetModelCooldowns() { cooldownUntil.clear(); }
 
+// "models/gemini-x" and stray spaces are accepted, so a value pasted from AI Studio still works.
+const normalizeModel = (m) => String(m ?? "").trim().replace(/^models\//i, "");
+
+// GEMINI_FALLBACK_MODEL is a comma-separated list, e.g. "gemini-3.6-flash, gemini-3.1-flash-lite".
+// "off" (or an empty list) means no fallback.
+export function parseModelList(value) {
+  return String(value ?? "").split(",").map(normalizeModel).filter((m) => m && m.toLowerCase() !== "off");
+}
+
+export function modelChain(env, model) {
+  const primary = normalizeModel(model || env.GEMINI_TEXT_MODEL) || normalizeModel(CFG.text_model);
+  return [...new Set([primary, ...parseModelList(env.GEMINI_FALLBACK_MODEL || CFG.fallback_model)])];
+}
+
 async function chatJson(env, system, user, name, schema, maxTokens, model) {
-  model = model || env.GEMINI_TEXT_MODEL || CFG.text_model;
-  const fallback = env.GEMINI_FALLBACK_MODEL || CFG.fallback_model;
-  const canFallBack = fallback && fallback !== "off" && fallback !== model;
-  if (canFallBack && Date.now() < (cooldownUntil.get(model) || 0)) {
-    return await chatJsonOnce(env, system, user, name, schema, maxTokens, fallback);
+  const chain = modelChain(env, model);
+  const ready = chain.filter((m) => Date.now() >= (cooldownUntil.get(m) || 0));
+  const order = ready.length ? ready : chain; // everything cooling down: try anyway rather than refuse
+  let lastError;
+  for (const m of order) {
+    try {
+      const result = await chatJsonOnce(env, system, user, name, schema, maxTokens, m);
+      if (m !== chain[0]) console.warn(`[ai] answered by fallback model ${m} (main model ${chain[0]} unavailable)`);
+      return result;
+    } catch (e) {
+      if (!(e instanceof BusyError)) throw e;
+      cooldownUntil.set(m, Date.now() + COOLDOWN_MS);
+      console.warn(`[ai] model ${m} skipped for ${COOLDOWN_MS / 1000}s: ${e.message}`);
+      lastError = e;
+    }
   }
-  try {
-    return await chatJsonOnce(env, system, user, name, schema, maxTokens, model);
-  } catch (e) {
-    if (!(e instanceof BusyError) || !canFallBack) throw e;
-    cooldownUntil.set(model, Date.now() + COOLDOWN_MS);
-    return await chatJsonOnce(env, system, user, name, schema, maxTokens, fallback);
-  }
+  throw lastError;
 }
 
 async function chatJsonOnce(env, system, user, name, schema, maxTokens, model) {
@@ -351,6 +373,9 @@ async function chatJsonOnce(env, system, user, name, schema, maxTokens, model) {
   const detail = data.error?.message || res.statusText;
   if (res.status === 401 || res.status === 403) {
     throw new ApiError("The API key was rejected. Check the GEMINI_API_KEY secret in the Cloudflare Worker settings.");
+  }
+  if (res.status === 404) {
+    throw new ModelUnavailableError(`The AI model "${model}" wasn't found. Check the GEMINI_TEXT_MODEL, GEMINI_VISION_MODEL and GEMINI_FALLBACK_MODEL variables in the Worker settings. Catalog matches still work.`);
   }
   if (res.status === 429 || res.status === 503) {
     throw new BusyError("The AI service is overloaded right now. Wait a moment and try again. Catalog matches still work.");

@@ -25,6 +25,9 @@
     { "name": "AI_LIMIT", "namespace_id": "4207", "simple": { "limit": 20, "period": 60 } },
     { "name": "AI_IP_LIMIT", "namespace_id": "4208", "simple": { "limit": 120, "period": 60 } }
   ],
+  // Keep variables set in the Cloudflare dashboard (GEMINI_TEXT_MODEL, GEMINI_FALLBACK_MODEL, ...) when a push to
+  // main redeploys. Without this, Wrangler treats this file as the only source of variables and drops them.
+  "keep_vars": true,
   "workers_dev": false,
   "observability": { "enabled": true }
 }

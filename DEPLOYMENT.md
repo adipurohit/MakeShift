@@ -29,7 +29,28 @@ Without the secret, the catalog recipes work and the AI features show a short no
 
 Set a spending limit on the key in the Google AI Studio. Anyone who opens the site uses your key through the Worker, within the rate limit above.
 
-Optional variables (type **Text**): `GEMINI_TEXT_MODEL` and `GEMINI_VISION_MODEL` override the models, same as in `app/.env`.
+### Rate limited? Change the model
+
+Gemini enforces limits **per project and per model**: a second API key in the same project adds nothing, but each different model has its own allowance. Requests per day reset at midnight Pacific time. Google lists the limits in its [rate-limits documentation](https://ai.google.dev/gemini-api/docs/rate-limits), and AI Studio shows your project's actual usage. Lite variants of a model have generally allowed more requests per minute than the full model.
+
+The model is a Worker variable, not a setting in the web app: every visitor shares your key and your quota, so a model picker in the page would let anyone spend it on whichever model they like, and a different choice would not add capacity anyway.
+
+**Workers & Pages → makeshift → Settings → Variables and Secrets → Add** (type **Text**), then **Deploy**. It takes effect right away, with no code change:
+
+| Variable | What it does | Default |
+|---|---|---|
+| `GEMINI_TEXT_MODEL` | Model for ideas, steps and sourcing | `gemini-3.8-flash` |
+| `GEMINI_VISION_MODEL` | Model for photo scans | same as the text model |
+| `GEMINI_FALLBACK_MODEL` | Models to try, in order, when the one above is rate limited, overloaded or not found. **Comma-separated**, e.g. `gemini-3.6-flash, gemini-3.1-flash-lite`. `off` disables fallbacks | `gemini-3.6-flash` |
+| `GEMINI_THINKING_LEVEL` | `low` (default) or `off` to send no thinking setting | `low` |
+
+Model IDs come from the [model list](https://ai.google.dev/gemini-api/docs/models). A `models/` prefix and extra spaces are fine. Defaults live in `app/server.py`.
+
+How it behaves: a model that answers 429, 503, 404 or times out is skipped for 2 minutes, so the next requests go straight to the next model in the list instead of waiting out another failure. If every model fails, the page shows a plain "AI is busy" message and the catalog recipes keep working. A misspelled model name falls through to the next model rather than breaking the AI, and the error message names the variables to fix if none of them exist.
+
+To see what happened, open the Worker's **Logs** (Observability) tab: lines starting with `[ai]` say which model was skipped and when a fallback answered. The JSON reply of each AI call also has a `model` field naming the model that answered.
+
+`wrangler.jsonc` sets `keep_vars: true`, so variables you add in the dashboard survive the redeploy that follows every push to `main`. For local runs, set the same names in `app/.env`.
 
 ### Change a prompt
 
