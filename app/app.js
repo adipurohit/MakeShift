@@ -1617,7 +1617,7 @@ function cameraErrorMessage(e) {
       : "This browser can't access a camera";
   }
   switch (e && e.name) {
-    case "NotAllowedError": case "SecurityError": return "Camera permission was denied — allow it in the address bar, or type the item in";
+    case "NotAllowedError": case "SecurityError": return "Camera permission was denied — allow it in the address bar, upload a photo, or type the item in";
     case "NotFoundError": case "DevicesNotFoundError": return "No camera found";
     case "NotReadableError": case "TrackStartError": return "The camera is in use by another app";
     default: return "Camera unavailable" + (e && e.message ? " (" + e.message + ")" : "");
@@ -1659,6 +1659,10 @@ function initScan() {
   document.getElementById("scanBtn").addEventListener("click", openScanModal);
   document.getElementById("closeScanBtn").addEventListener("click", closeScanModal);
   document.getElementById("captureBtn").addEventListener("click", captureScan);
+  const pickPhoto = () => document.getElementById("scanFileInput").click();
+  document.getElementById("uploadPhotoBtn").addEventListener("click", pickPhoto);
+  document.getElementById("manualUploadBtn").addEventListener("click", pickPhoto); // camera blocked: upload still works
+  document.getElementById("scanFileInput").addEventListener("change", handleUploadedPhoto);
   document.getElementById("scanManualBtn").addEventListener("click", () => showScanStep("manual"));
   document.getElementById("manualBackBtn").addEventListener("click", () => retryCamera());
   document.getElementById("scanRetryBtn").addEventListener("click", () => retryCamera());
@@ -1736,30 +1740,18 @@ function showScanStep(step) {
   }
 }
 
-async function captureScan() {
-  const video = document.getElementById("scanVideo");
-  if (!scanStream || !video.videoWidth || video.readyState < 2) {
-    scanStatus("Camera is still warming up — try again in a second.");
-    return;
-  }
+// Shared by both capture paths (live camera frame or an uploaded file): sends
+// one already-downscaled image to the server and shows the result, same as
+// before — the backend doesn't care which path produced the data URL.
+async function identifyFromDataUrl(dataUrl) {
   const session = ++scanSession;
-
-  // Downscale: a 1080p/4K frame as base64 JPEG is slow to upload and gains nothing for naming an object.
-  const scale = Math.min(1, SCAN_MAX_SIDE / Math.max(video.videoWidth, video.videoHeight));
-  const canvas = document.getElementById("scanCanvas");
-  canvas.width = Math.round(video.videoWidth * scale);
-  canvas.height = Math.round(video.videoHeight * scale);
-  canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
-  const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-
-  const flash = document.getElementById("scanFlash");
-  flash.classList.remove("flash"); void flash.offsetWidth; flash.classList.add("flash");
 
   const preview = document.getElementById("scanPreview");
   preview.src = dataUrl;
   preview.hidden = false;
   document.getElementById("scanCameraWrap").hidden = true;
   document.getElementById("scanActionsCapture").hidden = true;
+  document.getElementById("manualAddPanel").hidden = true;
   scanStatus("Identifying...");
 
   scanAbort = new AbortController();
@@ -1794,6 +1786,55 @@ async function captureScan() {
     clearTimeout(timer);
     if (scanAbort === abort) scanAbort = null;
   }
+}
+
+async function captureScan() {
+  const video = document.getElementById("scanVideo");
+  if (!scanStream || !video.videoWidth || video.readyState < 2) {
+    scanStatus("Camera is still warming up — try again in a second.");
+    return;
+  }
+
+  // Downscale: a 1080p/4K frame as base64 JPEG is slow to upload and gains nothing for naming an object.
+  const scale = Math.min(1, SCAN_MAX_SIDE / Math.max(video.videoWidth, video.videoHeight));
+  const canvas = document.getElementById("scanCanvas");
+  canvas.width = Math.round(video.videoWidth * scale);
+  canvas.height = Math.round(video.videoHeight * scale);
+  canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+
+  const flash = document.getElementById("scanFlash");
+  flash.classList.remove("flash"); void flash.offsetWidth; flash.classList.add("flash");
+
+  await identifyFromDataUrl(dataUrl);
+}
+
+function stopCameraStream() {
+  if (scanStream) { scanStream.getTracks().forEach((t) => t.stop()); scanStream = null; }
+  document.getElementById("scanVideo").srcObject = null;
+}
+
+function handleUploadedPhoto(e) {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = "";                                // allow re-selecting the same file next time
+  if (!file) return;
+  stopCameraStream();                                  // no need to keep the camera live once a photo's picked
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, SCAN_MAX_SIDE / Math.max(img.width, img.height));
+      const canvas = document.getElementById("scanCanvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      identifyFromDataUrl(canvas.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = () => scanStatus("Couldn't read that image — try another file, or type it in.");
+    img.src = reader.result;
+  };
+  reader.onerror = () => scanStatus("Couldn't read that file — try another, or type it in.");
+  reader.readAsDataURL(file);
 }
 
 /* ================= RESET ================= */

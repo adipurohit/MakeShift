@@ -9,7 +9,7 @@ whole front-end path works against a genuine MediaStream.
 
     python3 app/tests/scan_browser.py
 """
-import base64, json, subprocess, sys, time, urllib.request, os
+import base64, json, subprocess, sys, tempfile, time, urllib.request, os
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
@@ -75,6 +75,32 @@ try:
         page.click("#captureBtn"); page.wait_for_selector("#scanResult:not([hidden])")
         page.click("#scanConfirmBtn")
         check("broken stepper motor" in page.inner_text("#inventoryList") if page.query_selector("#inventoryList") else "broken stepper motor" in page.content().lower(), "confirmed item lands in the inventory")
+
+        # Upload a photo instead of the live camera: same pipeline, downscaled, camera released.
+        big = os.path.join(tempfile.mkdtemp(), "part.png")
+        page.screenshot(path=big, full_page=False)  # 1280x800, larger than the 1024 px cap
+        sent.clear()
+        page.click("#scanBtn"); page.wait_for_function("document.getElementById('scanVideo').videoWidth > 0")
+        page.set_input_files("#scanFileInput", big)
+        page.wait_for_selector("#scanResult:not([hidden])", timeout=5000)
+        up = sent.get("body", {}).get("image", "")
+        check(up.startswith("data:image/jpeg;base64,"), "uploaded photo is sent as a JPEG data URL")
+        dims = page.evaluate("[document.getElementById('scanCanvas').width, document.getElementById('scanCanvas').height]")
+        check(max(dims) <= 1024, "uploaded photo downscaled to <=1024px", str(dims))
+        check(page.evaluate("document.getElementById('scanVideo').srcObject") is None, "upload releases the camera")
+        page.keyboard.press("Escape")
+
+        # Camera blocked: the manual panel still offers an upload.
+        page.evaluate("() => { navigator.mediaDevices.getUserMedia = () => Promise.reject(new DOMException('no', 'NotAllowedError')); }")
+        page.click("#scanBtn"); page.wait_for_selector("#manualAddPanel:not([hidden])", timeout=5000)
+        check(page.is_visible("#manualUploadBtn"), "camera blocked: Upload a photo is offered")
+        check("upload a photo" in page.inner_text("#scanStatus"), "camera-blocked message mentions upload")
+        sent.clear()
+        page.set_input_files("#scanFileInput", big)
+        page.wait_for_selector("#scanResult:not([hidden])", timeout=5000)
+        check(page.is_hidden("#manualAddPanel") and "image" in sent.get("body", {}), "upload works with the camera blocked")
+        page.keyboard.press("Escape")
+        page.reload()  # restore the real getUserMedia
 
         page.route("**/api/identify-material", lambda r: r.abort())
         page.click("#scanBtn"); page.wait_for_function("document.getElementById('scanVideo').videoWidth > 0")
