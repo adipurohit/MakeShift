@@ -1,6 +1,6 @@
 {
   "help": "Gemini models for MakeShift. Edit on GitHub and commit to main: the site redeploys in about a minute. main = ideas, steps, sourcing. backup = tried in order when main is busy or missing (comma-separated, or off). scan = camera scan. See what the live site runs at https://adipurohit.com/makeshift/api/models",
   "main": "gemini-3.8-flash",
-  "backup": "gemini-3.6-flash",
+  "backup": "gemma-4-31B",
   "scan": "gemini-3.8-flash"
 }
