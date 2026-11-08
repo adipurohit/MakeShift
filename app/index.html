@@ -106,6 +106,14 @@
           <span id="progressLabel">0 / 0 ready</span>
         </div>
         <div class="merge-guide" id="mergeGuide" hidden></div>
+        <div class="instructions" id="instructionsPanel">
+          <div class="instructions-head">
+            <span class="merge-guide-head">Instructions</span>
+            <button class="ghost-btn instructions-btn" id="instructionsBtn" type="button" aria-controls="instructionsList">Instructions</button>
+          </div>
+          <p class="instructions-hint" id="instructionsHint" aria-live="polite"></p>
+          <ol class="instructions-list" id="instructionsList" hidden></ol>
+        </div>
         <ul class="req-list" id="reqList"></ul>
         <div class="source-finder" id="sourceFinder">
           <button class="ghost-btn source-finder-btn" id="findSourcesBtn" type="button">Where can I find these materials?</button>

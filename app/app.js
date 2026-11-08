@@ -668,6 +668,7 @@ function renderRequirements() {
   emptyEl.hidden = true;
   activeEl.hidden = false;
   renderMergeGuide(idea);
+  renderInstructions(idea);
 
   const resolved = resolveIdea(idea);
   const asIs = asIsIds(idea);
@@ -1419,6 +1420,119 @@ function tryMergeAt3D(uid) {
   renderCatalog();
 }
 
+/* ================= ASSEMBLY STEPS: shared by the Instructions panel and Build It =================
+   Built-in recipes carry their own steps. AI ideas ask Gemini once, only when you press
+   Instructions or Build It, then keep the answer, so picking a project never spends tokens. */
+const stepsInFlight = new Map(); // idea id -> promise, so Instructions then Build It make one call
+
+function savedSteps(idea) {
+  return idea.offline ? idea.assembly_steps : state.assemblySteps[idea.id];
+}
+
+function fetchSteps(idea) {
+  const saved = savedSteps(idea);
+  if (saved) return Promise.resolve(saved);
+  if (stepsInFlight.has(idea.id)) return stepsInFlight.get(idea.id);
+  const job = (async () => {
+    const resolved = resolveIdea(idea);
+    const brief = {
+      title: idea.title,
+      pitch: idea.pitch,
+      recipe_graph: resolved.recipes.map((r) => ({
+        a: state.items[r.a].name,
+        b: state.items[r.b].name,
+        result: state.items[r.result].name,
+      })),
+      sub_assemblies: Object.values(resolved.recipes.reduce((acc, r) => {
+        acc[r.result] = state.items[r.result].name;
+        return acc;
+      }, {})),
+      final_parts: Object.entries(resolved.finalRequires).map(([id, q]) => `${state.items[id].name} x${q}`),
+      // the only raw parts the steps may use; without this list the model invented plates, screws and planks
+      raw_materials: rawIdsForIdea(idea).map((id) => (state.items[id] || {}).name).filter(Boolean),
+    };
+    const res = await fetch("api/generate-steps", {
+      method: "POST",
+      headers: aiHeaders(),
+      body: JSON.stringify({ idea: brief }),
+    });
+    let data = {};
+    try { data = await res.json(); } catch (e) { /* non-JSON error page */ }
+    if (!res.ok || !Array.isArray(data.assembly_steps) || !data.assembly_steps.length) {
+      throw new Error(data.message || "Couldn't get instructions right now.");
+    }
+    state.assemblySteps[idea.id] = data.assembly_steps;
+    saveState();
+    return data.assembly_steps;
+  })();
+  stepsInFlight.set(idea.id, job);
+  job.finally(() => stepsInFlight.delete(idea.id)).catch(() => {});
+  return job;
+}
+
+let instructionsOpen = true; // the reader's choice, kept while they switch projects
+let instructionsError = null; // {id, message} from the last failed request
+
+function renderInstructions(idea) {
+  const btn = document.getElementById("instructionsBtn");
+  const hint = document.getElementById("instructionsHint");
+  const list = document.getElementById("instructionsList");
+  const steps = savedSteps(idea);
+  const loading = stepsInFlight.has(idea.id);
+  hint.classList.remove("error");
+  list.innerHTML = "";
+  if (steps) {
+    steps.forEach((text) => {
+      const li = document.createElement("li");
+      li.textContent = text;
+      list.appendChild(li);
+    });
+    list.hidden = !instructionsOpen;
+    btn.disabled = false;
+    btn.textContent = instructionsOpen ? "Hide" : "Instructions";
+    btn.setAttribute("aria-expanded", String(instructionsOpen));
+    hint.textContent = instructionsOpen ? "" : `${steps.length} steps. ` + (idea.offline ? "Built in, no AI needed." : "Saved, no new AI call.");
+    return;
+  }
+  list.hidden = true;
+  btn.removeAttribute("aria-expanded");
+  btn.disabled = loading;
+  if (loading) {
+    btn.textContent = "Writing...";
+    hint.textContent = "The AI is writing the steps. This takes about 20 seconds. You can keep merging.";
+  } else if (instructionsError && instructionsError.id === idea.id) {
+    btn.textContent = "Try again";
+    hint.textContent = instructionsError.message;
+    hint.classList.add("error");
+  } else {
+    btn.textContent = "Instructions";
+    hint.textContent = "Press Instructions to have the AI write the steps. The AI runs only when you ask, and the steps are saved.";
+  }
+}
+
+function initInstructions() {
+  document.getElementById("instructionsBtn").addEventListener("click", async () => {
+    const idea = findIdea(state.activeIdeaId);
+    if (!idea) return;
+    if (savedSteps(idea)) {
+      instructionsOpen = !instructionsOpen;
+      renderInstructions(idea);
+      return;
+    }
+    instructionsError = null;
+    instructionsOpen = true;
+    const job = fetchSteps(idea);
+    renderInstructions(idea);
+    try {
+      await job;
+    } catch (e) {
+      instructionsError = { id: idea.id, message: e.message || "Couldn't get instructions right now." };
+    }
+    const active = findIdea(state.activeIdeaId);
+    if (active) renderInstructions(active); // only redraw for whatever project is open now
+  });
+}
+
 /* ================= ASSEMBLY MODAL (steps generated on demand) ================= */
 let stepsDone = new Set();
 let assemblyIdea = null;
@@ -1432,38 +1546,12 @@ async function openAssemblyModal(idea) {
   document.getElementById("completeBtn").disabled = true;
   document.getElementById("stepsList").innerHTML = "";
 
-  let steps = idea.offline ? idea.assembly_steps : state.assemblySteps[idea.id];
+  let steps = savedSteps(idea);
   if (!steps) {
     document.getElementById("stepsLoading").hidden = false;
     document.getElementById("assemblyStatus").textContent = "Asking the AI for assembly steps for " + idea.title + "...";
     try {
-      const resolved = resolveIdea(idea);
-      const brief = {
-        title: idea.title,
-        pitch: idea.pitch,
-        recipe_graph: resolved.recipes.map((r) => ({
-          a: state.items[r.a].name,
-          b: state.items[r.b].name,
-          result: state.items[r.result].name,
-        })),
-        sub_assemblies: Object.values(resolved.recipes.reduce((acc, r) => {
-          acc[r.result] = state.items[r.result].name;
-          return acc;
-        }, {})),
-        final_parts: Object.entries(resolved.finalRequires).map(([id, q]) => `${state.items[id].name} x${q}`),
-        // the only raw parts the steps may use; without this list the model invented plates, screws and planks
-        raw_materials: rawIdsForIdea(idea).map((id) => (state.items[id] || {}).name).filter(Boolean),
-      };
-      const res = await fetch("api/generate-steps", {
-        method: "POST",
-        headers: aiHeaders(),
-        body: JSON.stringify({ idea: brief }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Couldn't generate steps");
-      steps = data.assembly_steps;
-      state.assemblySteps[idea.id] = steps;
-      saveState();
+      steps = await fetchSteps(idea);
     } catch (e) {
       steps = ["Couldn't generate assembly steps automatically — improvise from the parts you've built, or close this and try Build again."];
     }
@@ -1895,6 +1983,7 @@ async function init() {
   initBench();
   initBuildButton();
   initSourceFinder();
+  initInstructions();
   initAssemblyModal();
   initScan();
   initReset();

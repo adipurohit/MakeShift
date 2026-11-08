@@ -12,6 +12,7 @@ MakeShift treats broken gear and scrap as a parts inventory. Tell it what you ha
 
 - **Works without AI.** 101 built-in recipes across 10 categories. Type in your scrap and **Catalog matches** ranks the recipes by how many of their parts you already have. No API key, no Wi-Fi.
 - **Guides every build.** The "How to build it" list shows each merge in order and checks it off as you go. Parts marked **as-is** go straight into the build.
+- **Instructions on selection.** Pick a built-in recipe and its assembly steps show right away. For an AI idea, press **Instructions** and the AI writes the steps once, then they're saved, so picking projects never spends AI tokens or waits on the AI.
 - **AI ideas from your own parts** (needs a Gemini key): up to 14 builds using only what's in your inventory (10 for a full inventory, fewer for a short list so the AI doesn't pad it), refreshed as you edit it, each marked Ready or Need N more. A validator rejects unsafe or impossible ideas, such as reusing capacitors, launchers, a "motorized" build with no power source, rubber trivets for hot pans, or circuit-board coasters.
 - **Camera scan** (needs a Gemini key): photograph a part to add it, or upload a photo when the camera is blocked or you shot it earlier. The photo goes to Google's Gemini service to name the part and isn't stored.
 - **Where to find parts:** donor objects that usually contain each part (a dead inkjet printer for a stepper motor and belt, worn skate wheels for bearings) and how to get it out.
@@ -69,6 +70,7 @@ python3 app/tests/pack_test.py <recipe_id>
 | `python3 app/tests/pack_test.py` | Builds all 100 pack recipes end to end |
 | `python3 app/tests/catalog_match_test.py` | Catalog matches rank built-in recipes by the parts you have, no AI |
 | `python3 app/tests/ai_flow_test.py` | AI ideas: only your parts sent, auto-refresh, 10+ ideas, merge guide |
+| `python3 app/tests/instructions_test.py` | Instructions show on selection; AI steps only on request, saved, reused by Build It |
 | `python3 app/tests/bench_count_test.py` | Parts on the bench count toward the checklist, including as-is parts |
 | `python3 app/tests/test_recipes.py` | AI recipe validation and plausibility rules |
 | `python3 app/tests/worker_parity_test.py` | Cloudflare Worker treats AI output exactly like `server.py` |
